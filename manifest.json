@@ -1,0 +1,10 @@
+{
+  "id": "gt-tracker",
+  "name": "TrackerGT",
+  "version": "1.11.0",
+  "minAppVersion": "1.4.0",
+  "description": "Tracks and visualizes Frontmatter properties",
+  "author": "greater-than",
+  "authorUrl": "http://greaterthan.solutions",
+  "isDesktopOnly": false
+}

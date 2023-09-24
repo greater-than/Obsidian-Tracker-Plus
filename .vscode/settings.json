@@ -1,0 +1,14 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true
+  },
+  "[javascript]": {
+    "javascript.preferences.importModuleSpecifier": "relative"
+  },
+  "[typescript]": {
+    "typescript.preferences.importModuleSpecifier": "relative"
+  },
+  "cSpell.words": []
+}
