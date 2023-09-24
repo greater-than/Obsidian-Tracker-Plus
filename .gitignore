@@ -1,0 +1,19 @@
+# Intellij
+*.iml
+.idea
+
+# npm
+node_modules
+package-lock.json
+
+# build
+main.js
+*.js.map
+examples/*.js
+*.zip
+
+# .obsidian
+.obsidian
+
+# examples for users
+examples/case
