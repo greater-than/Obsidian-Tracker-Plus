@@ -1,5 +1,10 @@
 # Release Notes
 
+## v1.12.0
+
+- Support for inline dataview fields. Thanks, @Laharah
+- Fixed typos (code, comments, docs)
+
 ## v1.11.0
 
 - Adds ability to track boolean properties. Thanks, @bnjbvr
@@ -71,7 +76,7 @@
 
 - Add a new output type `pie`, rendering a pie chart ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestPieChart.md))
 - Allow expressions (operators and functions) as data inputs for output type `summary`, `bullet`, and `pie` (examples: [expression](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestExpression.md), [summary](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestSummary.md), [bullet](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestBullet.md), [pie](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestPieChart.md))
-- Allow formatting evaluated expressions by a follwing format string ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestExpression.md))
+- Allow formatting evaluated expressions by a following format string ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestExpression.md))
 
 ## v1.8.2
 

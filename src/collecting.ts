@@ -323,7 +323,7 @@ export function addToDataMap(
 // Helper function
 // Accept multiple values using custom separators
 // regex with value --> extract value
-// regex without value --> count occurrencies
+// regex without value --> count occurrences
 function extractDataUsingRegexWithMultipleValues(
   text: string,
   strRegex: string,
@@ -401,15 +401,15 @@ function extractDataUsingRegexWithMultipleValues(
           }
         }
       } else {
-        // no named groups, count occurrencies
-        // console.log("count occurrencies");
+        // no named groups, count occurrences
+        // console.log("count occurrences");
         measure += renderInfo.constValue[query.getId()];
         extracted = true;
         query.addNumTargets();
       }
     } else {
-      // force to count occurrencies
-      // console.log("forced count occurrencies");
+      // force to count occurrences
+      // console.log("forced count occurrences");
       measure += renderInfo.constValue[query.getId()];
       extracted = true;
       query.addNumTargets();
@@ -553,7 +553,7 @@ export function collectDataFromFrontmatterKey(
         splitted.length > query.getAccessor() &&
         query.getAccessor() >= 0
       ) {
-        // TODO: it's not efficent to retrieve one value at a time, enhance this
+        // TODO: it's not efficient to retrieve one value at a time, enhance this
         let splittedPart = splitted[query.getAccessor()].trim();
         let retParse = helper.parseFloatFromAny(
           splittedPart,
@@ -801,6 +801,49 @@ export function collectDataFromDvField(
     "\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-,@; \\t:" +
     WordCharacters +
     "]*))(\\r\\?\\n|\\r|$)";
+  let outline = extractDataUsingRegexWithMultipleValues(
+    content,
+    strRegex,
+    query,
+    dataMap,
+    xValueMap,
+    renderInfo
+  );
+  let inline = collectDataFromInlineDvField(
+    content,
+    query,
+    renderInfo,
+    dataMap,
+    xValueMap
+  );
+  return outline || inline;
+}
+
+// In form 'key::value', named group 'value' from plugin
+export function collectDataFromInlineDvField(
+  content: string,
+  query: Query,
+  renderInfo: RenderInfo,
+  dataMap: DataMap,
+  xValueMap: XValueMap
+): boolean {
+  let dvTarget = query.getTarget();
+  if (query.getParentTarget()) {
+    dvTarget = query.getParentTarget(); // use parent tag name for multiple values
+  }
+  // Dataview ask user to add dashes for spaces as search target
+  // So a dash may stands for a real dash or a space
+  dvTarget = dvTarget.replace("-", "[\\s\\-]");
+
+  // Test this in Regex101
+  // remember '\s' includes new line
+  // ^.*?(\[|\()\*{0,2}dvTarget\*{0,2}(::[ |\t]*(?<value>[\d\.\/\-\w,@; \t:]*))(\]|\)).*?
+  let strRegex =
+    "^.*?(\\[|\\()\\*{0,2}" +
+    dvTarget +
+    "\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-,@; \\t:" +
+    WordCharacters +
+    "]*))(\\]|\\)).*?$";
   // console.log(strRegex);
 
   return extractDataUsingRegexWithMultipleValues(
