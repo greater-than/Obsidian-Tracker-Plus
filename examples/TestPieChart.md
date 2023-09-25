@@ -5,8 +5,10 @@ Expressions could be used in parameter `data`, `label`, and `extLabel`.
 ## Manual Input Data
 
 ### Numbers as Data
+
 Pie chart with labels showing percentages
-``` tracker
+
+```tracker
 searchType: task.done, task.notdone
 searchTarget: Say I love you, Say I love you
 pie:
@@ -20,7 +22,8 @@ pie:
 ### Arithmetic
 
 Pie chart with labels showing percentages
-``` tracker
+
+```tracker
 searchType: task.done, task.notdone
 searchTarget: Say I love you, Say I love you
 datasetName: Done, NotDone
@@ -35,7 +38,8 @@ pie:
 ### Legend
 
 Use parameter `dataName` for the name on the legend
-``` tracker
+
+```tracker
 searchType: task.done, task.notdone
 searchTarget: Say I love you, Say I love you
 datasetName: Done, NotDone
@@ -48,11 +52,12 @@ pie:
     ratioInnerRadius: 0.5
     showLegend: true
     legendPosition: right
-    legendOrientation: vertical	
+    legendOrientation: vertical
 ```
 
 ### Default data colors
-``` tracker
+
+```tracker
 searchType: task.done, task.notdone
 searchTarget: Say I love you, Say I love you
 pie:
@@ -65,7 +70,8 @@ pie:
 ## Data from Notes
 
 Using function dataset() to get Dataset then use function sum() to get the summation
-``` tracker
+
+```tracker
 searchType: task.done, task.notdone
 searchTarget: Say I love you, Say I love you
 folder: diary
@@ -79,7 +85,8 @@ pie:
 ```
 
 Summary
-``` tracker
+
+```tracker
 searchType: task.done, task.notdone
 searchTarget: Say I love you, Say I love you
 folder: diary
@@ -88,7 +95,8 @@ summary:
 ```
 
 ## External Labels
-``` tracker
+
+```tracker
 searchType: task.done, task.notdone
 searchTarget: Say I love you, Say I love you
 datasetName: Done, NotDone
@@ -102,7 +110,8 @@ pie:
 
 1. Label for the first data was hidden because the fraction of it is too small (less than 0.03, 3%).
 2. showExtLabelOnlyIfNoLabel was set to true, thus the external label of the first data was shown due to the hidden label.
-``` tracker
+
+```tracker
 searchType: task.done, task.notdone
 searchTarget: Say I love you, Say I love you
 datasetName: Done, NotDone

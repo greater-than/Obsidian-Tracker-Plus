@@ -1,6 +1,6 @@
 # Habit Tracker
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 folder: diary
@@ -11,7 +11,7 @@ line:
     lineColor: "#d65d0e"
 ```
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: exercise-plank
 folder: diary
@@ -23,7 +23,7 @@ line:
     pointColor: red
 ```
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: meditation
 folder: diary
@@ -35,8 +35,10 @@ line:
 ```
 
 ## Summary
+
 ### Meditation
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: meditation
 folder: diary
@@ -45,7 +47,8 @@ summary:
 ```
 
 ### CleanUp
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: clean-up
 folder: diary
@@ -55,7 +58,8 @@ summary:
 ```
 
 ### Work log
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: work_log
 folder: diary

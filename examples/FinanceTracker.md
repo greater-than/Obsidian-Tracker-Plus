@@ -1,18 +1,17 @@
 # Finance Tracker
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: finance
 folder: diary
 accum: true
 line:
-    title: Finace
+    title: Finance
     yAxisLabel: USD
     lineWidth: 4
 ```
 
-
-``` tracker
+```tracker
 searchType: tag
 searchTarget: finance/bank1
 folder: diary
@@ -22,8 +21,7 @@ line:
     yAxisLabel: USD
 ```
 
-
-``` tracker
+```tracker
 searchType: tag
 searchTarget: finance/bank2
 folder: diary

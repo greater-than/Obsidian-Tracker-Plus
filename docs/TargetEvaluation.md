@@ -37,7 +37,7 @@ tags: tagName1, tagName2<br>
 
 Set `searchTarget` to tagName1 or tagName2 will make the plugin do its work.
 
-In your content, a value can be attached to the tag in the format of '_#tagName:value_'. Note the value should be appended right after your tag and an extra colon **without spaces**. If a value is attached this way, the obsidian-tracker will automatically use the provided value instead of the constant one.
+In your content, a value can be attached to the tag in the format of '_#tagName:value_'. Note the value should be appended right after your tag and an extra colon **without spaces**. If a value is attached this way, TrackerGT will automatically use the provided value instead of the constant one.
 
 Nested tags with values attached could be useful for tracking children's data separately and also still see the overall merged data using parent tags.
 
@@ -111,20 +111,20 @@ More table examples can be found [here](https://github.com/greater-than/Obsidian
 
 ### searchType: fileMeta
 
-With this search type, you can retrieve infomation of files. Currently, three kinds of data you can get.
+With this search type, you can retrieve information of files. Currently, three kinds of data you can get.
 
 - cDate: creation date of a file
 - mDate: last modification date of a file
 - size: file size in bytes
 - numWords: number of words in a file
 - numChars: number of characters in a file (including spaces)
-- numSentences: number of setences in a file
+- numSentences: number of sentences in a file
 
 `cData` and `mDate` can be used as X dataset and `size` can be used as Y dataset.
 
 ### searchType: task
 
-You can retrieve infomation from tasks by using `searchType` `tasks`.
+You can retrieve information from tasks by using `searchType` `task`.
 The provided `searchTarget` will limit the result with task's contents match the input.
 
 Using type `task` or `task.all` will get you all tasks no matter it is done or not.

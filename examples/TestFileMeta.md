@@ -1,6 +1,8 @@
 # Test FileMeta
-Track the size variation of diaries 
-``` tracker
+
+Track the size variation of diaries
+
+```tracker
 searchType: fileMeta
 searchTarget: size
 folder: diary
@@ -12,7 +14,8 @@ line:
 ```
 
 Use file created dates (cDate) as x values
-``` tracker
+
+```tracker
 searchType: fileMeta, dvField
 searchTarget: cDate, dataviewTarget
 xDataset: 0
@@ -22,7 +25,8 @@ line:
 ```
 
 Use file modified dates (mDate) as x values
-``` tracker
+
+```tracker
 searchType: fileMeta, dvField
 searchTarget: mDate, dataviewTarget
 xDataset: 0
@@ -32,4 +36,3 @@ line:
 ```
 
 Please also check those search targets in markdown files under folder 'diary' and 'data'.
-

@@ -3,7 +3,8 @@
 ## Y Axis Interval
 
 Numeric Y values
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary
@@ -19,7 +20,8 @@ line:
 ```
 
 Y values in time
-``` tracker
+
+```tracker
 searchType: frontmatter
 searchTarget: clock-in, clock-out
 endDate: 2021-01-15
@@ -37,8 +39,10 @@ line:
 ```
 
 ## Y Axis Tick Label Format
+
 Float numbers with precision of 1 decimal digits
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary
@@ -55,7 +59,8 @@ line:
 ```
 
 Y values in time
-``` tracker
+
+```tracker
 searchType: frontmatter
 searchTarget: clock-in, clock-out
 endDate: 2021-01-15
@@ -74,7 +79,8 @@ line:
 ```
 
 ## X Axis Interval
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary
@@ -89,7 +95,8 @@ line:
 ```
 
 ## X Axis Tick Label Format
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary

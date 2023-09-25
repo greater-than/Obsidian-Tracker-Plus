@@ -1,6 +1,6 @@
 # Test Commands
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: weight
 folder: /
@@ -12,8 +12,7 @@ line:
     yAxisLabel: Value
 ```
 
-
-``` tracker
+```tracker
 searchType: tag
 searchTarget: weight
 folder: /
@@ -25,8 +24,7 @@ bar:
     yAxisLabel: Value
 ```
 
-
-``` tracker
+```tracker
 searchType: tag
 searchTarget: weight
 folder: /

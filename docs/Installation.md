@@ -3,7 +3,7 @@
 ## Install from the Obsidian Settings Panel
 
 1. From Settings Panel (the icon at the bottom left corner) -> Options -> Community plugins, set 'safe mode' to off.
-2. In the 'Community plugins' section, click 'Browse' and find the obsidian-tracker plugin by the name 'Tracker'.
+2. In the 'Community plugins' section, click 'Browse' and find the plugin by the name 'TrackerGT'.
 3. Press the button 'Install' and wait for the completion of the install.
 4. In the section 'Installed plugins', find and enable the plugin just installed.
 5. Enjoy tracking.

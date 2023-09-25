@@ -1,6 +1,6 @@
 # Test Relative startDate and endDate
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 folder: diary

@@ -1,8 +1,10 @@
 # Test Table
 
 ## Line Chart
+
 Use first column as X dataset , and second and third columns as Y values
-``` tracker
+
+```tracker
 searchType: table
 searchTarget: data/Tables[0][0], data/Tables[0][1], data/Tables[0][2]
 xDataset: 0
@@ -13,7 +15,8 @@ line:
 ```
 
 Use first column as X dataset , and third and forth columns as Y values
-``` tracker
+
+```tracker
 searchType: table
 searchTarget: data/Tables[0][0], data/Tables[0][2], data/Tables[0][3]
 xDataset: 0
@@ -25,7 +28,8 @@ line:
 ```
 
 Use first column as X dataset. Second column posses multiple values in each cell.
-``` tracker
+
+```tracker
 searchType: table
 searchTarget: data/Tables[1][0], data/Tables[1][1][0], data/Tables[1][1][1]
 xDataset: 0
@@ -38,7 +42,8 @@ line:
 ```
 
 ### Tables with Defects
-``` tracker
+
+```tracker
 searchType: table
 searchTarget: data/Tables[2][0], data/Tables[2][1]
 xDataset: 0
@@ -47,7 +52,8 @@ line:
 ```
 
 Wrong date format in Table
-``` tracker
+
+```tracker
 searchType: table
 searchTarget: data/Tables[3][0], data/Tables[3][1]
 xDataset: 0
@@ -57,7 +63,7 @@ line:
 
 ## Month View
 
-``` tracker
+```tracker
 searchType: table
 searchTarget: data/Tables[0][0], data/Tables[0][1], data/Tables[0][2], data/Tables[0][3]
 xDataset: 0

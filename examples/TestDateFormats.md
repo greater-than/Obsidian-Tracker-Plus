@@ -2,11 +2,11 @@
 
 ## Test Default Date Formats
 
-Change the default dateFomat on Tracker settings panel and then check the following trackers in the preview mode. Only the one fit dateFomat settings will get rendered.
+Change the default dateFormat on Tracker settings panel and then check the following trackers in the preview mode. Only the one fit dateFormat settings will get rendered.
 
-### dateFomat: YYYY-MM-DD
+### dateFormat: YYYY-MM-DD
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary
@@ -21,7 +21,7 @@ line:
 
 ### dateFormat: D-YYYYMMDD
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary
@@ -36,7 +36,7 @@ line:
 
 ### dateFormat: YYYY-MM-DD-dddd
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary
@@ -50,7 +50,8 @@ line:
 ```
 
 ### dateFormat: YYYY-MM-DD_ddd
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary
@@ -65,7 +66,7 @@ line:
 
 ### dateFormat: DD-MM-YYYY
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary
@@ -80,7 +81,7 @@ line:
 
 ### dateFormat: DD.MM.YYYY
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary
@@ -95,7 +96,7 @@ line:
 
 ## ISO-8601 Date Format
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary
@@ -115,7 +116,7 @@ The string provided in dateFormatPrefix and dateFormatSuffix will be removed bef
 
 ### dateFormat: YYYYMMDD with prefix D-
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary
@@ -132,7 +133,7 @@ line:
 
 ### dateFormat: YYYYMMDD with suffix -D
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary
@@ -150,13 +151,15 @@ line:
 ### Using prefix and suffix with regular expression
 
 Examples of file name
+
 - Jeffrey-20210101-Journal
 - Jeffrey-20210102-Diary
 - Lucas-2021-0103-Journal
 - Lucas-2021-0104-Diary
 
 Data from the same days will be summed up.
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 folder: diary
@@ -175,17 +178,19 @@ line:
 ## Relative Date Input for startDate and endDate
 
 The reference date of the relative date input is 'today' (The current date of your computer), So
+
 - 0d ==> today
 - -1d ==> yesterday
 - -1w ==> last week
 - -1M ==> last month
 - -1y ==> last year
 
-Notice!! 
+Notice!!
+
 - small 'm' represent 'minute'
 - If the date range is less than 1 day, you will get the error message 'No valid date as X value found in notes'.
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary

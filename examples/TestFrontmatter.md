@@ -1,14 +1,16 @@
 # Test Frontmatter
 
 ## Deep Values
+
 deepValue:
-    very:
-        very:
-            very:
-                very: 
-                    very:
-                        deep: 27.4
-``` tracker
+very:
+very:
+very:
+very:
+very:
+deep: 27.4
+
+```tracker
 searchType: frontmatter
 searchTarget: deepValue.very.very.very.very.very.deep
 folder: diary
@@ -18,8 +20,10 @@ line:
 ```
 
 ## Multiple Values
+
 bloodpressure: 184.4/118.8
-``` tracker
+
+```tracker
 searchType: frontmatter
 searchTarget: bloodpressure[0], bloodpressure[1]
 datasetName: systolic, diastolic
@@ -36,9 +40,11 @@ line:
 ```
 
 ## Multiple Tags in Front Matter
+
 Extract data of one tag from multiple tags
 The default separator in front matter tags is comma (,)
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: work_log
 folder: diary
@@ -56,7 +62,8 @@ line:
 
 Use the data of two tags
 The default separator in front matter tags is comma (,)
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: work_log, work_log2
 folder: diary

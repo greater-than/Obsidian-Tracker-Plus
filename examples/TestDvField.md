@@ -1,7 +1,8 @@
 # Test dvField
 
 Simple inline field
-``` tracker
+
+```tracker
 searchType: dvField
 searchTarget: dataviewTarget
 folder: diary
@@ -13,7 +14,8 @@ line:
 ```
 
 Field with a space
-``` tracker
+
+```tracker
 searchType: dvField
 searchTarget: Make Progress
 folder: diary
@@ -25,7 +27,8 @@ line:
 ```
 
 Field with a dash line
-``` tracker
+
+```tracker
 searchType: dvField
 searchTarget: Make-Progress
 folder: diary
@@ -37,7 +40,8 @@ line:
 ```
 
 Extract the first value from multiple values
-``` tracker
+
+```tracker
 searchType: dvField
 searchTarget: dataviewTarget1[0]
 folder: diary
@@ -49,7 +53,8 @@ line:
 ```
 
 Multiple values separated by '/' (default)
-``` tracker
+
+```tracker
 searchType: dvField
 searchTarget: dataviewTarget1[0], dataviewTarget1[1]
 folder: diary
@@ -61,7 +66,8 @@ line:
 ```
 
 Multiple values seprated by 'comma'
-``` tracker
+
+```tracker
 searchType: dvField
 searchTarget: dataviewTarget3[0], dataviewTarget3[1]
 folder: diary
@@ -74,7 +80,8 @@ line:
 ```
 
 Multiple values seprated by '\,'
-``` tracker
+
+```tracker
 searchType: dvField
 searchTarget: dataviewTarget3[0], dataviewTarget3[1]
 folder: diary
@@ -87,7 +94,8 @@ line:
 ```
 
 Use custom multiple value separator
-``` tracker
+
+```tracker
 searchType: dvField
 searchTarget: dataviewTarget2[0], dataviewTarget2[1]
 separator: '@'

@@ -1,9 +1,12 @@
 # Test Task
 
 ## Summary
+
 ### All Tasks
+
 Collect all tasks matched `searchTarget`
-``` tracker
+
+```tracker
 searchType: task
 searchTarget: Say I love you
 folder: diary
@@ -12,8 +15,10 @@ summary:
 ```
 
 ### All Tasks
+
 Collect all tasks matched `searchTarget`
-``` tracker
+
+```tracker
 searchType: task.all
 searchTarget: Say I love you
 folder: diary
@@ -22,8 +27,10 @@ summary:
 ```
 
 ### Task Done
+
 Collect all tasks done matched `searchTarget`
-``` tracker
+
+```tracker
 searchType: task.done
 searchTarget: Say I love you
 folder: diary
@@ -32,8 +39,10 @@ summary:
 ```
 
 ### Task Not Done
+
 Collect all tasks not-done matched `searchTarget`
-``` tracker
+
+```tracker
 searchType: task.notdone
 searchTarget: Say I love you
 folder: diary
@@ -42,8 +51,10 @@ summary:
 ```
 
 ## Month View
+
 See tasks done in month view
-``` tracker
+
+```tracker
 searchType: task.done
 searchTarget: Say I love you
 folder: diary
@@ -57,7 +68,8 @@ month:
 ```
 
 task.done and task.notdone
-``` tracker
+
+```tracker
 searchType: task.done, task.notdone
 searchTarget: Say I love you, Say I love you
 folder: diary

@@ -1,10 +1,13 @@
 # Test Calendar
 
 ## Single target
+
 ### Minimum setup
+
 1. Use default colors only
 2. Use parameter `datasetName` to set the title name
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: meditation
 datasetName: Meditation
@@ -13,10 +16,12 @@ month:
 ```
 
 ### Colorized
+
 1. Click "<" to see data in previous month
 2. Click ">" to see data in next month
 3. Click "◦" to see data in current month
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 datasetName: PushUp
@@ -33,7 +38,8 @@ month:
 ```
 
 ### Colorized
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: meditation
 datasetName: Meditation
@@ -46,8 +52,10 @@ month:
 ```
 
 ### Colored by Values
+
 Use parameter `circleColorByValue`, color the circles based on the values
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 datasetName: PushUp
@@ -65,7 +73,8 @@ month:
 ```
 
 ### Check minDate, minValue, maxDate, maxValue
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 summary:
@@ -75,7 +84,8 @@ summary:
 ### initMonth
 
 Specify the initial month in YYYY-MM format
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 datasetName: PushUp
@@ -94,7 +104,8 @@ month:
 ```
 
 Specify the initial month by relative date
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 datasetName: PushUp
@@ -113,11 +124,13 @@ month:
 ```
 
 ## Multiple targets
+
 1. Use parameter `datasetName` to specify the name of each dataset
 2. Use parameter `dataset` to include dataset we are going to view
 3. Use parameter `threshold` to specify the level of achievement (affect the streaks)
 4. Click the datasetName label in month view to change the target dataset
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: exercise-pushup, meditation
 datasetName: PushUp, Meditation
@@ -136,8 +149,10 @@ month:
 ```
 
 ## Annotations
+
 One target at a time
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: exercise-pushup, meditation
 datasetName: PushUp, Meditation
@@ -154,7 +169,8 @@ month:
 ```
 
 All targets
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: exercise-pushup, meditation
 datasetName: PushUp, Meditation
@@ -171,4 +187,3 @@ month:
 ```
 
 Please also check those search targets in markdown files under folder 'diary'.
-

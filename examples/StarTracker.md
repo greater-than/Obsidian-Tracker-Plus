@@ -1,7 +1,8 @@
 # Star Tracker
+
 ## Summary
 
-``` tracker
+```tracker
 searchType: text
 searchTarget: ⭐
 folder: diary
@@ -10,7 +11,7 @@ summary:
     style: "font-size:20px;color:yellow;margin-left: 50px;margin-top:00px;"
 ```
 
-``` tracker
+```tracker
 searchType: text
 searchTarget: ⭐
 folder: diary

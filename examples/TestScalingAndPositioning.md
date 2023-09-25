@@ -1,7 +1,10 @@
 # Test Scaling and Positioning
+
 ## Scaling the chart
+
 Scaling factor 0.5
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 folder: diary
@@ -15,7 +18,8 @@ line:
 ```
 
 Scaling factor 1.5
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 folder: diary
@@ -29,7 +33,8 @@ line:
 ```
 
 ## Fitting the chart to the panel width
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 folder: diary
@@ -43,8 +48,10 @@ line:
 ```
 
 ## Chart Positioning
+
 margin: top right bottom left
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 folder: diary
@@ -58,7 +65,7 @@ line:
     lineColor: "#d65d0e"
 ```
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 folder: diary
@@ -72,7 +79,7 @@ line:
     lineColor: "#d65d0e"
 ```
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 folder: diary
@@ -86,7 +93,7 @@ line:
     lineColor: "#d65d0e"
 ```
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 folder: diary

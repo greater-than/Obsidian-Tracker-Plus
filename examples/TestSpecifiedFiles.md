@@ -1,7 +1,8 @@
 # Test Specified Files
 
 ## Collect Data from the Specified Files Only
-``` tracker
+
+```tracker
 searchType: frontmatter, dvField
 searchTarget: date, dataviewTarget
 xDataset: 0
@@ -11,8 +12,10 @@ line:
 ```
 
 ## Collect Data from the Linked Files Only
+
 Count the MTG mana cost in linked files
-``` tracker
+
+```tracker
 searchType: fileMeta, text
 searchTarget: 'cDate, {W}, {R}, {G}, {B}, {(?<value>[0-9]+)}'
 fileContainsLinkedFiles: data/MTG-Deck-1
