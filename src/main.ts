@@ -57,7 +57,7 @@ export default class Tracker extends Plugin {
 
     this.registerMarkdownCodeBlockProcessor(
       "tracker",
-      this.postprocessor.bind(this)
+      this.postProcessor.bind(this)
     );
 
     this.addCommand({
@@ -167,16 +167,16 @@ export default class Tracker extends Plugin {
     // console.log(filesContainsLinkedFiles);
     // console.log(fileMultiplierAfterLink);
     let linkedFileMultiplier = 1;
-    let searchFileMultifpierAfterLink = true;
+    let searchFileMultiplierAfterLink = true;
     if (fileMultiplierAfterLink === "") {
-      searchFileMultifpierAfterLink = false;
+      searchFileMultiplierAfterLink = false;
     } else if (/^[0-9]+$/.test(fileMultiplierAfterLink)) {
       // integer
       linkedFileMultiplier = parseFloat(fileMultiplierAfterLink);
-      searchFileMultifpierAfterLink = false;
+      searchFileMultiplierAfterLink = false;
     } else if (!/\?<value>/.test(fileMultiplierAfterLink)) {
       // no 'value' named group
-      searchFileMultifpierAfterLink = false;
+      searchFileMultiplierAfterLink = false;
     }
     for (let filePath of filesContainsLinkedFiles) {
       if (!filePath.endsWith(".md")) {
@@ -199,7 +199,7 @@ export default class Tracker extends Plugin {
             filePath
           );
           if (linkedFile && linkedFile instanceof TFile) {
-            if (searchFileMultifpierAfterLink) {
+            if (searchFileMultiplierAfterLink) {
               // Get the line of link in file
               let lineNumber = link.position.end.line;
               // console.log(lineNumber);
@@ -248,7 +248,7 @@ export default class Tracker extends Plugin {
     // console.log(files);
   }
 
-  async postprocessor(
+  async postProcessor(
     source: string,
     el: HTMLElement,
     ctx: MarkdownPostProcessorContext
@@ -831,8 +831,8 @@ export default class Tracker extends Plugin {
 
         let sepLine = tableLines.shift().trim();
         sepLine = helper.trimByChar(sepLine, "|");
-        let spepLineSplitted = sepLine.split("|");
-        for (let col of spepLineSplitted) {
+        let sepLineSplitted = sepLine.split("|");
+        for (let col of sepLineSplitted) {
           if (!col.includes("-")) {
             break; // Not a valid sep
           }

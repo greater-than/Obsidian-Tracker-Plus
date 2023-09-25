@@ -10,6 +10,10 @@ This is an [Obsidian](https://obsidian.md/) plugin that helps you track and visu
 
 ## What's New
 
+Version 1.12.0
+
+- Support for inline dataview fields. Thanks, @Laharah
+
 Version 1.11.0
 
 - Adds ability to track boolean properties. Thanks, @bnjbvr
