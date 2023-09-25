@@ -3,7 +3,8 @@
 ## Manual Input Data
 
 Manual input `value` as 12\.5
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: clean-up
 folder: diary
@@ -27,7 +28,8 @@ bullet:
 
 Horizontal bullet chart
 value from expression function currentBreaks()
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: clean-up
 folder: diary
@@ -49,7 +51,8 @@ bullet:
 
 Vertical bullet chart
 value from expression function sum()
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: meditation
 folder: diary

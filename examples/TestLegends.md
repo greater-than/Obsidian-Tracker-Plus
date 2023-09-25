@@ -10,7 +10,7 @@
 - legendPosition: right
 - Default legendOrientation ==> vertical
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: sin[0], sin[1], sin[2], sin[3], sin[4], sin[5], sin[6], sin[7], sin[8]
 folder: diary
@@ -27,7 +27,7 @@ line:
 - legendPosition: right
 - legendOrientation: horizontal
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: sin[0], sin[1], sin[2], sin[3], sin[4], sin[5], sin[6], sin[7], sin[8]
 folder: diary
@@ -47,7 +47,7 @@ line:
 - legendPosition: left
 - Default legendOrientation ==> vertical
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: sin[0], sin[1], sin[2], sin[3], sin[4], sin[5], sin[6], sin[7], sin[8]
 folder: diary
@@ -64,7 +64,7 @@ line:
 - legendPosition: left
 - legendOrientation: horizontal
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: sin[0], sin[1], sin[2], sin[3], sin[4], sin[5], sin[6], sin[7], sin[8]
 folder: diary
@@ -84,7 +84,7 @@ line:
 - legendPosition: top
 - Default legendOrientation ==> horizontal
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: sin[0], sin[1], sin[2], sin[3], sin[4], sin[5], sin[6], sin[7], sin[8]
 folder: diary
@@ -100,7 +100,8 @@ line:
 
 - legendPosition: top
 - legendOrientation: vertical
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: sin[0], sin[1], sin[2], sin[3], sin[4], sin[5], sin[6], sin[7], sin[8]
 folder: diary
@@ -120,7 +121,7 @@ line:
 - Default legendPosition ==> bottom
 - Default legendOrientation ==> horizontal
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: sin[0], sin[1], sin[2], sin[3], sin[4], sin[5], sin[6], sin[7], sin[8]
 folder: diary
@@ -136,7 +137,7 @@ line:
 - Default legendPosition ==> bottom
 - legendOrientation: vertical
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: sin[0], sin[1], sin[2], sin[3], sin[4], sin[5], sin[6], sin[7], sin[8]
 folder: diary
@@ -153,7 +154,7 @@ line:
 
 ## Lines, Points, and Bars
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 datasetName: weight
@@ -166,7 +167,7 @@ line:
     showLegend: true
 ```
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 datasetName: weight
@@ -179,7 +180,7 @@ bar:
     showLegend: true
 ```
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 datasetName: weight

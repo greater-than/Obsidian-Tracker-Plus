@@ -3,7 +3,8 @@
 Tab characters will be replaced by numbers of spaces according to the tabSize defined in your editor settings
 
 ## Single Tab
-``` tracker
+
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 folder: diary
@@ -16,7 +17,7 @@ line:
 
 ## Multiple Tabs
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: exercise-pushup
 folder: diary
@@ -26,8 +27,3 @@ line:
     yAxisLabel: Count
 	lineColor: "#d65d0e"
 ```
-
-
-
-
-

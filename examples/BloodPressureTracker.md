@@ -1,8 +1,6 @@
-
-
 # Blood Pressure Tracker
 
-``` tracker
+```tracker
 searchType: frontmatter
 searchTarget: bloodpressure[0], bloodpressure[1]
 datasetName: systolic, diastolic
@@ -18,7 +16,7 @@ line:
     legendPosition: bottom
 ```
 
-``` tracker
+```tracker
 searchType: frontmatter
 searchTarget: bloodpressure[0], bloodpressure[1]
 datasetName: systolic, diastolic
@@ -29,7 +27,7 @@ summary:
     template: "Average: {{average(dataset(0))}}/{{average(dataset(1))}}"
 ```
 
-``` tracker
+```tracker
 searchType: frontmatter
 searchTarget: bloodpressure[0], bloodpressure[1]
 datasetName: systolic, diastolic

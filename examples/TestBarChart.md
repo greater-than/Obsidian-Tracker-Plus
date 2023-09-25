@@ -1,6 +1,6 @@
 # Test Bar Chart
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary
@@ -14,7 +14,7 @@ bar:
     barColor: darkolivegreen
 ```
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: weight
 folder: diary
@@ -28,7 +28,7 @@ bar:
     barColor: brown
 ```
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: sin[0], sin[1], sin[2]
 folder: diary
@@ -40,7 +40,7 @@ bar:
     barColor: yellow, red, green
 ```
 
-``` tracker
+```tracker
 searchType: tag
 searchTarget: sinsquare[0], sinsquare[1], sinsquare[2], sinsquare[3], sinsquare[4], sinsquare[5]
 folder: diary

@@ -1,8 +1,10 @@
 # Test Time Values
 
 ## From frontmatter
+
 Clock-In & Clock-Out from front matter
-``` tracker
+
+```tracker
 searchType: frontmatter
 searchTarget: clock-in, clock-out
 endDate: 2021-01-15
@@ -18,7 +20,8 @@ line:
 ```
 
 Sleep time separated by / from front matter
-``` tracker
+
+```tracker
 searchType: frontmatter
 searchTarget: sleep[0], sleep[1]
 endDate: 2021-01-15
@@ -34,9 +37,11 @@ line:
 ```
 
 ## From dvField
+
 Clock-In & Clock-Out from dvField
 time granularity to one second
-``` tracker
+
+```tracker
 searchType: dvField
 searchTarget: clock-in, clock-out
 endDate: 2021-01-15
@@ -52,7 +57,8 @@ line:
 ```
 
 Sleep time separated by / from dvField
-``` tracker
+
+```tracker
 searchType: dvField
 searchTarget: sleep[0], sleep[1]
 endDate: 2021-01-15
