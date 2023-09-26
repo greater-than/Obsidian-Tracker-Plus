@@ -14,8 +14,9 @@ Contributions are welcome. I will do my best to respond within one day to any fe
 
 Version 1.11.0
 
-- Support for inline dataview fields. Thanks, @Laharah
-- Adds ability to track boolean properties. Thanks, @bnjbvr
+- Adds aspect ratio parameter for graphs. Thanks, [@woodworker](https://github.com/woodworker)
+- Support for inline dataview fields. Thanks, [@Laharah](https://github.com/Laharah)
+- Adds ability to track boolean properties. Thanks, [@bnjbvr](https://github.com/bnjbvr)
 
 Version 1.10.0
 
