@@ -1,13 +1,16 @@
 # Release Notes
 
-## v1.12.0
-
-- Support for inline dataview fields. Thanks, @Laharah
-- Fixed typos (code, comments, docs)
-
 ## v1.11.0
 
-- Adds ability to track boolean properties. Thanks, @bnjbvr
+- Renamed to **TrackerGT** (GT: GreaterThan)
+- Adds aspect ratio parameter for graphs. Thanks, [@woodworker](https://github.com/woodworker)
+- Support for inline dataview fields. Thanks, [@Laharah](https://github.com/Laharah)
+- Adds ability to track boolean properties. Thanks, [@bnjbvr](https://github.com/bnjbvr)
+- Fixed (hopefully) all the typos (code, comments, docs)
+
+---
+
+# Original Tracker Release notes
 
 ## v1.10.9
 
@@ -18,7 +21,7 @@
 
 ## v1.10.8
 
-- Fixed startDat/endDate misread as a relative date
+- Fixed startDate/endDate misread as a relative date
 
 ## v1.10.7
 

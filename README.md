@@ -1,21 +1,20 @@
-# Obsidian Tracker Plugin
+# Obsidian TrackerGT Plugin
 
 ![GitHub release](https://img.shields.io/github/v/release/greater-than/Obisidian-TrackerGT)
 
 <img src="./docs/images/screenshot_v1.9.png" width="800">
 
-This is an [Obsidian](https://obsidian.md/) plugin that helps you track and visualize data from notes. It is a continuation of the Tracker plugin from @pyrochlore, which had not seen any updates since August, 2021.
+This is an [Obsidian](https://obsidian.md/) plugin that helps you track and visualize data from notes. It is a continuation of the [Tracker](https://github.com/pyrochlore/obsidian-tracker) plugin from [@pyrochlore](https://github.com/pyrochlore), which had not seen any updates since August, 2021. Releases here start at 1.0.11. If you are looking for a prior release, you can find it in the original repo.
 
 [Here](./docs/Examples.md) is a table containing simplified examples showing what you can track.
 
+Contributions are welcome. I will do my best to respond within one day to any feature requests, comments, or pull requests. I do not want total ownership over this plugin--I just want to keep it alive!
+
 ## What's New
-
-Version 1.12.0
-
-- Support for inline dataview fields. Thanks, @Laharah
 
 Version 1.11.0
 
+- Support for inline dataview fields. Thanks, @Laharah
 - Adds ability to track boolean properties. Thanks, @bnjbvr
 
 Version 1.10.0
