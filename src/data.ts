@@ -607,6 +607,7 @@ export class RenderInfo {
     this.textValueMap = {};
 
     this.dataAreaSize = new Size(300, 300);
+    this.aspectRatio = new AspectRatio(1, 1);
     this.margin = new Margin(10, 10, 10, 10); // top, right, bottom, left
 
     this.fixedScale = 1.0;
