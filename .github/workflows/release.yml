@@ -1,4 +1,4 @@
-name: Release TrackerGT Obsidian plugin
+name: Release Obsidian TrackerGT plugin
 
 on:
   push:

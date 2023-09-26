@@ -6,7 +6,7 @@ import copy from "rollup-plugin-copy";
 export default {
   input: "src/main.ts",
   output: {
-    dir: "examples/.obsidian/plugins/gt-tracker",
+    dir: "examples/.obsidian/plugins/tracker-gt",
     sourcemap: "inline",
     format: "cjs",
     exports: "default",
@@ -20,7 +20,7 @@ export default {
       targets: [
         {
           src: ["styles.css", "manifest.json"],
-          dest: "examples/.obsidian/plugins/gt-tracker",
+          dest: "examples/.obsidian/plugins/tracker-gt",
         },
       ],
     }),

@@ -1,5 +1,5 @@
 {
-  "name": "gt-tracker",
+  "name": "tracker-gt",
   "version": "1.12.0",
   "description": "A plugin tracks occurrences and numbers in your notes",
   "main": "main.js",
