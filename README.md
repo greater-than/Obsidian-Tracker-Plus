@@ -6,11 +6,10 @@ Track and visualize data in your [Obsidian](https://obsidian.md/) notes.
 
 <img src="https://github.com/greater-than/Obsidian-TrackerGT/blob/main/docs/images/screenshot_v1.9.png" width="800">
 
-_TrackerGT is a continuation of the [Tracker](https://github.com/pyrochlore/obsidian-tracker) plugin from [@pyrochlore](https://github.com/pyrochlore), which had not seen any updates since August, 2021. Releases here start at 1.0.11. If you are looking for a prior release, you can find it in the original repo._
-
 ## Examples
 
-[Here](https://github.com/greater-than/Obsidian-TrackerGT/tree/main/docs/Examples.md) is a table containing simplified examples showing what you can track.
+A list of use-cases and example trackers can be found
+[here](https://github.com/greater-than/Obsidian-TrackerGT/tree/main/docs/Examples.md)
 
 ## What's New
 
@@ -87,6 +86,8 @@ From version 1.9.0, template variables, e.g. '{{sum}}', are deprecated. Instead,
 For more use cases, please download and open the [examples](https://github.com/greater-than/Obsidian-TrackerGT/tree/main/examples) folder in obsidian with this plugin installed and enabled.
 
 ## Additional Information
+
+_TrackerGT is a continuation of the [Tracker](https://github.com/pyrochlore/obsidian-tracker) plugin from [@pyrochlore](https://github.com/pyrochlore), which had not seen any updates since August, 2021. Releases here start at 1.0.11. If you are looking for a prior release, you can find it in the original repo._
 
 - [Installation](https://github.com/greater-than/Obsidian-TrackerGT/tree/main/docs/Installation.md): Install the plugin from Obsidian or install it manually
 - [Concepts](https://github.com/greater-than/Obsidian-TrackerGT/tree/main/docs/Concepts.md): Explain how this plugin works and what to setup
