@@ -3,7 +3,7 @@
   "name": "TrackerGT",
   "version": "1.11.0",
   "minAppVersion": "1.4.0",
-  "description": "Tracks and visualizes Frontmatter properties",
+  "description": "Track and visualize data from your notes",
   "author": "greater-than",
   "authorUrl": "http://greaterthan.solutions",
   "isDesktopOnly": false,
