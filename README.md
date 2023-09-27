@@ -87,7 +87,7 @@ For more use cases, please download and open the [examples](https://github.com/g
 
 ## Additional Information
 
-_TrackerGT is a continuation of the [Tracker](https://github.com/pyrochlore/obsidian-tracker) plugin from [@pyrochlore](https://github.com/pyrochlore), which had not seen any updates since August, 2021. Releases here start at 1.0.11. If you are looking for a prior release, you can find it in the original repo._
+_TrackerGT is a continuation of the [Tracker](https://github.com/pyrochlore/obsidian-tracker) plugin from [@pyrochlore](https://github.com/pyrochlore), which had not seen any updates since August, 2021. Release for TrackerGT start at 1.0.11. If you are looking for a prior release, you can find it in the original repo._
 
 - [Installation](https://github.com/greater-than/Obsidian-TrackerGT/tree/main/docs/Installation.md): Install the plugin from Obsidian or install it manually
 - [Concepts](https://github.com/greater-than/Obsidian-TrackerGT/tree/main/docs/Concepts.md): Explain how this plugin works and what to setup
