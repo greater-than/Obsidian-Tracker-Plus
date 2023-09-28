@@ -1,8 +1,11 @@
 # Examples
 
-We provide a simplified table of use cases and full examples including data.
+A table of use cases and examples including data.
 
-## Table of Use Cases
+- [Use Cases](#use-cases)
+- [Tracker Examples](#tracker-examples)
+
+## Use Cases
 
 Check where (Location) and what (Target to Track) is your target and find the settings (Tracker) you need.
 
@@ -36,7 +39,7 @@ Check where (Location) and what (Target to Track) is your target and find the se
 | content       | - [x] Say love                                                                                                                                    | searchType:task.done<br>searchTarget: Say love                                                                                                                                           |             O              |
 | content       | - [ ] Say love                                                                                                                                    | searchType: task.notdone<br>searchTarget: Say love                                                                                                                                       |             O              |
 
-## Full examples
+## Tracker Examples
 
 Full tracker code blocks can be found in folder [examples](https://github.com/greater-than/Obsidian-TrackerGT/tree/main/examples) and the corresponding notes (data) can be found under folder '[diary](https://github.com/greater-than/Obsidian-TrackerGT/tree/main/examples/diary)' and '[data](https://github.com/greater-than/Obsidian-TrackerGT/tree/main/examples/data)'.
 
