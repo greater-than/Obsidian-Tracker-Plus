@@ -11,7 +11,7 @@
   ],
   "main": "main.js",
   "scripts": {
-    "start": "rollup --config rollup.config.dev.js -w",
+    "dev": "rollup --config rollup.config.dev.js -w",
     "build": "rollup --config rollup.config.build.js",
     "zip": "gulp",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
