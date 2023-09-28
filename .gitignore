@@ -17,3 +17,5 @@ examples/*.js
 
 # examples for users
 examples/case
+
+.env
