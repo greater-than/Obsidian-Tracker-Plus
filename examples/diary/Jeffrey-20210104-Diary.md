@@ -1,7 +1,7 @@
 ---
 tags: work_log
 mood: 3
-bloodpressure: 178.6/119.2
+bloodPressure: 178.6/119.2
 ---
 
 #weight:73.5kg

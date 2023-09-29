@@ -21,11 +21,11 @@ line:
 
 ## Multiple Values
 
-bloodpressure: 184.4/118.8
+bloodPressure: 184.4/118.8
 
 ```tracker
 searchType: frontmatter
-searchTarget: bloodpressure[0], bloodpressure[1]
+searchTarget: bloodPressure[0], bloodPressure[1]
 datasetName: systolic, diastolic
 folder: diary
 startDate: 2021-01-01

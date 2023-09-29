@@ -59,7 +59,7 @@ Multiple values separated by slash (/)
 
 ```tracker
 searchType: frontmatter
-searchTarget: bloodpressure[0], bloodpressure[1]
+searchTarget: bloodPressure[0], bloodPressure[1]
 folder: diary
 datasetName: systolic, diastolic
 startDate: 2021-01-01
@@ -74,7 +74,7 @@ Multiple values separated by comma (,)
 
 ```tracker
 searchType: frontmatter
-searchTarget: bloodpressure1[0], bloodpressure1[1]
+searchTarget: bloodPressure1[0], bloodPressure1[1]
 folder: diary
 datasetName: systolic, diastolic
 startDate: 2021-01-01
@@ -90,7 +90,7 @@ Values from array
 
 ```tracker
 searchType: frontmatter
-searchTarget: bloodpressure2[0], bloodpressure2[1]
+searchTarget: bloodPressure2[0], bloodPressure2[1]
 folder: diary
 datasetName: systolic, diastolic
 startDate: 2021-01-01

@@ -2,7 +2,7 @@
 
 ```tracker
 searchType: frontmatter
-searchTarget: bloodpressure[0], bloodpressure[1]
+searchTarget: bloodPressure[0], bloodPressure[1]
 datasetName: systolic, diastolic
 folder: diary
 startDate: 2021-01-01
@@ -18,7 +18,7 @@ line:
 
 ```tracker
 searchType: frontmatter
-searchTarget: bloodpressure[0], bloodpressure[1]
+searchTarget: bloodPressure[0], bloodPressure[1]
 datasetName: systolic, diastolic
 folder: diary
 startDate: 2021-01-01
@@ -29,7 +29,7 @@ summary:
 
 ```tracker
 searchType: frontmatter
-searchTarget: bloodpressure[0], bloodpressure[1]
+searchTarget: bloodPressure[0], bloodPressure[1]
 datasetName: systolic, diastolic
 folder: diary
 startDate: 2021-01-01
