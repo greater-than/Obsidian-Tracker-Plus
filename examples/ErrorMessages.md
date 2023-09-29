@@ -91,7 +91,7 @@ Two search targets provided, the number of search types shouldn't be more than t
 
 ```tracker
 searchType: frontmatter, frontmatter, frontmatter
-searchTarget: bloodpressure[0], bloodpressure[1]
+searchTarget: bloodPressure[0], bloodPressure[1]
 line:
 ```
 
@@ -99,7 +99,7 @@ yAxisLabel allows only two inputs
 
 ```tracker
 searchType: frontmatter, frontmatter
-searchTarget: bloodpressure[0], bloodpressure[1]
+searchTarget: bloodPressure[0], bloodPressure[1]
 line:
     yAxisLabel: BP1, BP2, BP3
 ```
@@ -186,7 +186,7 @@ The parameter name should be 'title', not 'titles'
 
 ```tracker
 searchType: frontmatter, frontmatter
-searchTarget: bloodpressure[0], bloodpressure[1]
+searchTarget: bloodPressure[0], bloodPressure[1]
 line:
     titles: "Blood Pressure"
 ```

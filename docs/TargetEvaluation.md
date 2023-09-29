@@ -20,7 +20,7 @@ Many other parameters that accept multiple values (e.g. lineColor) can also be p
 
 ## Multiple Values
 
-Multiple values under a target (value tuple) separated by a slash, e.g. #bloodpressure:180/120mmHg, are supported after version 1.3.0. To identify a specific value as a target, use an accessor with bracket notation where the value in the bracket is the index by the order of values. In this case, they are bloodpressure[0] and bloodpressure[1]. You can find the example of this [here](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/BloodPressureTracker.md). You can also use a custom separator by using the parameter `separator`.
+Multiple values under a target (value tuple) separated by a slash, e.g. #bloodPressure:180/120mmHg, are supported after version 1.3.0. To identify a specific value as a target, use an accessor with bracket notation where the value in the bracket is the index by the order of values. In this case, they are bloodPressure[0] and bloodPressure[1]. You can find the example of this [here](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/BloodPressureTracker.md). You can also use a custom separator by using the parameter `separator`.
 
 ## Search Target in Detail
 

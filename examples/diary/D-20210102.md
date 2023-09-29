@@ -1,7 +1,7 @@
 ---
 tags:
 mood: 8
-bloodpressure: 174.8/121.6
+bloodPressure: 174.8/121.6
 ---
 
 #weight:68.8kg
