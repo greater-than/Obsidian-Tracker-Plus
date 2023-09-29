@@ -1,10 +1,9 @@
-# Intellij
+# IDE
 *.iml
 .idea
 
 # npm
 node_modules
-package-lock.json
 
 # build
 main.js
@@ -19,3 +18,4 @@ examples/*.js
 examples/case
 
 .env
+.coverage
