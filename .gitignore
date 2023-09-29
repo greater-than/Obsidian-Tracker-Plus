@@ -18,3 +18,4 @@ examples/*.js
 examples/case
 
 .env
+.coverage
