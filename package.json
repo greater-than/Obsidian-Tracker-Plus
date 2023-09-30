@@ -16,8 +16,7 @@
     "zip": "gulp",
     "lint": "eslint \"{src,test}/**/*.ts\"",
     "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix",
-    "test": "jest --config ./test/unit/jest.config.ts --coverage --runInBand",
-    "test:cov": "jest --config ./test/unit/jest.config.ts --coverage",
+    "test": "jest --config ./test/unit/jest.config.ts --runInBand",
     "test:e2e": "jest --config ./test/e2e/jest.config.ts"
   },
   "devDependencies": {
