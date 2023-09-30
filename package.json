@@ -17,7 +17,7 @@
     "lint": "eslint \"{src,test}/**/*.ts\"",
     "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix",
     "test": "jest --config ./test/unit/jest.config.ts --runInBand",
-    "test:e2e": "jest --config ./test/e2e/jest.config.ts"
+    "test:e2e": "jest --config ./test/e2e/jest.config.ts --runInBand"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.22.20",

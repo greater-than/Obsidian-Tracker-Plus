@@ -1,4 +1,4 @@
-import { Moment } from "moment";
+import { Moment } from 'moment';
 
 export enum SearchType {
   Tag,
@@ -68,7 +68,7 @@ export class Query {
   constructor(id: number, searchType: SearchType, searchTarget: string) {
     this.type = searchType;
     this.target = searchTarget;
-    this.separator = ""; // separator to separate multiple values
+    this.separator = ''; // separator to separate multiple values
     this.id = id;
     this.accessor = -1;
     this.accessor1 = -1;
@@ -79,19 +79,19 @@ export class Query {
 
     if (searchType === SearchType.Table) {
       // searchTarget --> {{filePath}}[{{table}}][{{column}}]
-      let strRegex =
-        "\\[(?<accessor>[0-9]+)\\]\\[(?<accessor1>[0-9]+)\\](\\[(?<accessor2>[0-9]+)\\])?";
-      let regex = new RegExp(strRegex, "gm");
+      const strRegex =
+        '\\[(?<accessor>[0-9]+)\\]\\[(?<accessor1>[0-9]+)\\](\\[(?<accessor2>[0-9]+)\\])?';
+      const regex = new RegExp(strRegex, 'gm');
       let match;
       while ((match = regex.exec(searchTarget))) {
-        if (typeof match.groups.accessor !== "undefined") {
-          let accessor = parseFloat(match.groups.accessor);
+        if (typeof match.groups.accessor !== 'undefined') {
+          const accessor = parseFloat(match.groups.accessor);
           if (Number.isNumber(accessor)) {
-            if (typeof match.groups.accessor1 !== "undefined") {
-              let accessor1 = parseFloat(match.groups.accessor1);
+            if (typeof match.groups.accessor1 !== 'undefined') {
+              const accessor1 = parseFloat(match.groups.accessor1);
               if (Number.isNumber(accessor1)) {
                 let accessor2;
-                if (typeof match.groups.accessor2 !== "undefined") {
+                if (typeof match.groups.accessor2 !== 'undefined') {
                   accessor2 = parseFloat(match.groups.accessor2);
                 }
 
@@ -100,7 +100,7 @@ export class Query {
                 if (Number.isNumber(accessor2)) {
                   this.accessor2 = accessor2;
                 }
-                this.parentTarget = searchTarget.replace(regex, "");
+                this.parentTarget = searchTarget.replace(regex, '');
               }
               break;
             }
@@ -108,15 +108,15 @@ export class Query {
         }
       }
     } else {
-      let strRegex = "\\[(?<accessor>[0-9]+)\\]";
-      let regex = new RegExp(strRegex, "gm");
+      const strRegex = '\\[(?<accessor>[0-9]+)\\]';
+      const regex = new RegExp(strRegex, 'gm');
       let match;
       while ((match = regex.exec(searchTarget))) {
-        if (typeof match.groups.accessor !== "undefined") {
-          let accessor = parseFloat(match.groups.accessor);
+        if (typeof match.groups.accessor !== 'undefined') {
+          const accessor = parseFloat(match.groups.accessor);
           if (Number.isNumber(accessor)) {
             this.accessor = accessor;
-            this.parentTarget = searchTarget.replace(regex, "");
+            this.parentTarget = searchTarget.replace(regex, '');
           }
           break;
         }
@@ -165,11 +165,11 @@ export class Query {
   }
 
   public getSeparator(isForFrontmatterTags: boolean = false) {
-    if (this.separator === "") {
+    if (this.separator === '') {
       if (isForFrontmatterTags) {
-        return ",";
+        return ',';
       }
-      return "/";
+      return '/';
     }
     return this.separator;
   }
@@ -210,7 +210,7 @@ export class Dataset implements IterableIterator<DataPoint> {
   private currentIndex = 0; // IterableIterator
 
   constructor(parent: Datasets, query: Query) {
-    this.name = "untitled";
+    this.name = 'untitled';
     this.query = query;
     this.values = [];
     this.parent = parent;
@@ -234,8 +234,8 @@ export class Dataset implements IterableIterator<DataPoint> {
 
   public cloneToTmpDataset() {
     if (!this.isTmpDataset) {
-      let tmpDataset = new Dataset(this.parent, null);
-      tmpDataset.name = "tmp";
+      const tmpDataset = new Dataset(this.parent, null);
+      tmpDataset.name = 'tmp';
       tmpDataset.values = [...this.values];
       tmpDataset.yMin = this.yMin;
       tmpDataset.yMax = this.yMax;
@@ -274,7 +274,7 @@ export class Dataset implements IterableIterator<DataPoint> {
   }
 
   public getValue(date: Moment, dayShift: number = 0) {
-    let ind = this.parent.getIndexOfDate(date) + Math.floor(dayShift);
+    const ind = this.parent.getIndexOfDate(date) + Math.floor(dayShift);
     if (ind >= 0 && ind < this.values.length) {
       return this.values[ind];
     }
@@ -282,7 +282,7 @@ export class Dataset implements IterableIterator<DataPoint> {
   }
 
   public setValue(date: Moment, value: number) {
-    let ind = this.parent.getIndexOfDate(date);
+    const ind = this.parent.getIndexOfDate(date);
     // console.log(ind);
 
     if (ind >= 0 && ind < this.values.length) {
@@ -328,15 +328,15 @@ export class Dataset implements IterableIterator<DataPoint> {
     return this.endDate;
   }
 
-  public shift(shiftAmount: number, doLargerthan: number) {
+  public shift(shiftAmount: number, doLargerThan: number) {
     let anyShifted = false;
     for (let ind = 0; ind < this.values.length; ind++) {
       if (this.values[ind] !== null) {
-        if (doLargerthan === null) {
+        if (doLargerThan === null) {
           this.values[ind] = this.values[ind] + shiftAmount;
           anyShifted = true;
         } else {
-          if (this.values[ind] >= doLargerthan) {
+          if (this.values[ind] >= doLargerThan) {
             this.values[ind] = this.values[ind] + shiftAmount;
             anyShifted = true;
           }
@@ -403,8 +403,8 @@ export class Dataset implements IterableIterator<DataPoint> {
 
   next(): IteratorResult<DataPoint> {
     if (this.currentIndex < this.values.length) {
-      let ind = this.currentIndex++;
-      let dataPoint = new DataPoint(
+      const ind = this.currentIndex++;
+      const dataPoint = new DataPoint(
         this.parent.getDates()[ind],
         this.values[ind]
       );
@@ -437,22 +437,26 @@ export class Datasets implements IterableIterator<Dataset> {
     this.dates = [];
     this.datasets = [];
 
-    let cData = startDate.creationData();
+    const cData = startDate.creationData();
     // console.log(cData);
     const dateFormat = cData.format.toString();
     for (
       let curDate = startDate.clone();
       curDate <= endDate;
-      curDate.add(1, "days")
+      curDate.add(1, 'days')
     ) {
-      let newDate = window.moment(curDate.format(dateFormat), dateFormat, true);
+      const newDate = window.moment(
+        curDate.format(dateFormat),
+        dateFormat,
+        true
+      );
       this.dates.push(newDate);
     }
     // console.log(this.dates);
   }
 
   public createDataset(query: Query, renderInfo: RenderInfo) {
-    let dataset = new Dataset(this, query);
+    const dataset = new Dataset(this, query);
     dataset.setId(query.getId());
     if (renderInfo) {
       dataset.setName(renderInfo.datasetName[query.getId()]);
@@ -464,7 +468,7 @@ export class Datasets implements IterableIterator<Dataset> {
   }
 
   public getIndexOfDate(date: Moment) {
-    let cData = date.creationData();
+    const cData = date.creationData();
     const dateFormat = cData.format.toString();
     for (let ind = 0; ind < this.dates.length; ind++) {
       if (this.dates[ind].format(dateFormat) === date.format(dateFormat)) {
@@ -475,7 +479,7 @@ export class Datasets implements IterableIterator<Dataset> {
   }
 
   public getDatasetByQuery(query: Query) {
-    for (let dataset of this.datasets) {
+    for (const dataset of this.datasets) {
       if (dataset.getQuery().equalTo(query)) {
         return dataset;
       }
@@ -484,7 +488,7 @@ export class Datasets implements IterableIterator<Dataset> {
   }
 
   public getDatasetById(id: number) {
-    for (let dataset of this.datasets) {
+    for (const dataset of this.datasets) {
       if (dataset.getId() === id) {
         return dataset;
       }
@@ -494,10 +498,10 @@ export class Datasets implements IterableIterator<Dataset> {
   }
 
   public getXDatasetIds() {
-    let ids: Array<number> = [];
-    for (let dataset of this.datasets) {
+    const ids: Array<number> = [];
+    for (const dataset of this.datasets) {
       if (dataset.getQuery().usedAsXDataset) {
-        let id = dataset.getQuery().getId();
+        const id = dataset.getQuery().getId();
         if (!ids.includes(id) && id !== -1) {
           ids.push(id);
         }
@@ -511,8 +515,8 @@ export class Datasets implements IterableIterator<Dataset> {
   }
 
   public getNames() {
-    let names = [];
-    for (let dataset of this.datasets) {
+    const names = [];
+    for (const dataset of this.datasets) {
       names.push(dataset.getName());
     }
     return names;
@@ -570,6 +574,7 @@ export class RenderInfo {
   fitPanelWidth: boolean;
   aspectRatio: AspectRatio;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   output: any[];
   line: LineInfo[];
   bar: BarInfo[];
@@ -585,14 +590,14 @@ export class RenderInfo {
   constructor(queries: Query[]) {
     this.queries = queries;
     this.xDataset = []; // use file name
-    this.folder = "/";
+    this.folder = '/';
     this.file = []; // extra files to use
     this.specifiedFilesOnly = false; // if true, use files specified only
     this.fileContainsLinkedFiles = [];
-    this.fileMultiplierAfterLink = ""; // regex pattern to extract multiplier after link
-    this.dateFormat = "YYYY-MM-DD";
-    this.dateFormatPrefix = "";
-    this.dateFormatSuffix = "";
+    this.fileMultiplierAfterLink = ''; // regex pattern to extract multiplier after link
+    this.dateFormat = 'YYYY-MM-DD';
+    this.dateFormatPrefix = '';
+    this.dateFormatSuffix = '';
     this.startDate = null;
     this.endDate = null;
     this.datasetName = []; // untitled
@@ -627,7 +632,7 @@ export class RenderInfo {
   }
 
   public getQueryById(id: number) {
-    for (let query of this.queries) {
+    for (const query of this.queries) {
       if (query.getId() === id) {
         return query;
       }
@@ -643,7 +648,7 @@ export class CustomDatasetInfo {
 
   constructor() {
     this.id = -1;
-    this.name = "";
+    this.name = '';
     this.xData = [];
     this.yData = [];
   }
@@ -687,15 +692,15 @@ export class CommonChartInfo implements IGraph, ILegend {
   legendBorderColor: string;
 
   constructor() {
-    this.title = "";
-    this.xAxisLabel = "Date";
-    this.xAxisColor = "";
-    this.xAxisLabelColor = "";
+    this.title = '';
+    this.xAxisLabel = 'Date';
+    this.xAxisColor = '';
+    this.xAxisLabelColor = '';
     this.yAxisLabel = []; // "Value", 2 elements
     this.yAxisColor = []; // "", 2 elements
     this.yAxisLabelColor = []; // "", 2 elements
     this.yAxisUnit = []; // "", 2 elements
-    this.xAxisTickInterval = null; // the string will be converted to Duration (a month is not nesscesary to 30 days)
+    this.xAxisTickInterval = null; // the string will be converted to Duration (a month is not necessary to 30 days)
     this.yAxisTickInterval = []; // null, 2 elements
     this.xAxisTickLabelFormat = null;
     this.yAxisTickLabelFormat = []; // null, 2 elements
@@ -706,10 +711,10 @@ export class CommonChartInfo implements IGraph, ILegend {
 
     // ILegend
     this.showLegend = false;
-    this.legendPosition = ""; // top, bottom, left, right
-    this.legendOrientation = ""; // horizontal, vertical
-    this.legendBgColor = "";
-    this.legendBorderColor = "";
+    this.legendPosition = ''; // top, bottom, left, right
+    this.legendOrientation = ''; // horizontal, vertical
+    this.legendBgColor = '';
+    this.legendBorderColor = '';
   }
 
   public GetGraphType() {
@@ -783,7 +788,7 @@ export class PieInfo implements IGraph, ILegend {
   legendBorderColor: string;
 
   constructor() {
-    this.title = "";
+    this.title = '';
     this.data = [];
     this.dataColor = [];
     this.dataName = [];
@@ -795,10 +800,10 @@ export class PieInfo implements IGraph, ILegend {
 
     // ILegend
     this.showLegend = false;
-    this.legendPosition = ""; // top, bottom, left, right
-    this.legendOrientation = ""; // horizontal, vertical
-    this.legendBgColor = "";
-    this.legendBorderColor = "";
+    this.legendPosition = ''; // top, bottom, left, right
+    this.legendOrientation = ''; // horizontal, vertical
+    this.legendBgColor = '';
+    this.legendBorderColor = '';
   }
 
   public GetGraphType() {
@@ -811,8 +816,8 @@ export class SummaryInfo implements IGraph {
   style: string;
 
   constructor() {
-    this.template = "";
-    this.style = "";
+    this.template = '';
+    this.style = '';
   }
 
   public GetGraphType() {
@@ -857,15 +862,15 @@ export class MonthInfo implements IGraph {
   selectedDataset: number;
 
   constructor() {
-    this.mode = "circle"; // circle, annotation
+    this.mode = 'circle'; // circle, annotation
     this.dataset = [];
-    this.startWeekOn = "Sun";
+    this.startWeekOn = 'Sun';
     this.threshold = []; // if value > threshold, will show dot
     this.yMin = [];
     this.yMax = [];
     this.color = null;
     this.dimNotInMonth = true;
-    this.initMonth = "";
+    this.initMonth = '';
     this.showSelectedValue = true;
 
     // header
@@ -875,13 +880,13 @@ export class MonthInfo implements IGraph {
 
     // circles and rings
     this.showCircle = true;
-    this.showStreak = true; // a streak connects neigbor dots
+    this.showStreak = true; // a streak connects neighbor dots
     this.showTodayRing = true;
     this.showSelectedRing = true;
     this.circleColor = null;
     this.circleColorByValue = false;
-    this.todayRingColor = ""; // white
-    this.selectedRingColor = "firebrick";
+    this.todayRingColor = ''; // white
+    this.selectedRingColor = 'firebrick';
 
     // annotations
     this.showAnnotation = true;
@@ -889,7 +894,7 @@ export class MonthInfo implements IGraph {
     this.showAnnotationOfAllTargets = true;
 
     // internal
-    this.selectedDate = ""; // selected date
+    this.selectedDate = ''; // selected date
     this.selectedDataset = null; // selected index of dataset
   }
 
@@ -907,9 +912,9 @@ export class HeatmapInfo implements IGraph {
   color: string;
 
   constructor() {
-    this.dataset = "0";
-    this.startWeekOn = "Sun";
-    this.orientation = "vertical";
+    this.dataset = '0';
+    this.startWeekOn = 'Sun';
+    this.orientation = 'vertical';
     this.yMin = null;
     this.yMax = null;
     this.color = null;
@@ -934,17 +939,17 @@ export class BulletInfo implements IGraph {
   markerColor: string;
 
   constructor() {
-    this.title = "";
-    this.dataset = "0"; // dataset id or name
-    this.orientation = "horizontal"; // or vertical
-    this.value = ""; // Can possess template varialbe
-    this.valueUnit = "";
-    this.valueColor = "#69b3a2";
+    this.title = '';
+    this.dataset = '0'; // dataset id or name
+    this.orientation = 'horizontal'; // or vertical
+    this.value = ''; // Can possess template variable
+    this.valueUnit = '';
+    this.valueColor = '#69b3a2';
     this.range = [];
     this.rangeColor = [];
     this.showMarker = false;
     this.markerValue = 0;
-    this.markerColor = "";
+    this.markerColor = '';
   }
 
   public GetGraphType() {
@@ -986,8 +991,8 @@ export class AspectRatio {
   }
 
   public recalculateSize(size: Size): Size {
-    let aspectRatio = this.x / this.y;
-    let width = parseFloat((size.width * aspectRatio).toFixed(2));
+    const aspectRatio = this.x / this.y;
+    const width = parseFloat((size.width * aspectRatio).toFixed(2));
     return new Size(width, size.height);
   }
 }
@@ -996,12 +1001,13 @@ export class Transform {
   translateX: number;
   translateY: number;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(transform: any) {
     this.translateX = 0;
     this.translateY = 0;
 
-    if (typeof transform === "string") {
-      let groups = transform.match(
+    if (typeof transform === 'string') {
+      const groups = transform.match(
         /translate\(\s*(?<x>[\d\.\/-]+)\s*,\s*(?<y>[\d\.\/-]+)\s*\)/
       ).groups;
       if (groups) {
@@ -1013,6 +1019,7 @@ export class Transform {
 }
 
 export type ChartElements = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 };
 
@@ -1046,9 +1053,9 @@ export class CollectingProcessInfo {
     this.fileAvailable = 0;
     this.fileOutOfDateRange = 0;
     this.fileNotInFormat = 0;
-    this.errorMessage = "";
-    this.minDate = window.moment(""); // invalid date
-    this.maxDate = window.moment(""); // invalid date
+    this.errorMessage = '';
+    this.minDate = window.moment(''); // invalid date
+    this.maxDate = window.moment(''); // invalid date
     this.gotAnyValidXValue = false;
     this.gotAnyValidYValue = false;
   }
