@@ -1,4 +1,4 @@
-import { clone, isNullOrUndefined } from './object.utils';
+import { clone, isNullOrUndefined } from '../../../src/utils/object.utils';
 
 describe('Object Utils', () => {
   describe('clone', () => {

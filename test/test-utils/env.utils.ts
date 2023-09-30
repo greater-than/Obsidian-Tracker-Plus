@@ -1,4 +1,4 @@
-import { clone } from '../../src/utils';
+import { clone } from '../../src/utils/object.utils';
 import { successMark } from './console.utils';
 
 export const cacheEnv = (): NodeJS.ProcessEnv => {

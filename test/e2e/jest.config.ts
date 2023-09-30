@@ -1,6 +1,6 @@
-import { Config } from 'jest';
+import type { Config } from 'jest';
 
-const config: Config = {
+export default async (): Promise<Config> => ({
   verbose: true,
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: '.',
@@ -11,6 +11,4 @@ const config: Config = {
   },
   globalSetup: './global-setup.ts',
   globalTeardown: './global-setup.ts',
-};
-
-export default config;
+});
