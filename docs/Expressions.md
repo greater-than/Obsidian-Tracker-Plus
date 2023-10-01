@@ -4,15 +4,15 @@ Expressions could help us create new and meaningful data from the original colle
 
 ## !!! Breaking Changes !!!
 
-From version 1.9.0, template variables, e.g. '{{sum}}', are deprecated. Instead, Tracker provide operators (+, -, \*, /, %) and functions (dataset(), sum(), maxStreak(), ......etc) to help us do data processing. For users having code blocks from previous version, please replace '{{sum}}' by '{{sum()}}' or '{{sum(1)}}' by '{{sum(dataset(1))}}'.
+From version 1.9.0, template variables, e.g. '{{sum}}', are deprecated. Instead, Tracker provide operators (+, -, \*, /, %) and functions (dataset(), sum(), maxStreak(), etc...) to help us do data processing. For users having code blocks from previous version, please replace '{{sum}}' by '{{sum()}}' or '{{sum(1)}}' by '{{sum(dataset(1))}}'.
 
 ## Where to Use
 
-Currently, we can only use expressions in some parameters. These includes `template` in `summary` output, `value` in `bullet` output, and `data` `label` `extLabel` in `pie` output. In future release, there will be more parameters using expressiones as input.
+Currently, we can only use expressions in some parameters. These includes `template` in `summary` output, `value` in `bullet` output, and `data` `label` `extLabel` in `pie` output. In future release, there will be more parameters using expressions as input.
 
 ## How to Use
 
-Expressions should be be wrapped in curly brackets. By using the combination of operators and funtions, Tracker can resolve the whole expression in brackets and then generate a number or a string according to what was requested.
+Expressions should be be wrapped in curly brackets. By using the combination of operators and functions, Tracker can resolve the whole expression in brackets and then generate a number or a string according to what was requested.
 
 If the resolved output of an expression is a string, we can assign a format string to it. The format string should be placed after the expression in curly brackets following by two colons. For example, The expression '{{sum()::i}}' will force the output number represented as an integer (i for integer).
 
@@ -22,7 +22,7 @@ The following tables show all the operators and functions available for now. Ple
 
 ## List of Operators
 
-### Uniry Operators
+### Unary Operators
 
 | Function | Description | Operant           | Output            |
 | :------- | :---------- | :---------------- | :---------------- |

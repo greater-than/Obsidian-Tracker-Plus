@@ -155,7 +155,7 @@ Use parameter `textValueMap` to map a text to a value.
 
 ```tracker
 searchType: frontmatter
-searchTarget: randchar
+searchTarget: random-char
 folder: diary
 line:
     fillGap: true
