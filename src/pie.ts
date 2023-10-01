@@ -1,121 +1,122 @@
-import * as d3 from "d3";
-import { ChartElements, PieInfo, RenderInfo } from "./data";
-import * as expr from "./expr";
-import * as helper from "./helper";
+import * as d3 from 'd3';
+import { ChartElements, PieInfo, RenderInfo } from './data';
+import * as expr from './expr';
+import * as helper from './utils/helper';
 
-function setChartScale(
+const setChartScale = (
   _canvas: HTMLElement,
   chartElements: ChartElements,
   renderInfo: RenderInfo
-) {
-  let canvas = d3.select(_canvas);
-  let svg = chartElements.svg;
-  let svgWidth = parseFloat(svg.attr("width"));
-  let svgHeight = parseFloat(svg.attr("height"));
+): void => {
+  const canvas = d3.select(_canvas);
+  const svg = chartElements.svg;
+  const svgWidth = parseFloat(svg.attr('width'));
+  const svgHeight = parseFloat(svg.attr('height'));
   svg
-    .attr("width", null)
-    .attr("height", null)
-    .attr("viewBox", `0 0 ${svgWidth} ${svgHeight}`)
-    .attr("preserveAspectRatio", "xMidYMid meet");
+    .attr('width', null)
+    .attr('height', null)
+    .attr('viewBox', `0 0 ${svgWidth} ${svgHeight}`)
+    .attr('preserveAspectRatio', 'xMidYMid meet');
 
   if (renderInfo.fitPanelWidth) {
-    canvas.style("width", "100%");
+    canvas.style('width', '100%');
   } else {
-    canvas.style("width", (svgWidth * renderInfo.fixedScale).toString() + "px");
+    canvas.style('width', (svgWidth * renderInfo.fixedScale).toString() + 'px');
     canvas.style(
-      "height",
-      (svgHeight * renderInfo.fixedScale).toString() + "px"
+      'height',
+      (svgHeight * renderInfo.fixedScale).toString() + 'px'
     );
   }
-}
+};
 
-function createAreas(
+const createAreas = (
   chartElements: ChartElements,
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  pieInfo: PieInfo
-): ChartElements {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _pieInfo: PieInfo
+): ChartElements => {
   // clean areas
-  d3.select(canvas).select("#svg").remove();
-  var props = Object.getOwnPropertyNames(chartElements);
-  for (var i = 0; i < props.length; i++) {
+  d3.select(canvas).select('#svg').remove();
+  const props = Object.getOwnPropertyNames(chartElements);
+  for (let i = 0; i < props.length; i++) {
     // d3.select(chartElements[props[i]]).remove();
     delete chartElements[props[i]];
   }
   // console.log(chartElements);
 
   // whole area for plotting, includes margins
-  let svg = d3
+  const svg = d3
     .select(canvas)
-    .append("svg")
-    .attr("id", "svg")
+    .append('svg')
+    .attr('id', 'svg')
     .attr(
-      "width",
+      'width',
       renderInfo.dataAreaSize.width +
         renderInfo.margin.left +
         renderInfo.margin.right
     )
     .attr(
-      "height",
+      'height',
       renderInfo.dataAreaSize.height +
         renderInfo.margin.top +
         renderInfo.margin.bottom
     );
-  chartElements["svg"] = svg;
+  chartElements['svg'] = svg;
 
   // graphArea, includes chartArea, title, legend
-  let graphArea = svg
-    .append("g")
-    .attr("id", "graphArea")
+  const graphArea = svg
+    .append('g')
+    .attr('id', 'graphArea')
     .attr(
-      "transform",
-      "translate(" + renderInfo.margin.left + "," + renderInfo.margin.top + ")"
+      'transform',
+      'translate(' + renderInfo.margin.left + ',' + renderInfo.margin.top + ')'
     )
-    .attr("width", renderInfo.dataAreaSize.width + renderInfo.margin.right)
-    .attr("height", renderInfo.dataAreaSize.height + renderInfo.margin.bottom);
-  chartElements["graphArea"] = graphArea;
+    .attr('width', renderInfo.dataAreaSize.width + renderInfo.margin.right)
+    .attr('height', renderInfo.dataAreaSize.height + renderInfo.margin.bottom);
+  chartElements['graphArea'] = graphArea;
 
   // dataArea, under graphArea, includes points, lines, xAxis, yAxis
-  let dataArea = graphArea
-    .append("g")
-    .attr("id", "dataArea")
-    .attr("width", renderInfo.dataAreaSize.width)
-    .attr("height", renderInfo.dataAreaSize.height);
-  chartElements["dataArea"] = dataArea;
+  const dataArea = graphArea
+    .append('g')
+    .attr('id', 'dataArea')
+    .attr('width', renderInfo.dataAreaSize.width)
+    .attr('height', renderInfo.dataAreaSize.height);
+  chartElements['dataArea'] = dataArea;
 
   return chartElements;
-}
+};
 
-function renderTitle(
-  canvas: HTMLElement,
+const renderTitle = (
+  _canvas: HTMLElement,
   chartElements: ChartElements,
   renderInfo: RenderInfo,
   pieInfo: PieInfo
-) {
+) => {
   // console.log("renderTitle");
   // under graphArea
 
   if (!renderInfo || !pieInfo) return;
 
   if (!pieInfo.title) return;
-  let titleSize = helper.measureTextSize(pieInfo.title, "tracker-title");
+  const titleSize = helper.measureTextSize(pieInfo.title, 'tracker-title');
 
   // Append title
-  let title = chartElements.graphArea
-    .append("text")
+  const title = chartElements.graphArea
+    .append('text')
     .text(pieInfo.title) // pivot at center
-    .attr("id", "title")
+    .attr('id', 'title')
     .attr(
-      "transform",
-      "translate(" +
+      'transform',
+      'translate(' +
         renderInfo.dataAreaSize.width / 2.0 +
-        "," +
+        ',' +
         titleSize.height / 2.0 +
-        ")"
+        ')'
     )
-    .attr("height", titleSize.height) // for later use
-    .attr("class", "tracker-title");
-  chartElements["title"] = title;
+    .attr('height', titleSize.height) // for later use
+    .attr('class', 'tracker-title');
+  chartElements['title'] = title;
 
   // Expand parent areas
   helper.expandArea(chartElements.svg, 0, titleSize.height);
@@ -125,34 +126,38 @@ function renderTitle(
   helper.moveArea(chartElements.dataArea, 0, titleSize.height);
 
   return;
-}
+};
 
-function renderLegend(
-  canvas: HTMLElement,
+const renderLegend = (
+  _canvas: HTMLElement,
   chartElements: ChartElements,
   renderInfo: RenderInfo,
   pieInfo: PieInfo
-) {
+): void => {
   // console.log("renderLegend");
   // console.log(piInfo.legendPosition);
   // console.log(piInfo.legendOrientation);
 
   // Get chart elements
-  let svg = chartElements.svg;
-  let graphArea = chartElements.graphArea;
-  let dataArea = chartElements.dataArea;
-  let title = chartElements.title;
+  const svg = chartElements.svg;
+
+  // TODO Why is this here?
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const graphArea = chartElements.graphArea;
+
+  const dataArea = chartElements.dataArea;
+  const title = chartElements.title;
 
   // Get element width and height
   let titleHeight = 0.0;
   if (title) {
-    titleHeight = parseFloat(title.attr("height"));
+    titleHeight = parseFloat(title.attr('height'));
   }
 
   // Get names and their dimension
-  let names = pieInfo.dataName;
-  let nameSizes = names.map(function (n) {
-    return helper.measureTextSize(n, "tracker-legend-label");
+  const names = pieInfo.dataName;
+  const nameSizes = names.map((n) => {
+    return helper.measureTextSize(n, 'tracker-legend-label');
   });
   let indMaxName = 0;
   let maxNameWidth = 0.0;
@@ -162,28 +167,27 @@ function renderLegend(
       indMaxName = ind;
     }
   }
-  let maxName = names[indMaxName];
-  let characterWidth = maxNameWidth / maxName.length;
-  let nameHeight = nameSizes[indMaxName].height;
-  let numNames = names.length;
+  const maxName = names[indMaxName];
+  const characterWidth = maxNameWidth / maxName.length;
+  const nameHeight = nameSizes[indMaxName].height;
+  const numNames = names.length;
 
-  let xSpacing = 2 * characterWidth;
-  let ySpacing = nameHeight;
-  let markerWidth = 2 * characterWidth;
+  const xSpacing = 2 * characterWidth;
+  const ySpacing = nameHeight;
+  const markerWidth = 2 * characterWidth;
 
   // Get legend width and height
   let legendWidth = 0;
   let legendHeight = 0;
-  if (pieInfo.legendOrientation === "vertical") {
+  if (pieInfo.legendOrientation === 'vertical') {
     legendWidth = xSpacing * 3 + markerWidth + maxNameWidth;
     legendHeight = (numNames + 1) * ySpacing;
-  } else if (pieInfo.legendOrientation === "horizontal") {
+  } else if (pieInfo.legendOrientation === 'horizontal') {
     legendWidth =
       (2 * xSpacing + markerWidth) * numNames +
       xSpacing +
-      d3.sum(nameSizes, function (s, i) {
-        return s.width;
-      });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      d3.sum(nameSizes, (s, _i) => s.width);
     legendHeight = ySpacing + nameHeight;
   }
   // console.log(
@@ -192,10 +196,10 @@ function renderLegend(
   // console.log(`xSpacing:${xSpacing}, numNames: ${numNames}, markerWidth: ${markerWidth}`);
   // console.log(`legendWidth: ${legendWidth}, legendHeight: ${legendHeight}`);
 
-  // Calcualte lengendX and legendY
+  // Calculate legendX and legendY
   let legendX = 0.0; // relative to graphArea
   let legendY = 0.0;
-  if (pieInfo.legendPosition === "top") {
+  if (pieInfo.legendPosition === 'top') {
     // below title
     legendX = renderInfo.dataAreaSize.width / 2.0 - legendWidth / 2.0;
     legendY = titleHeight;
@@ -203,13 +207,13 @@ function renderLegend(
     helper.expandArea(svg, 0, legendHeight + ySpacing);
     // Move dataArea down
     helper.moveArea(dataArea, 0, legendHeight + ySpacing);
-  } else if (pieInfo.legendPosition === "bottom") {
+  } else if (pieInfo.legendPosition === 'bottom') {
     // bellow x-axis label
     legendX = renderInfo.dataAreaSize.width / 2.0 - legendWidth / 2.0;
     legendY = titleHeight + renderInfo.dataAreaSize.height + ySpacing;
     // Expand svg
     helper.expandArea(svg, 0, legendHeight + ySpacing);
-  } else if (pieInfo.legendPosition === "left") {
+  } else if (pieInfo.legendPosition === 'left') {
     legendX = 0;
     legendY =
       titleHeight + renderInfo.dataAreaSize.height / 2.0 - legendHeight / 2.0;
@@ -217,7 +221,7 @@ function renderLegend(
     helper.expandArea(svg, legendWidth + xSpacing, 0);
     // Move dataArea right
     helper.moveArea(dataArea, legendWidth + xSpacing, 0);
-  } else if (pieInfo.legendPosition === "right") {
+  } else if (pieInfo.legendPosition === 'right') {
     legendX = renderInfo.dataAreaSize.width + xSpacing;
     legendY =
       titleHeight + renderInfo.dataAreaSize.height / 2.0 - legendHeight / 2.0;
@@ -228,79 +232,75 @@ function renderLegend(
   }
   // console.log(`legendX: ${legendX}, legendY: ${legendY}`);
 
-  let legend = chartElements.graphArea
-    .append("g")
-    .attr("id", "legend")
-    .attr("transform", "translate(" + legendX + "," + legendY + ")");
+  const legend = chartElements.graphArea
+    .append('g')
+    .attr('id', 'legend')
+    .attr('transform', 'translate(' + legendX + ',' + legendY + ')');
   // console.log('legendX: %d, legendY: %d', legendX, legendY);
 
-  let legendBg = legend
-    .append("rect")
-    .attr("class", "tracker-legend")
-    .attr("width", legendWidth)
-    .attr("height", legendHeight);
+  const legendBg = legend
+    .append('rect')
+    .attr('class', 'tracker-legend')
+    .attr('width', legendWidth)
+    .attr('height', legendHeight);
   if (pieInfo.legendBgColor) {
-    legendBg.style("fill", pieInfo.legendBgColor);
+    legendBg.style('fill', pieInfo.legendBgColor);
   }
   if (pieInfo.legendBorderColor) {
-    legendBg.style("stroke", pieInfo.legendBorderColor);
+    legendBg.style('stroke', pieInfo.legendBorderColor);
   }
 
-  let markerRadius = 5.0;
-  let firstMarkerX = xSpacing;
-  let firstMarkerY = nameHeight;
-  let firstLabelX = firstMarkerX + xSpacing + markerWidth; // xSpacing + 2 * xSpaing
-  let firstLabelY = firstMarkerY;
+  const markerRadius = 5.0;
+  const firstMarkerX = xSpacing;
+  const firstMarkerY = nameHeight;
+  const firstLabelX = firstMarkerX + xSpacing + markerWidth; // xSpacing + 2 * xSpacing
+  const firstLabelY = firstMarkerY;
 
-  if (pieInfo.legendOrientation === "vertical") {
+  if (pieInfo.legendOrientation === 'vertical') {
     // points
     legend
-      .selectAll("markers")
+      .selectAll('markers')
       .data(names)
       .enter()
-      .append("circle")
-      .attr("cx", firstMarkerX + markerWidth / 2.0)
-      .attr("cy", function (name: string, i: number) {
-        return firstMarkerY + i * ySpacing;
-      })
-      .attr("r", function (name: string, i: number) {
-        return markerRadius;
-      })
-      .style("fill", function (name: string, i: number) {
-        return pieInfo.dataColor[i];
-      });
+      .append('circle')
+      .attr('cx', firstMarkerX + markerWidth / 2.0)
+      .attr('cy', (_name: string, i: number) => firstMarkerY + i * ySpacing)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .attr('r', (_name: string, _i: number) => markerRadius)
+      .style('fill', (_name: string, i: number) => pieInfo.dataColor[i]);
 
     // names
-    let nameLabels = legend
-      .selectAll("labels")
+    const nameLabels = legend
+      .selectAll('labels')
       .data(names)
       .enter()
-      .append("text")
-      .attr("x", firstLabelX)
-      .attr("y", function (name: string, i: number) {
-        return firstLabelY + i * ySpacing;
-      })
-      .text(function (name: string, i: number) {
-        return name;
-      })
-      .style("alignment-baseline", "middle")
-      .attr("class", "tracker-legend-label");
+      .append('text')
+      .attr('x', firstLabelX)
+      .attr('y', (_name: string, i: number) => firstLabelY + i * ySpacing)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .text((name: string, _i: number) => name)
+      .style('alignment-baseline', 'middle')
+      .attr('class', 'tracker-legend-label');
 
-    nameLabels.style("fill", function (name: string, i: number) {
-      return pieInfo.dataColor[i];
-    });
-  } else if (pieInfo.legendOrientation === "horizontal") {
+    nameLabels.style(
+      'fill',
+      (_name: string, i: number) => pieInfo.dataColor[i]
+    );
+  } else if (pieInfo.legendOrientation === 'horizontal') {
     let currRenderPosX = 0.0;
-    let currRenderPosX2 = 0.0;
+
+    // TODO Why is this here?
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const currRenderPosX2 = 0.0;
 
     // points
     currRenderPosX = 0.0;
     legend
-      .selectAll("markers")
+      .selectAll('markers')
       .data(names)
       .enter()
-      .append("circle")
-      .attr("cx", function (name: string, i: number) {
+      .append('circle')
+      .attr('cx', (_name: string, i: number) => {
         if (i === 0) {
           currRenderPosX = firstMarkerX + markerWidth / 2.0;
         } else {
@@ -309,22 +309,19 @@ function renderLegend(
         }
         return currRenderPosX;
       })
-      .attr("cy", firstMarkerY)
-      .attr("r", function (name: string, i: number) {
-        return markerRadius;
-      })
-      .style("fill", function (name: string, i: number) {
-        return pieInfo.dataColor[i];
-      });
+      .attr('cy', firstMarkerY)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .attr('r', (_name: string, _i: number) => markerRadius)
+      .style('fill', (_name: string, i: number) => pieInfo.dataColor[i]);
 
     // names
     currRenderPosX = 0.0;
-    let nameLabels = legend
-      .selectAll("labels")
+    const nameLabels = legend
+      .selectAll('labels')
       .data(names)
       .enter()
-      .append("text")
-      .attr("x", function (name: string, i: number) {
+      .append('text')
+      .attr('x', (_name: string, i: number) => {
         if (i === 0) {
           currRenderPosX = firstLabelX;
         } else {
@@ -333,206 +330,222 @@ function renderLegend(
         }
         return currRenderPosX;
       })
-      .attr("y", firstLabelY)
-      .text(function (name: string, i: number) {
-        return name;
-      })
-      .style("alignment-baseline", "middle")
-      .attr("class", "tracker-legend-label");
+      .attr('y', firstLabelY)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .text((name: string, _i: number) => name)
+      .style('alignment-baseline', 'middle')
+      .attr('class', 'tracker-legend-label');
 
-    nameLabels.style("fill", function (name: string, i: number) {
-      return pieInfo.dataColor[i];
-    });
+    nameLabels.style(
+      'fill',
+      (_name: string, i: number) => pieInfo.dataColor[i]
+    );
   }
-}
+};
 
-function renderPie(
-  canvas: HTMLElement,
+const renderPie = (
+  _canvas: HTMLElement,
   chartElements: ChartElements,
   renderInfo: RenderInfo,
   pieInfo: PieInfo
-) {
+): string => {
   // console.log("renderPie");
   // console.log(renderInfo);
-  let errorMessage = "";
+  let errorMessage = '';
 
-  let radius = renderInfo.dataAreaSize.width * 0.5;
-  let outterRadius = radius * 0.7;
-  let innerRadius = outterRadius * pieInfo.ratioInnerRadius;
+  const radius = renderInfo.dataAreaSize.width * 0.5;
+  const outerRadius = radius * 0.7;
+  const innerRadius = outerRadius * pieInfo.ratioInnerRadius;
 
   // values
-  let values: Array<number> = [];
-  for (let strExpr of pieInfo.data) {
-    let retValue = expr.resolveValue(strExpr, renderInfo);
-    if (typeof retValue === "string") {
+  const values: Array<number> = [];
+  for (const strExpr of pieInfo.data) {
+    const retValue = expr.resolveValue(strExpr, renderInfo);
+    if (typeof retValue === 'string') {
       errorMessage = retValue;
       break;
-    } else if (typeof retValue === "number") {
+    } else if (typeof retValue === 'number') {
       values.push(retValue);
     }
   }
-  if (errorMessage !== "") {
+  if (errorMessage !== '') {
     return errorMessage;
   }
   // console.log(values);
 
   // labels
-  let labels: Array<string> = [];
-  for (let strExpr of pieInfo.label) {
-    let retLabel = expr.resolveTemplate(strExpr, renderInfo);
+  const labels: Array<string> = [];
+  for (const strExpr of pieInfo.label) {
+    const retLabel = expr.resolveTemplate(strExpr, renderInfo);
     // console.log(retLabel);
-    if (retLabel.startsWith("Error")) {
+    if (retLabel.startsWith('Error')) {
       errorMessage = retLabel;
       break;
     }
     labels.push(retLabel);
   }
-  if (errorMessage !== "") {
+  if (errorMessage !== '') {
     return errorMessage;
   }
   // console.log(labels);
 
   // hideLabelLessThan
-  let hideLabelLessThan = pieInfo.hideLabelLessThan;
+  const hideLabelLessThan = pieInfo.hideLabelLessThan;
 
   // label sizes
-  let labelSizes = labels.map(function (n) {
-    return helper.measureTextSize(n, "tracker-tick-label");
-  });
+  const labelSizes = labels.map((n) =>
+    helper.measureTextSize(n, 'tracker-tick-label')
+  );
 
   // extLabel
-  let extLabels: Array<string> = [];
-  for (let strExpr of pieInfo.extLabel) {
-    let retExtLabel = expr.resolveTemplate(strExpr, renderInfo);
-    if (retExtLabel.startsWith("Error")) {
+  const extLabels: Array<string> = [];
+  for (const strExpr of pieInfo.extLabel) {
+    const retExtLabel = expr.resolveTemplate(strExpr, renderInfo);
+    if (retExtLabel.startsWith('Error')) {
       errorMessage = retExtLabel;
       break;
     }
     extLabels.push(retExtLabel);
   }
-  if (errorMessage !== "") {
+  if (errorMessage !== '') {
     return errorMessage;
   }
   // console.log(extLabels);
 
   // extLabel sizes
-  let extLabelSizes = extLabels.map(function (n) {
-    return helper.measureTextSize(n, "tracker-pie-label");
+  const extLabelSizes = extLabels.map((n) => {
+    return helper.measureTextSize(n, 'tracker-pie-label');
   });
   // console.log(extLabelSizes);
 
-  let showExtLabelOnlyIfNoLabel = pieInfo.showExtLabelOnlyIfNoLabel;
+  const showExtLabelOnlyIfNoLabel = pieInfo.showExtLabelOnlyIfNoLabel;
 
   // scale
-  let colorScale = d3.scaleOrdinal().range(pieInfo.dataColor);
+  const colorScale = d3.scaleOrdinal().range(pieInfo.dataColor);
 
-  let sectorsGroup = chartElements.dataArea.append("g");
-  sectorsGroup.attr("transform", function () {
-    let strTranslate =
-      "translate(" +
+  const sectorsGroup = chartElements.dataArea.append('g');
+  sectorsGroup.attr('transform', () => {
+    const strTranslate =
+      'translate(' +
       renderInfo.dataAreaSize.width * 0.5 +
-      "," +
+      ',' +
       renderInfo.dataAreaSize.height * 0.5 +
-      ")";
+      ')';
 
     return strTranslate;
   });
 
-  let pie = d3.pie();
-  let pieValues = pie(values);
+  const pie = d3.pie();
+  const pieValues = pie(values);
 
-  let sectors = sectorsGroup
-    .selectAll("sector")
+  const sectors = sectorsGroup
+    .selectAll('sector')
     .data(pieValues)
     .enter()
-    .append("g")
-    .attr("class", "sector");
+    .append('g')
+    .attr('class', 'sector');
 
-  let arc = d3.arc().innerRadius(innerRadius).outerRadius(outterRadius);
+  const arc = d3.arc().innerRadius(innerRadius).outerRadius(outerRadius);
 
-  var hiddenArc = d3
+  const hiddenArc = d3
     .arc()
     .innerRadius(radius * 0.9)
     .outerRadius(radius * 0.9);
 
-  let sectorPaths = sectors
-    .append("path")
-    .attr("fill", function (d: any, i: number) {
+  sectors
+    .append('path')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .attr('fill', (_d: any, i: number) => {
       return colorScale(i.toString());
     })
-    .attr("d", arc);
+    .attr('d', arc);
 
-  function isLabelHidden(arcObj: any) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isLabelHidden = (arcObj: any) => {
     // console.log(`start/end: ${arcObj.startAngle}/${arcObj.endAngle}`);
-    let fraction = (arcObj.endAngle - arcObj.startAngle) / (2.0 * Math.PI);
+    const fraction = (arcObj.endAngle - arcObj.startAngle) / (2.0 * Math.PI);
     if (fraction < hideLabelLessThan) {
       return true;
     }
     return false;
-  }
+  };
 
   // label elements
-  let labelElements = sectorsGroup
-    .selectAll("label")
+  sectorsGroup
+    .selectAll('label')
     .data(pie(values))
     .enter()
-    .append("text")
-    .text(function (arcObj: any, i: number) {
+    .append('text')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .text((arcObj: any, i: number) => {
       if (isLabelHidden(arcObj)) {
-        return "";
+        return '';
       }
       return labels[i];
     })
-    .attr("transform", function (d: any) {
-      return "translate(" + arc.centroid(d)[0] + "," + arc.centroid(d)[1] + ")";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .attr('transform', (d: any) => {
+      return 'translate(' + arc.centroid(d)[0] + ',' + arc.centroid(d)[1] + ')';
     })
-    .style("text-anchor", "middle")
-    .attr("class", "tracker-pie-label");
+    .style('text-anchor', 'middle')
+    .attr('class', 'tracker-pie-label');
 
-  function getMidAngle(arcObj: any) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getMidAngle = (arcObj: any) => {
     return arcObj.startAngle + (arcObj.endAngle - arcObj.startAngle) / 2;
-  }
+  };
 
   // external label elements
-  let extLabelElements = sectorsGroup
-    .selectAll("extLabel")
+  sectorsGroup
+    .selectAll('extLabel')
     .data(pieValues)
     .enter()
-    .append("text")
-    .text(function (arcObj: any, i: number) {
+    .append('text')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .text((arcObj: any, i: number) => {
       if (showExtLabelOnlyIfNoLabel) {
-        if (labels[i] === "" || isLabelHidden(arcObj)) {
+        if (labels[i] === '' || isLabelHidden(arcObj)) {
           return extLabels[i];
         }
-        return "";
+        return '';
       } else {
         return extLabels[i];
       }
     })
-    .attr("transform", function (arcObj: any, i: number) {
-      let posLabel = hiddenArc.centroid(arcObj);
-      let midAngle = getMidAngle(arcObj);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .attr('transform', (arcObj: any, i: number) => {
+      const posLabel = hiddenArc.centroid(arcObj);
+      const midAngle = getMidAngle(arcObj);
 
       posLabel[0] =
         (radius * 0.99 - extLabelSizes[i].width) *
         (midAngle < Math.PI ? 1 : -1);
-      return "translate(" + posLabel[0] + "," + posLabel[1] + ")";
+      return 'translate(' + posLabel[0] + ',' + posLabel[1] + ')';
     })
-    .style("text-anchor", function (arcObj: any) {
-      let midAngle = getMidAngle(arcObj);
-      return midAngle < Math.PI ? "start" : "end";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .style('text-anchor', (arcObj: any) => {
+      const midAngle = getMidAngle(arcObj);
+      return midAngle < Math.PI ? 'start' : 'end';
     })
-    .attr("class", "tracker-pie-label");
+    .attr('class', 'tracker-pie-label');
 
-  function getPointsForConnectionLines(arcObj: any, i: number) {
-    let labelWidth = labelSizes[i].width;
-    let extLabelWidth = extLabelSizes[i].width;
-    let labelHidden = isLabelHidden(arcObj);
-    let midAngle = getMidAngle(arcObj);
+  const getPointsForConnectionLines = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    arcObj: any,
+    i: number
+  ): [number, number][] => {
+    const labelWidth = labelSizes[i].width;
+    const extLabelWidth = extLabelSizes[i].width;
 
-    let posLabel = arc.centroid(arcObj); // line insertion in the slice
-    let posMiddle = hiddenArc.centroid(arcObj); // line break: we use the other arc generator that has been built only for that
-    let posExtLabel = hiddenArc.centroid(arcObj); // Label position = almost the same as posB
+    // TODO Why is this here?
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const labelHidden = isLabelHidden(arcObj);
+
+    const midAngle = getMidAngle(arcObj);
+
+    const posLabel = arc.centroid(arcObj); // line insertion in the slice
+    const posMiddle = hiddenArc.centroid(arcObj); // line break: we use the other arc generator that has been built only for that
+    const posExtLabel = hiddenArc.centroid(arcObj); // Label position = almost the same as posB
     // console.log(labels[i]);
     // console.log(`label/middle/extLabel: ${posLabel}/${posMiddle}/${posExtLabel}`);
 
@@ -540,7 +553,7 @@ function renderPie(
       (posMiddle[0] - posLabel[0]) ** 2 + (posMiddle[1] - posLabel[1]) ** 2
     );
 
-    if (labels[i] !== "") {
+    if (labels[i] !== '') {
       // shift posLabel, toward the middle point
       posLabel[0] =
         posLabel[0] +
@@ -558,7 +571,7 @@ function renderPie(
       (posMiddle[0] - posLabel[0]) ** 2 + (posMiddle[1] - posLabel[1]) ** 2
     );
 
-    let distExtLabelToLabel = Math.sqrt(
+    const distExtLabelToLabel = Math.sqrt(
       (posExtLabel[0] - posLabel[0]) ** 2 + (posExtLabel[1] - posLabel[1]) ** 2
     );
 
@@ -567,38 +580,39 @@ function renderPie(
       return [posLabel, posExtLabel];
     }
     return [posLabel, posMiddle, posExtLabel];
-  }
+  };
 
   // Add lines between sectors and external labels
-  let lines = sectorsGroup
-    .selectAll("line")
+  sectorsGroup
+    .selectAll('line')
     .data(pieValues)
     .enter()
-    .append("polyline")
-    .attr("stroke", "black")
-    .style("fill", "none")
-    .attr("stroke-width", 1)
-    .attr("points", function (arcObj: any, i: number) {
+    .append('polyline')
+    .attr('stroke', 'black')
+    .style('fill', 'none')
+    .attr('stroke-width', 1)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .attr('points', (arcObj: any, i: number) => {
       if (showExtLabelOnlyIfNoLabel) {
-        if (labels[i] === "" || isLabelHidden(arcObj)) {
-          if (extLabels[i] !== "") {
+        if (labels[i] === '' || isLabelHidden(arcObj)) {
+          if (extLabels[i] !== '') {
             return getPointsForConnectionLines(arcObj, i);
           }
         }
       } else {
-        if (extLabels[i] !== "") {
+        if (extLabels[i] !== '') {
           return getPointsForConnectionLines(arcObj, i);
         }
       }
     })
-    .attr("class", "tracker-axis");
-}
+    .attr('class', 'tracker-axis');
+};
 
-export function renderPieChart(
+export const renderPieChart = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
   pieInfo: PieInfo
-) {
+) => {
   // console.log("renderPieChart");
   // console.log(renderInfo);
   if (!renderInfo || !pieInfo) return;
@@ -609,7 +623,7 @@ export function renderPieChart(
   chartElements = createAreas(chartElements, canvas, renderInfo, pieInfo);
 
   // Set default dataColor if no dataColor provided
-  let defaultDataColor = d3.schemeSpectral[pieInfo.dataColor.length];
+  const defaultDataColor = d3.schemeSpectral[pieInfo.dataColor.length];
   for (let i = 0; i < pieInfo.dataColor.length; i++) {
     if (pieInfo.dataColor[i] === null) {
       pieInfo.dataColor[i] = defaultDataColor[i];
@@ -625,4 +639,4 @@ export function renderPieChart(
   }
 
   setChartScale(canvas, chartElements, renderInfo);
-}
+};

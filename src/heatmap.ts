@@ -1,6 +1,6 @@
-import * as d3 from "d3";
-import { ChartElements, Dataset, HeatmapInfo, RenderInfo } from "./data";
-import * as helper from "./helper";
+import * as d3 from 'd3';
+import { ChartElements, Dataset, HeatmapInfo, RenderInfo } from './data';
+import * as helper from './utils/helper';
 
 interface DayInfo {
   date: string;
@@ -10,88 +10,91 @@ interface DayInfo {
   col: number;
 }
 
-function createAreas(
+const createAreas = (
   chartElements: ChartElements,
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  heatmapInfo: HeatmapInfo
-): ChartElements {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _heatmapInfo: HeatmapInfo
+): ChartElements => {
   // clean areas
-  d3.select(canvas).select("#svg").remove();
-  var props = Object.getOwnPropertyNames(chartElements);
-  for (var i = 0; i < props.length; i++) {
+  d3.select(canvas).select('#svg').remove();
+  const props = Object.getOwnPropertyNames(chartElements);
+  for (let i = 0; i < props.length; i++) {
     // d3.select(chartElements[props[i]]).remove();
     delete chartElements[props[i]];
   }
   // console.log(chartElements);
 
   // whole area for plotting, includes margins
-  let svg = d3
+  const svg = d3
     .select(canvas)
-    .append("svg")
-    .attr("id", "svg")
+    .append('svg')
+    .attr('id', 'svg')
     .attr(
-      "width",
+      'width',
       renderInfo.dataAreaSize.width +
         renderInfo.margin.left +
         renderInfo.margin.right
     )
     .attr(
-      "height",
+      'height',
       renderInfo.dataAreaSize.height +
         renderInfo.margin.top +
         renderInfo.margin.bottom
     );
-  chartElements["svg"] = svg;
+  chartElements['svg'] = svg;
 
   // graphArea, includes chartArea, title, legend
-  let graphArea = svg
-    .append("g")
-    .attr("id", "graphArea")
+  const graphArea = svg
+    .append('g')
+    .attr('id', 'graphArea')
     .attr(
-      "transform",
-      "translate(" + renderInfo.margin.left + "," + renderInfo.margin.top + ")"
+      'transform',
+      'translate(' + renderInfo.margin.left + ',' + renderInfo.margin.top + ')'
     )
-    .attr("width", renderInfo.dataAreaSize.width + renderInfo.margin.right)
-    .attr("height", renderInfo.dataAreaSize.height + renderInfo.margin.bottom);
-  chartElements["graphArea"] = graphArea;
+    .attr('width', renderInfo.dataAreaSize.width + renderInfo.margin.right)
+    .attr('height', renderInfo.dataAreaSize.height + renderInfo.margin.bottom);
+  chartElements['graphArea'] = graphArea;
 
   // dataArea, under graphArea, includes points, lines, xAxis, yAxis
-  let dataArea = graphArea
-    .append("g")
-    .attr("id", "dataArea")
-    .attr("width", renderInfo.dataAreaSize.width)
-    .attr("height", renderInfo.dataAreaSize.height);
-  chartElements["dataArea"] = dataArea;
+  const dataArea = graphArea
+    .append('g')
+    .attr('id', 'dataArea')
+    .attr('width', renderInfo.dataAreaSize.width)
+    .attr('height', renderInfo.dataAreaSize.height);
+  chartElements['dataArea'] = dataArea;
 
   return chartElements;
-}
+};
 
-function renderHeatmapHeader(
-  canvas: HTMLElement,
-  chartElements: ChartElements,
+const renderHeatmapHeader = (
+  _canvas: HTMLElement,
+  _chartElements: ChartElements,
   renderInfo: RenderInfo,
   heatmapInfo: HeatmapInfo,
-  dataset: Dataset
-) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _dataset: Dataset
+): void => {
   // console.log("renderMonthHeader")
 
   if (!renderInfo || !heatmapInfo) return;
-}
+  // TODO What does this do?
+};
 
-function renderHeatmapDays(
-  canvas: HTMLElement,
+const renderHeatmapDays = (
+  _canvas: HTMLElement,
   chartElements: ChartElements,
   renderInfo: RenderInfo,
   heatmapInfo: HeatmapInfo,
   dataset: Dataset
-) {
+) => {
   // console.log("renderHeatmapDays");
 
   if (!renderInfo || !heatmapInfo) return;
 
-  let cellSize = 20;
-  let dotRadius = (cellSize / 2.0) * 0.6;
+  const cellSize = 20;
+  const dotRadius = (cellSize / 2.0) * 0.6;
 
   // Get min and max, null values will be treated as zero here
   let yMin = d3.min(dataset.getValues());
@@ -105,16 +108,16 @@ function renderHeatmapDays(
   // console.log(`yMin:${yMin}, yMax:${yMax}`);
 
   // Prepare data for graph
-  let daysInHeatmapView: Array<DayInfo> = [];
+  const daysInHeatmapView: Array<DayInfo> = [];
   const dataStartDate = dataset.getStartDate().clone();
-  let startDate = dataStartDate.clone().subtract(dataStartDate.day(), "days");
-  if (heatmapInfo.startWeekOn.toLowerCase() === "mon") {
-    startDate = startDate.add(1, "days");
+  let startDate = dataStartDate.clone().subtract(dataStartDate.day(), 'days');
+  if (heatmapInfo.startWeekOn.toLowerCase() === 'mon') {
+    startDate = startDate.add(1, 'days');
   }
   const dataEndDate = dataset.getEndDate().clone();
-  let endDate = dataEndDate.clone().add(7 - dataEndDate.day() - 1, "days");
-  if (heatmapInfo.startWeekOn.toLowerCase() === "mon") {
-    endDate = endDate.add(1, "days");
+  let endDate = dataEndDate.clone().add(7 - dataEndDate.day() - 1, 'days');
+  if (heatmapInfo.startWeekOn.toLowerCase() === 'mon') {
+    endDate = endDate.add(1, 'days');
   }
   // console.log(startDate.format("YYYY-MM-DD"));
   // console.log(endDate.format("YYYY-MM-DD"));
@@ -125,9 +128,9 @@ function renderHeatmapDays(
   for (
     let curDate = startDate.clone();
     curDate <= endDate;
-    curDate.add(1, "days")
+    curDate.add(1, 'days')
   ) {
-    if (heatmapInfo.startWeekOn.toLowerCase() === "mon") {
+    if (heatmapInfo.startWeekOn.toLowerCase() === 'mon') {
       indCol = curDate.day() - 1;
       if (indCol < 0) {
         indCol = 6;
@@ -139,7 +142,7 @@ function renderHeatmapDays(
     }
 
     // curValue and scaledValue
-    let curValue = dataset.getValue(curDate);
+    const curValue = dataset.getValue(curDate);
     let scaledValue = 0;
     if (Number.isNumber(yMax) && Number.isNumber(yMin) && yMax - yMin > 0) {
       scaledValue = (curValue - yMin) / (yMax - yMin);
@@ -158,44 +161,48 @@ function renderHeatmapDays(
   // console.log(daysInHeatmapView);
 
   // scale
-  let totalDayBlockWidth = (indCol + 1) * cellSize;
-  let totalBlockHeight = (indRow + 1) * cellSize;
-  let scale = d3
+  const totalDayBlockWidth = (indCol + 1) * cellSize;
+
+  // TODO Remove const?
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const totalBlockHeight = (indRow + 1) * cellSize;
+
+  const scale = d3
     .scaleLinear()
     .domain([-0.5, 6.5])
     .range([0, totalDayBlockWidth]);
 
   // circles
-  let heatmapColor = "#69b3a2";
+  let heatmapColor = '#69b3a2';
   if (heatmapInfo.color) {
     heatmapColor = heatmapInfo.color;
   }
 
   // days, shown as dots or squares
-  let days = chartElements.dataArea
-    .selectAll("dot")
+  chartElements.dataArea
+    .selectAll('dot')
     .data(daysInHeatmapView)
     .enter()
-    .append("circle")
-    .attr("r", dotRadius)
-    .attr("cx", function (d: DayInfo) {
+    .append('circle')
+    .attr('r', dotRadius)
+    .attr('cx', (d: DayInfo) => {
       return scale(d.col);
     })
-    .attr("cy", function (d: DayInfo) {
+    .attr('cy', (d: DayInfo) => {
       return scale(d.row);
     })
-    .style("fill", function (d: DayInfo) {
-      return d3.interpolateLab("white", heatmapColor)(d.scaledValue);
+    .style('fill', (d: DayInfo) => {
+      return d3.interpolateLab('white', heatmapColor)(d.scaledValue);
     })
-    .style("cursor", "default");
+    .style('cursor', 'default');
 
   // Expand areas
-  let svgWidth = parseFloat(chartElements.svg.attr("width"));
-  let svgHeight = parseFloat(chartElements.svg.attr("height"));
-  let graphAreaWidth = parseFloat(chartElements.graphArea.attr("width"));
-  let graphAreaHeight = parseFloat(chartElements.graphArea.attr("height"));
-  let totalHeight = (indRow + 2) * cellSize; // + parseFloat(chartElements.header.attr("height"));
-  let totalWidth = (indCol + 1) * cellSize;
+  const svgWidth = parseFloat(chartElements.svg.attr('width'));
+  const svgHeight = parseFloat(chartElements.svg.attr('height'));
+  const graphAreaWidth = parseFloat(chartElements.graphArea.attr('width'));
+  const graphAreaHeight = parseFloat(chartElements.graphArea.attr('height'));
+  const totalHeight = (indRow + 2) * cellSize; // + parseFloat(chartElements.header.attr("height"));
+  const totalWidth = (indCol + 1) * cellSize;
   if (totalHeight > svgHeight) {
     helper.expandArea(chartElements.svg, 0, totalHeight - svgHeight);
   }
@@ -212,29 +219,34 @@ function renderHeatmapDays(
   if (totalWidth > graphAreaWidth) {
     helper.expandArea(chartElements.svg, totalWidth - graphAreaWidth, 0);
   }
-}
+};
 
-export function renderHeatmap(
+export const renderHeatmap = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
   heatmapInfo: HeatmapInfo
-) {
+) => {
   // console.log("renderHeatmap");
   // console.log(renderInfo);
   if (!renderInfo || !renderHeatmap) return;
 
-  return "Under construction";
+  return 'Under construction';
 
   let chartElements: ChartElements = {};
   chartElements = createAreas(chartElements, canvas, renderInfo, heatmapInfo);
 
-  let today = window.moment();
-  let lastDataMonthDate = renderInfo.datasets.getDates().last();
+  // TODO Why is this here?
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const today = window.moment();
 
-  let datasetId = parseFloat(heatmapInfo.dataset);
-  let dataset = renderInfo.datasets.getDatasetById(datasetId);
+  // TODO Why is this here?
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const lastDataMonthDate = renderInfo.datasets.getDates().last();
+
+  const datasetId = parseFloat(heatmapInfo.dataset);
+  const dataset = renderInfo.datasets.getDatasetById(datasetId);
 
   renderHeatmapHeader(canvas, chartElements, renderInfo, heatmapInfo, dataset);
 
   renderHeatmapDays(canvas, chartElements, renderInfo, heatmapInfo, dataset);
-}
+};
