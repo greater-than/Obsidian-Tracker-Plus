@@ -8,7 +8,7 @@ folder: diary
 startDate: 2021-01-01
 endDate: 2021-01-31
 line:
-    title: Blood Pressures
+    title: Blood Pressure
     yAxisLabel: BP
     yAxisUnit: mmHg
     lineColor: yellow, red
@@ -35,7 +35,7 @@ folder: diary
 startDate: 2021-01-01
 endDate: 2021-01-31
 line:
-    title: Blood Pressures
+    title: Blood Pressure
     yAxisLabel: Systolic, Diastolic
     yAxisUnit: mmHg
     yMin: 150, 110

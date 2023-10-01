@@ -10,5 +10,23 @@
   "[typescript]": {
     "typescript.preferences.importModuleSpecifier": "relative"
   },
-  "cSpell.words": []
+  "cSpell.words": [
+    "accum",
+    "alues",
+    "bnjbvr",
+    "ccurrences",
+    "codemirror",
+    "dataview",
+    "datetime",
+    "frontmatter",
+    "getFirstLinkpathDest",
+    "jsep",
+    "Laharah",
+    "notdone",
+    "numElemsExcluded",
+    "obsidianmd",
+    "onwarn",
+    "pyrochlore",
+    "sprintf"
+  ]
 }
