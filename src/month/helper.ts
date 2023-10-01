@@ -1,12 +1,15 @@
 import * as d3 from 'd3';
 import { Moment } from 'moment';
-import { ChartElements, MonthInfo, RenderInfo, ValueType } from './data';
-import * as helper from './utils/helper';
+import { ChartElements, ValueType } from 'src/models/types';
+import * as dateTimeUtils from 'src/utils/date-time.utils';
+import * as domUtils from 'src/utils/dom.utils';
+import * as stringUtils from 'src/utils/string.utils';
+import { MonthInfo, RenderInfo } from '../models/data';
+import { renderMonth } from './renderer';
 
 let logToConsole = false;
-const ratioCellToText = 2.8;
-const ratioDotToText = 1.8;
-
+const RATIO_CELL_TO_TEXT = 2.8;
+const RATIO_DOT_TO_TEXT = 1.8;
 interface DayInfo {
   date: string;
   value: number;
@@ -21,14 +24,13 @@ interface DayInfo {
   streakOut: boolean;
   annotation: string;
 }
-
-const setChartScale = (
+export const setChartScale = (
   _canvas: HTMLElement,
-  chartElements: ChartElements,
+  elements: ChartElements,
   renderInfo: RenderInfo
 ): void => {
   const canvas = d3.select(_canvas);
-  const svg = chartElements.svg;
+  const svg = elements.svg;
   const svgWidth = parseFloat(svg.attr('width'));
   const svgHeight = parseFloat(svg.attr('height'));
   svg
@@ -47,8 +49,7 @@ const setChartScale = (
     );
   }
 };
-
-const toNextDataset = (
+export const toNextDataset = (
   renderInfo: RenderInfo,
   monthInfo: MonthInfo
 ): boolean => {
@@ -99,9 +100,8 @@ const toNextDataset = (
 
   return false;
 };
-
-const createAreas = (
-  chartElements: ChartElements,
+export const createAreas = (
+  elements: ChartElements,
   canvas: HTMLElement,
   renderInfo: RenderInfo,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -109,13 +109,12 @@ const createAreas = (
 ): ChartElements => {
   // clean areas
   d3.select(canvas).select('#svg').remove();
-  const props = Object.getOwnPropertyNames(chartElements);
+  const props = Object.getOwnPropertyNames(elements);
   for (let i = 0; i < props.length; i++) {
-    // d3.select(chartElements[props[i]]).remove();
-    delete chartElements[props[i]];
+    // d3.select(elements[props[i]]).remove();
+    delete elements[props[i]];
   }
-  // console.log(chartElements);
-
+  // console.log(elements);
   // whole area for plotting, includes margins
   const svg = d3
     .select(canvas)
@@ -133,7 +132,7 @@ const createAreas = (
         renderInfo.margin.top +
         renderInfo.margin.bottom
     );
-  chartElements['svg'] = svg;
+  elements['svg'] = svg;
 
   // graphArea, includes chartArea, title, legend
   const graphArea = svg
@@ -145,7 +144,7 @@ const createAreas = (
     )
     .attr('width', renderInfo.dataAreaSize.width + renderInfo.margin.right)
     .attr('height', renderInfo.dataAreaSize.height + renderInfo.margin.bottom);
-  chartElements['graphArea'] = graphArea;
+  elements['graphArea'] = graphArea;
 
   // dataArea, under graphArea, includes points, lines, xAxis, yAxis
   const dataArea = graphArea
@@ -153,13 +152,12 @@ const createAreas = (
     .attr('id', 'dataArea')
     .attr('width', renderInfo.dataAreaSize.width)
     .attr('height', renderInfo.dataAreaSize.height);
-  chartElements['dataArea'] = dataArea;
+  elements['dataArea'] = dataArea;
 
-  return chartElements;
+  return elements;
 };
-
-const clearSelection = (chartElements: ChartElements, monthInfo: MonthInfo) => {
-  const circles = chartElements.svg.selectAll('circle');
+const clearSelection = (elements: ChartElements, monthInfo: MonthInfo) => {
+  const circles = elements.svg.selectAll('circle');
   // console.log(circles);
   for (const circle of circles) {
     // console.log(circle);
@@ -171,18 +169,16 @@ const clearSelection = (chartElements: ChartElements, monthInfo: MonthInfo) => {
 
   monthInfo.selectedDate = '';
 
-  chartElements.monitor.text('');
+  elements.monitor.text('');
 };
-
-const renderMonthHeader = (
+export const renderMonthHeader = (
   canvas: HTMLElement,
-  chartElements: ChartElements,
+  elements: ChartElements,
   renderInfo: RenderInfo,
   monthInfo: MonthInfo,
   curMonthDate: Moment
 ): void => {
   // console.log("renderMonthHeader")
-
   if (!renderInfo || !monthInfo) return;
 
   const curDatasetId = monthInfo.selectedDataset;
@@ -194,26 +190,31 @@ const renderMonthHeader = (
   // TODO What are these for?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const curMonth = curMonthDate.month(); // 0~11
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const curDaysInMonth = curMonthDate.daysInMonth(); // 28~31
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const curYear = curMonthDate.year();
 
-  const maxDayTextSize = helper.measureTextSize('30', 'tracker-month-label');
+  const maxDayTextSize = stringUtils.measureTextSize(
+    '30',
+    'tracker-month-label'
+  );
   const cellSize =
-    Math.max(maxDayTextSize.width, maxDayTextSize.height) * ratioCellToText;
+    Math.max(maxDayTextSize.width, maxDayTextSize.height) * RATIO_CELL_TO_TEXT;
 
   // What is this for?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const dotRadius = ((cellSize / ratioCellToText) * ratioDotToText) / 2.0;
+  const dotRadius = ((cellSize / RATIO_CELL_TO_TEXT) * RATIO_DOT_TO_TEXT) / 2;
 
   const headerYearText = curMonthDate.format('YYYY');
   const headerMonthText = curMonthDate.format('MMM');
-  const headerYearSize = helper.measureTextSize(
+  const headerYearSize = stringUtils.measureTextSize(
     headerYearText,
     'tracker-month-header-year'
   );
-  const headerMonthSize = helper.measureTextSize(
+  const headerMonthSize = stringUtils.measureTextSize(
     headerMonthText,
     'tracker-month-header-month'
   );
@@ -222,7 +223,7 @@ const renderMonthHeader = (
   const ySpacing = 8;
 
   // Append header group
-  const headerGroup = chartElements.graphArea.append('g');
+  const headerGroup = elements.graphArea.append('g');
 
   // header month
   let headerMonthColor = null;
@@ -239,13 +240,13 @@ const renderMonthHeader = (
     .attr('id', 'titleMonth')
     .attr(
       'transform',
-      'translate(' + cellSize / 4.0 + ',' + headerMonthSize.height + ')'
+      'translate(' + cellSize / 4 + ',' + headerMonthSize.height + ')'
     )
     .attr('class', 'tracker-month-header-month')
     .style('cursor', 'default')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
-      clearSelection(chartElements, monthInfo);
+      clearSelection(elements, monthInfo);
     });
 
   if (headerMonthColor) {
@@ -269,7 +270,7 @@ const renderMonthHeader = (
     .attr(
       'transform',
       'translate(' +
-        cellSize / 4.0 +
+        cellSize / 4 +
         ',' +
         (headerHeight + headerYearSize.height) +
         ')'
@@ -279,7 +280,7 @@ const renderMonthHeader = (
     .attr('font-weight', 'bold')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
-      clearSelection(chartElements, monthInfo);
+      clearSelection(elements, monthInfo);
     });
 
   if (headerYearColor) {
@@ -289,7 +290,7 @@ const renderMonthHeader = (
   headerHeight += headerYearSize.height;
 
   // dataset rotator
-  const datasetNameSize = helper.measureTextSize(
+  const datasetNameSize = stringUtils.measureTextSize(
     datasetName,
     'tracker-month-title-rotator'
   );
@@ -311,16 +312,16 @@ const renderMonthHeader = (
         // show next target
         if (toNextDataset(renderInfo, monthInfo)) {
           // clear circles
-          clearSelection(chartElements, monthInfo);
+          clearSelection(elements, monthInfo);
 
-          refresh(canvas, chartElements, renderInfo, monthInfo, curMonthDate);
+          refresh(canvas, elements, renderInfo, monthInfo, curMonthDate);
         }
       });
-    chartElements['rotator'] = datasetRotator;
+    elements['rotator'] = datasetRotator;
   }
 
   // value monitor
-  const monitorTextSize = helper.measureTextSize(
+  const monitorTextSize = stringUtils.measureTextSize(
     '0.0000',
     'tracker-month-title-monitor'
   );
@@ -339,10 +340,13 @@ const renderMonthHeader = (
     )
     .style('cursor', 'pointer')
     .style('fill', monthInfo.selectedRingColor);
-  chartElements['monitor'] = monitor;
+  elements['monitor'] = monitor;
 
   // arrow left
-  const arrowSize = helper.measureTextSize('<', 'tracker-month-title-arrow');
+  const arrowSize = stringUtils.measureTextSize(
+    '<',
+    'tracker-month-title-arrow'
+  );
   headerGroup
     .append('text')
     .text('<') // pivot at center
@@ -359,10 +363,10 @@ const renderMonthHeader = (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
       // console.log("left arrow clicked");
-      clearSelection(chartElements, monthInfo);
+      clearSelection(elements, monthInfo);
       monthInfo.selectedDate = '';
       const prevMonthDate = curMonthDate.clone().add(-1, 'month');
-      refresh(canvas, chartElements, renderInfo, monthInfo, prevMonthDate);
+      refresh(canvas, elements, renderInfo, monthInfo, prevMonthDate);
     })
     .style('cursor', 'pointer');
 
@@ -383,10 +387,10 @@ const renderMonthHeader = (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
       // console.log("right arrow clicked");
-      clearSelection(chartElements, monthInfo);
+      clearSelection(elements, monthInfo);
 
       const nextMonthDate = curMonthDate.clone().add(1, 'month');
-      refresh(canvas, chartElements, renderInfo, monthInfo, nextMonthDate);
+      refresh(canvas, elements, renderInfo, monthInfo, nextMonthDate);
     })
     .style('cursor', 'pointer');
 
@@ -407,10 +411,10 @@ const renderMonthHeader = (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
       // console.log("today arrow clicked");
-      clearSelection(chartElements, monthInfo);
+      clearSelection(elements, monthInfo);
 
-      const todayDate = helper.getDateToday(renderInfo.dateFormat);
-      refresh(canvas, chartElements, renderInfo, monthInfo, todayDate);
+      const todayDate = dateTimeUtils.getDateToday(renderInfo.dateFormat);
+      refresh(canvas, elements, renderInfo, monthInfo, todayDate);
     })
     .style('cursor', 'pointer');
 
@@ -421,11 +425,11 @@ const renderMonthHeader = (
   if (monthInfo.startWeekOn.toLowerCase() === 'mon') {
     weekdayNames.push(weekdayNames.shift());
   }
-  const weekdayNameSize = helper.measureTextSize(
+  const weekdayNameSize = stringUtils.measureTextSize(
     weekdayNames[0],
     'tracker-month-weekday'
   );
-  chartElements.graphArea
+  elements.graphArea
     .selectAll('weekDays')
     .data(weekdayNames)
     .enter()
@@ -447,7 +451,7 @@ const renderMonthHeader = (
     .style('cursor', 'default')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
-      clearSelection(chartElements, monthInfo);
+      clearSelection(elements, monthInfo);
     });
   headerHeight += weekdayNameSize.height + ySpacing;
 
@@ -461,7 +465,7 @@ const renderMonthHeader = (
       dividingLineColor = monthInfo.color;
     }
   }
-  const dividingLine = chartElements.graphArea
+  const dividingLine = elements.graphArea
     .append('rect')
     .attr('x', 0)
     .attr('y', headerHeight)
@@ -475,15 +479,14 @@ const renderMonthHeader = (
   headerHeight += dividingLineHeight;
 
   headerGroup.attr('height', headerHeight);
-  chartElements['header'] = headerGroup;
+  elements['header'] = headerGroup;
 
   // Move sibling areas
-  helper.moveArea(chartElements.dataArea, 0, headerHeight);
+  domUtils.moveArea(elements.dataArea, 0, headerHeight);
 };
-
-function renderMonthDays(
+export function renderMonthDays(
   _canvas: HTMLElement,
-  chartElements: ChartElements,
+  elements: ChartElements,
   renderInfo: RenderInfo,
   monthInfo: MonthInfo,
   curMonthDate: Moment
@@ -503,7 +506,6 @@ function renderMonthDays(
   const dataset = renderInfo.datasets.getDatasetById(curDatasetId);
   if (!dataset) return;
   // console.log(dataset);
-
   let curDatasetIndex = monthInfo.dataset.findIndex((id) => {
     return id === curDatasetId;
   });
@@ -513,14 +515,18 @@ function renderMonthDays(
   // TODO Why are these here?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const curMonth = curMonthDate.month(); // 0~11
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const curDaysInMonth = curMonthDate.daysInMonth(); // 28~31
 
-  const maxDayTextSize = helper.measureTextSize('30', 'tracker-month-label');
+  const maxDayTextSize = stringUtils.measureTextSize(
+    '30',
+    'tracker-month-label'
+  );
   const cellSize =
-    Math.max(maxDayTextSize.width, maxDayTextSize.height) * ratioCellToText;
-  const dotRadius = ((cellSize / ratioCellToText) * ratioDotToText) / 2.0;
-  const streakWidth = (cellSize - dotRadius * 2.0) / 2.0;
+    Math.max(maxDayTextSize.width, maxDayTextSize.height) * RATIO_CELL_TO_TEXT;
+  const dotRadius = ((cellSize / RATIO_CELL_TO_TEXT) * RATIO_DOT_TO_TEXT) / 2;
+  const streakWidth = (cellSize - dotRadius * 2) / 2;
   const streakHeight = 3;
 
   // Get min and max
@@ -555,7 +561,6 @@ function renderMonthDays(
   const dataEndDate = dataset.getEndDate();
   // console.log(monthStartDate.format("YYYY-MM-DD"));
   // console.log(startDate.format("YYYY-MM-DD"));
-
   // annotations
   const showAnnotation = monthInfo.showAnnotation;
   const annotations = monthInfo.annotation;
@@ -574,8 +579,8 @@ function renderMonthDays(
   ) {
     // not sure why we need to do this to stabilize the date
     // sometimes, curValue is wrong without doing this
-    curDate = helper.strToDate(
-      helper.dateToStr(curDate, renderInfo.dateFormat),
+    curDate = dateTimeUtils.strToDate(
+      dateTimeUtils.dateToStr(curDate, renderInfo.dateFormat),
       renderInfo.dateFormat
     );
     if (curDate.format('YYYY-MM-DD') === '2021-09-13') {
@@ -612,7 +617,7 @@ function renderMonthDays(
     const curValue = dataset.getValue(curDate);
     if (logToConsole) {
       console.log(dataset);
-      console.log(helper.dateToStr(curDate, renderInfo.dateFormat));
+      console.log(dateTimeUtils.dateToStr(curDate, renderInfo.dateFormat));
       console.log(curValue);
     }
 
@@ -698,7 +703,7 @@ function renderMonthDays(
     }
 
     daysInMonthView.push({
-      date: helper.dateToStr(curDate, renderInfo.dateFormat),
+      date: dateTimeUtils.dateToStr(curDate, renderInfo.dateFormat),
       value: curValue,
       scaledValue: scaledValue,
       dayInMonth: curDate.date(),
@@ -726,7 +731,6 @@ function renderMonthDays(
   // console.log(daysInMonthView.filter((d: DayInfo) => {
   //     return d.streakOut;
   // }));
-
   // scale
   const totalDayBlockWidth = (indCol + 1) * cellSize;
 
@@ -748,8 +752,7 @@ function renderMonthDays(
       streakColor = monthInfo.color;
     }
     // console.log(streakColor);
-
-    chartElements.dataArea
+    elements.dataArea
       .selectAll('streakIn')
       .data(
         daysInMonthView.filter((d: DayInfo) => {
@@ -766,7 +769,7 @@ function renderMonthDays(
         return x;
       })
       .attr('y', (d: DayInfo) => {
-        return scale(d.row) - streakHeight / 2.0;
+        return scale(d.row) - streakHeight / 2;
       })
       .attr('width', streakWidth)
       .attr('height', streakHeight)
@@ -793,10 +796,10 @@ function renderMonthDays(
         ) {
           return 0.2;
         }
-        return 1.0;
+        return 1;
       });
 
-    chartElements.dataArea
+    elements.dataArea
       .selectAll('streakOut')
       .data(
         daysInMonthView.filter((d: DayInfo) => {
@@ -813,7 +816,7 @@ function renderMonthDays(
         return x;
       })
       .attr('y', (d: DayInfo) => {
-        return scale(d.row) - streakHeight / 2.0;
+        return scale(d.row) - streakHeight / 2;
       })
       .attr('width', streakWidth)
       .attr('height', streakHeight)
@@ -840,7 +843,7 @@ function renderMonthDays(
         ) {
           return 0.2;
         }
-        return 1.0;
+        return 1;
       });
   }
 
@@ -852,7 +855,7 @@ function renderMonthDays(
     circleColor = monthInfo.color;
   }
   if (mode === 'circle' && monthInfo.showCircle) {
-    chartElements.dataArea
+    elements.dataArea
       .selectAll('dot')
       .data(daysInMonthView)
       .enter()
@@ -890,15 +893,15 @@ function renderMonthDays(
         ) {
           return 0.2;
         }
-        return 1.0;
+        return 1;
       })
       .style('cursor', 'default');
   }
 
   // today rings
-  const today = helper.dateToStr(window.moment(), renderInfo.dateFormat);
+  const today = dateTimeUtils.dateToStr(window.moment(), renderInfo.dateFormat);
   if (mode === 'circle' && monthInfo.showTodayRing) {
-    const todayRings = chartElements.dataArea
+    const todayRings = elements.dataArea
       .selectAll('todayRing')
       .data(
         daysInMonthView.filter((d: DayInfo) => {
@@ -926,7 +929,7 @@ function renderMonthDays(
 
   // selected rings
   if (mode === 'circle' && monthInfo.showSelectedRing) {
-    chartElements.dataArea
+    elements.dataArea
       .selectAll('selectedRing')
       .data(daysInMonthView)
       .enter()
@@ -947,7 +950,7 @@ function renderMonthDays(
   }
 
   // labels
-  chartElements.dataArea
+  elements.dataArea
     .selectAll('dayLabel')
     .data(daysInMonthView)
     .enter()
@@ -966,7 +969,7 @@ function renderMonthDays(
       if (d.isOutOfDataRange || (monthInfo.dimNotInMonth && !d.isInThisMonth)) {
         return 0.2;
       }
-      return 1.0;
+      return 1;
     })
     .attr('date', (d: DayInfo) => {
       return d.date;
@@ -982,12 +985,12 @@ function renderMonthDays(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
       // clear circles
-      clearSelection(chartElements, monthInfo);
+      clearSelection(elements, monthInfo);
       // show new selected circle
       const date = d3.select(this).attr('date');
       monthInfo.selectedDate = date;
       if (monthInfo.showSelectedRing) {
-        chartElements.dataArea
+        elements.dataArea
           .select('#tracker-selected-circle-' + date)
           .style('stroke', monthInfo.selectedRingColor);
       }
@@ -1003,14 +1006,14 @@ function renderMonthDays(
         } else {
           valueText = strValue;
         }
-        chartElements.monitor.text(valueText);
+        elements.monitor.text(valueText);
       }
     })
     .style('cursor', 'pointer');
 
   // annotation
   if (mode === 'annotation' && showAnnotation) {
-    chartElements.dataArea
+    elements.dataArea
       .selectAll('dayAnnotation')
       .data(daysInMonthView)
       .enter()
@@ -1032,34 +1035,28 @@ function renderMonthDays(
   }
 
   // Expand areas
-  const svgWidth = parseFloat(chartElements.svg.attr('width'));
-  const svgHeight = parseFloat(chartElements.svg.attr('height'));
-  const graphAreaWidth = parseFloat(chartElements.graphArea.attr('width'));
-  const graphAreaHeight = parseFloat(chartElements.graphArea.attr('height'));
-  const totalHeight =
-    7 * cellSize + parseFloat(chartElements.header.attr('height'));
+  const svgWidth = parseFloat(elements.svg.attr('width'));
+  const svgHeight = parseFloat(elements.svg.attr('height'));
+  const graphAreaWidth = parseFloat(elements.graphArea.attr('width'));
+  const graphAreaHeight = parseFloat(elements.graphArea.attr('height'));
+  const totalHeight = 7 * cellSize + parseFloat(elements.header.attr('height'));
   const totalWidth = 7 * cellSize;
   if (totalHeight > svgHeight) {
-    helper.expandArea(chartElements.svg, 0, totalHeight - svgHeight);
+    domUtils.expandArea(elements.svg, 0, totalHeight - svgHeight);
   }
   if (totalWidth > svgWidth) {
-    helper.expandArea(chartElements.svg, totalWidth - svgWidth, 0);
+    domUtils.expandArea(elements.svg, totalWidth - svgWidth, 0);
   }
   if (totalHeight > graphAreaHeight) {
-    helper.expandArea(
-      chartElements.graphArea,
-      0,
-      totalHeight - graphAreaHeight
-    );
+    domUtils.expandArea(elements.graphArea, 0, totalHeight - graphAreaHeight);
   }
   if (totalWidth > graphAreaWidth) {
-    helper.expandArea(chartElements.svg, totalWidth - graphAreaWidth, 0);
+    domUtils.expandArea(elements.svg, totalWidth - graphAreaWidth, 0);
   }
 }
-
 const refresh = (
   canvas: HTMLElement,
-  chartElements: ChartElements,
+  elements: ChartElements,
   renderInfo: RenderInfo,
   monthInfo: MonthInfo,
   curMonthDate: Moment
@@ -1068,68 +1065,10 @@ const refresh = (
   // console.log(renderInfo);
   if (!renderInfo || !renderMonth) return;
 
-  chartElements = createAreas(chartElements, canvas, renderInfo, monthInfo);
+  elements = createAreas(elements, canvas, renderInfo, monthInfo);
 
   // render
-  renderMonthHeader(canvas, chartElements, renderInfo, monthInfo, curMonthDate);
+  renderMonthHeader(canvas, elements, renderInfo, monthInfo, curMonthDate);
 
-  renderMonthDays(canvas, chartElements, renderInfo, monthInfo, curMonthDate);
-};
-
-export const renderMonth = (
-  canvas: HTMLElement,
-  renderInfo: RenderInfo,
-  monthInfo: MonthInfo
-): string => {
-  // console.log("renderMonth");
-  // console.log(renderInfo);
-  // console.log(monthInfo);
-  if (!renderInfo || !renderMonth) return;
-
-  // dataset
-
-  // TODO Why is this here?
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const datasetIds = monthInfo.dataset;
-
-  let numAvailableDataset = 0;
-  for (const dataset of renderInfo.datasets) {
-    if (!dataset.getQuery().usedAsXDataset) {
-      numAvailableDataset++;
-    }
-  }
-  if (numAvailableDataset === 0) {
-    return 'No available dataset found';
-  }
-  toNextDataset(renderInfo, monthInfo);
-  if (monthInfo.selectedDataset === null) {
-    return 'No available dataset found';
-  }
-
-  let chartElements: ChartElements = {};
-  chartElements = createAreas(chartElements, canvas, renderInfo, monthInfo);
-
-  let monthDate: Moment = null;
-  if (monthInfo.initMonth) {
-    monthDate = helper.getDateByDurationToToday(
-      monthInfo.initMonth,
-      renderInfo.dateFormat
-    );
-    if (!monthDate) {
-      const initMonth = window.moment(monthInfo.initMonth, 'YYYY-MM', true);
-      // console.log(initMonth);
-      if (initMonth.isValid()) {
-        monthDate = initMonth;
-      } else {
-        return 'Invalid initMonth';
-      }
-    }
-  } else {
-    monthDate = renderInfo.datasets.getDates().last();
-  }
-  if (!monthDate) return;
-
-  renderMonthHeader(canvas, chartElements, renderInfo, monthInfo, monthDate);
-  renderMonthDays(canvas, chartElements, renderInfo, monthInfo, monthDate);
-  setChartScale(canvas, chartElements, renderInfo);
+  renderMonthDays(canvas, elements, renderInfo, monthInfo, curMonthDate);
 };

@@ -1,10 +1,7 @@
 import * as d3 from 'd3';
-import { RenderInfo, SummaryInfo } from './data';
-import * as expr from './expr';
-
-// TODO ???
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const checkSummaryTemplateValid = (_summaryTemplate: string): boolean => true;
+import { RenderInfo, SummaryInfo } from '../models/data';
+import * as expr from '../resolver/resolver';
+import { checkSummaryTemplateValid } from './helper';
 
 export const renderSummary = (
   canvas: HTMLElement,

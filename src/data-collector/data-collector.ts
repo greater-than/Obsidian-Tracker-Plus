@@ -2,14 +2,13 @@ import { Moment } from 'moment';
 import { CachedMetadata, TFile } from 'obsidian';
 import {
   DataMap,
-  Query,
   QueryValuePair,
-  RenderInfo,
   SearchType,
   ValueType,
   XValueMap,
-} from './data';
-import * as helper from './utils/helper';
+} from 'src/models/types';
+import { Query, RenderInfo } from '../models/data';
+import { CountUtils, DateTimeUtils, NumberUtils, ObjectUtils } from '../utils';
 
 // ref: https://www.rapidtables.com/code/text/unicode-characters.html
 const CurrencyCodes =
@@ -30,14 +29,14 @@ export const getDateFromFilename = (
 
   const fileBaseName = file.basename;
 
-  const dateString = helper.getDateStringFromInputString(
+  const dateString = DateTimeUtils.getDateStringFromInputString(
     fileBaseName,
     renderInfo.dateFormatPrefix,
     renderInfo.dateFormatSuffix
   );
   // console.log(dateString);
 
-  const fileDate = helper.strToDate(dateString, renderInfo.dateFormat);
+  const fileDate = DateTimeUtils.strToDate(dateString, renderInfo.dateFormat);
   // console.log(fileDate);
 
   return fileDate;
@@ -57,18 +56,18 @@ export const getDateFromFrontmatter = (
 
   const frontMatter = fileCache.frontmatter;
   if (frontMatter) {
-    if (helper.deepValue(frontMatter, query.getTarget())) {
-      let strDate = helper.deepValue(frontMatter, query.getTarget());
+    if (ObjectUtils.getDeepValue(frontMatter, query.getTarget())) {
+      let strDate = ObjectUtils.getDeepValue(frontMatter, query.getTarget());
 
       // We only support single value for now
       if (typeof strDate === 'string') {
-        strDate = helper.getDateStringFromInputString(
+        strDate = DateTimeUtils.getDateStringFromInputString(
           strDate,
           renderInfo.dateFormatPrefix,
           renderInfo.dateFormatSuffix
         );
 
-        date = helper.strToDate(strDate, renderInfo.dateFormat);
+        date = DateTimeUtils.strToDate(strDate, renderInfo.dateFormat);
         // console.log(date);
       }
     }
@@ -77,14 +76,20 @@ export const getDateFromFrontmatter = (
   return date;
 };
 
-// helper function
-// strRegex must have name group 'value'
-// Named group 'value' could be provided from users or plugin
-function extractDateUsingRegexWithValue(
+/**
+ * Helper function
+ * - strRegex must have name group 'value'
+ * - Named group 'value' could be provided from users or plugin
+ * @param {string} text
+ * @param {string} strRegex
+ * @param {RenderInfo} renderInfo
+ * @returns {Moment}
+ */
+const extractDateUsingRegexWithValue = (
   text: string,
   strRegex: string,
   renderInfo: RenderInfo
-): Moment {
+): Moment => {
   let date = window.moment('');
 
   const regex = new RegExp(strRegex, 'gm');
@@ -99,21 +104,20 @@ function extractDateUsingRegexWithValue(
       let strDate = match.groups.value.trim();
       // console.log(strDate);
 
-      strDate = helper.getDateStringFromInputString(
+      strDate = DateTimeUtils.getDateStringFromInputString(
         strDate,
         renderInfo.dateFormatPrefix,
         renderInfo.dateFormatSuffix
       );
 
-      date = helper.strToDate(strDate, renderInfo.dateFormat);
+      date = DateTimeUtils.strToDate(strDate, renderInfo.dateFormat);
       if (date.isValid()) {
         return date;
       }
     }
   }
-
   return date;
-}
+};
 
 // Not support multiple targets
 // In form 'key: value', name group 'value' from plugin, not from users
@@ -268,10 +272,10 @@ export const getDateFromFileMeta = (
     const target = query.getTarget();
     if (target === 'cDate') {
       const ctime = file.stat.ctime; // unix time
-      date = helper.getDateFromUnixTime(ctime, renderInfo.dateFormat);
+      date = DateTimeUtils.getDateFromUnixTime(ctime, renderInfo.dateFormat);
     } else if (target === 'mDate') {
       const mtime = file.stat.mtime; // unix time
-      date = helper.getDateFromUnixTime(mtime, renderInfo.dateFormat);
+      date = DateTimeUtils.getDateFromUnixTime(mtime, renderInfo.dateFormat);
     } else if (target === 'name') {
       date = getDateFromFilename(file, renderInfo);
     }
@@ -328,10 +332,19 @@ export const addToDataMap = (
   }
 };
 
-// Helper function
-// Accept multiple values using custom separators
-// regex with value --> extract value
-// regex without value --> count occurrences
+/**
+ * Helper function
+ * - Accept multiple values using custom separators
+ * - regex with value --> extract value
+ * - regex without value --> count occurrences
+ * @param {string} text
+ * @param {string} strRegex
+ * @param {Query} query
+ * @param {DataMap} dataMap
+ * @param {XValueMap} xValueMap
+ * @param {RenderInfo} renderInfo
+ * @returns {boolean}
+ */
 const extractDataUsingRegexWithMultipleValues = (
   text: string,
   strRegex: string,
@@ -363,7 +376,7 @@ const extractDataUsingRegexWithMultipleValues = (
           // console.log("single-value");
           const toParse = splitted[0].trim();
           // console.log(toParse);
-          const retParse = helper.parseFloatFromAny(
+          const retParse = NumberUtils.parseFloatFromAny(
             toParse,
             renderInfo.textValueMap
           );
@@ -390,7 +403,7 @@ const extractDataUsingRegexWithMultipleValues = (
         ) {
           // console.log("multiple-values");
           const toParse = splitted[query.getAccessor()].trim();
-          const retParse = helper.parseFloatFromAny(
+          const retParse = NumberUtils.parseFloatFromAny(
             toParse,
             renderInfo.textValueMap
           );
@@ -511,10 +524,10 @@ export const collectDataFromFrontmatterKey = (
   if (frontMatter) {
     // console.log(frontMatter);
     // console.log(query.getTarget());
-    const deepValue = helper.deepValue(frontMatter, query.getTarget());
+    const deepValue = ObjectUtils.getDeepValue(frontMatter, query.getTarget());
     // console.log(deepValue);
     if (deepValue) {
-      const retParse = helper.parseFloatFromAny(
+      const retParse = NumberUtils.parseFloatFromAny(
         deepValue,
         renderInfo.textValueMap
       );
@@ -537,7 +550,7 @@ export const collectDataFromFrontmatterKey = (
       }
     } else if (
       query.getParentTarget() &&
-      helper.deepValue(frontMatter, query.getParentTarget())
+      ObjectUtils.getDeepValue(frontMatter, query.getParentTarget())
     ) {
       // console.log("multiple values");
       // console.log(query.getTarget());
@@ -546,7 +559,10 @@ export const collectDataFromFrontmatterKey = (
       // console.log(
       //     frontMatter[query.getParentTarget()]
       // );
-      const toParse = helper.deepValue(frontMatter, query.getParentTarget());
+      const toParse = ObjectUtils.getDeepValue(
+        frontMatter,
+        query.getParentTarget()
+      );
       let splitted = null;
       if (Array.isArray(toParse)) {
         splitted = toParse.map((p) => {
@@ -563,7 +579,7 @@ export const collectDataFromFrontmatterKey = (
       ) {
         // TODO: it's not efficient to retrieve one value at a time, enhance this
         const splittedPart = splitted[query.getAccessor()].trim();
-        const retParse = helper.parseFloatFromAny(
+        const retParse = NumberUtils.parseFloatFromAny(
           splittedPart,
           renderInfo.textValueMap
         );
@@ -732,23 +748,23 @@ export const collectDataFromFileMeta = (
       addToDataMap(dataMap, xValue, query, size);
       return true;
     } else if (target === 'numWords') {
-      const numWords = helper.getWordCount(content);
+      const numWords = CountUtils.getWordCount(content);
       addToDataMap(dataMap, xValue, query, numWords);
       return true;
     } else if (target === 'numChars') {
-      const numChars = helper.getCharacterCount(content);
+      const numChars = CountUtils.getCharacterCount(content);
       query.addNumTargets();
       addToDataMap(dataMap, xValue, query, numChars);
       return true;
     } else if (target === 'numSentences') {
-      const numSentences = helper.getSentenceCount(content);
+      const numSentences = CountUtils.getSentenceCount(content);
       query.addNumTargets();
       addToDataMap(dataMap, xValue, query, numSentences);
       return true;
     } else if (target === 'name') {
       let targetMeasure = 0.0;
       let targetExist = false;
-      const retParse = helper.parseFloatFromAny(
+      const retParse = NumberUtils.parseFloatFromAny(
         file.basename,
         renderInfo.textValueMap
       );

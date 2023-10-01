@@ -10,27 +10,31 @@ import {
   TFile,
   TFolder,
 } from 'obsidian';
-import * as collecting from './collecting';
+import * as collecting from './data-collector/data-collector';
 import {
   CollectingProcessInfo,
-  DataMap,
   Datasets,
+  RenderInfo,
+  TableData,
+} from './models/data';
+import {
+  DataMap,
   GraphType,
   QueryValuePair,
-  RenderInfo,
   SearchType,
-  TableData,
   ValueType,
   XValueMap,
-} from './data';
-import { getRenderInfoFromYaml } from './parsing';
-import * as rendering from './rendering';
+} from './models/types';
+import { getRenderInfoFromYaml } from './parser/yaml-parser';
+import * as rendering from './renderer/rendering';
 import {
   DEFAULT_SETTINGS,
   TrackerSettings,
   TrackerSettingTab,
 } from './settings';
-import * as helper from './utils/helper';
+import * as dateTimeUtils from './utils/date-time.utils';
+import * as numberUtils from './utils/number.utils';
+import * as stringUtils from './utils/string.utils';
 // import { getDailyNoteSettings } from "obsidian-daily-notes-interface";
 
 declare global {
@@ -232,7 +236,7 @@ export default class Tracker extends Plugin {
                       typeof match.groups.value !== 'undefined'
                     ) {
                       // must have group name 'value'
-                      const retParse = helper.parseFloatFromAny(
+                      const retParse = numberUtils.parseFloatFromAny(
                         match.groups.value.trim(),
                         renderInfo.textValueMap
                       );
@@ -449,7 +453,7 @@ export default class Tracker extends Plugin {
             processInfo.gotAnyValidXValue ||= true;
             xValueMap.set(
               xDatasetId,
-              helper.dateToStr(xDate, renderInfo.dateFormat)
+              dateTimeUtils.dateToStr(xDate, renderInfo.dateFormat)
             );
             processInfo.fileAvailable++;
 
@@ -690,9 +694,11 @@ export default class Tracker extends Plugin {
         // console.log(curDate);
 
         // dataMap --> {date: [query: value, ...]}
-        if (dataMap.has(helper.dateToStr(curDate, renderInfo.dateFormat))) {
+        if (
+          dataMap.has(dateTimeUtils.dateToStr(curDate, renderInfo.dateFormat))
+        ) {
           const queryValuePairs = dataMap
-            .get(helper.dateToStr(curDate, renderInfo.dateFormat))
+            .get(dateTimeUtils.dateToStr(curDate, renderInfo.dateFormat))
             .filter((pair: QueryValuePair) => {
               return pair.query.equalTo(query);
             });
@@ -808,10 +814,10 @@ export default class Tracker extends Plugin {
         // Test this in Regex101
         // This is a not-so-strict table selector
         // ((\r?\n){2}|^)([^\r\n]*\|[^\r\n]*(\r?\n)?)+(?=(\r?\n){2}|$)
-        const strMDTableRegex =
+        const strMdTableRegex =
           '((\\r?\\n){2}|^)([^\\r\\n]*\\|[^\\r\\n]*(\\r?\\n)?)+(?=(\\r?\\n){2}|$)';
         // console.log(strMDTableRegex);
-        const mdTableRegex = new RegExp(strMDTableRegex, 'gm');
+        const mdTableRegex = new RegExp(strMdTableRegex, 'gm');
         let match;
         let indTable = 0;
 
@@ -841,12 +847,12 @@ export default class Tracker extends Plugin {
       if (tableLines.length >= 2) {
         // Must have header and separator line
         let headerLine = tableLines.shift().trim();
-        headerLine = helper.trimByChar(headerLine, '|');
+        headerLine = stringUtils.trimByChar(headerLine, '|');
         const headerSplitted = headerLine.split('|');
         numColumns = headerSplitted.length;
 
         let sepLine = tableLines.shift().trim();
-        sepLine = helper.trimByChar(sepLine, '|');
+        sepLine = stringUtils.trimByChar(sepLine, '|');
         const sepLineSplitted = sepLine.split('|');
         for (const col of sepLineSplitted) {
           if (!col.includes('-')) {
@@ -866,11 +872,11 @@ export default class Tracker extends Plugin {
 
       let indLine = 0;
       for (const tableLine of tableLines) {
-        const dataRow = helper.trimByChar(tableLine.trim(), '|');
+        const dataRow = stringUtils.trimByChar(tableLine.trim(), '|');
         const dataRowSplitted = dataRow.split('|');
         if (columnXDataset < dataRowSplitted.length) {
           const data = dataRowSplitted[columnXDataset].trim();
-          const date = helper.strToDate(data, renderInfo.dateFormat);
+          const date = dateTimeUtils.strToDate(data, renderInfo.dateFormat);
 
           if (date.isValid()) {
             xValues.push(date);
@@ -921,7 +927,7 @@ export default class Tracker extends Plugin {
 
         let indLine = 0;
         for (const tableLine of tableLines) {
-          const dataRow = helper.trimByChar(tableLine.trim(), '|');
+          const dataRow = stringUtils.trimByChar(tableLine.trim(), '|');
           const dataRowSplitted = dataRow.split('|');
           if (columnOfInterest < dataRowSplitted.length) {
             const data = dataRowSplitted[columnOfInterest].trim();
@@ -929,7 +935,7 @@ export default class Tracker extends Plugin {
             // console.log(splitted);
             if (!splitted) continue;
             if (splitted.length === 1) {
-              const retParse = helper.parseFloatFromAny(
+              const retParse = numberUtils.parseFloatFromAny(
                 splitted[0],
                 renderInfo.textValueMap
               );
@@ -943,7 +949,10 @@ export default class Tracker extends Plugin {
                   processInfo.gotAnyValidYValue ||= true;
                   collecting.addToDataMap(
                     dataMap,
-                    helper.dateToStr(xValues[indLine], renderInfo.dateFormat),
+                    dateTimeUtils.dateToStr(
+                      xValues[indLine],
+                      renderInfo.dateFormat
+                    ),
                     yDatasetQuery,
                     value
                   );
@@ -957,7 +966,7 @@ export default class Tracker extends Plugin {
               const splittedPart =
                 splitted[yDatasetQuery.getAccessor(2)].trim();
               // console.log(splittedPart);
-              const retParse = helper.parseFloatFromAny(
+              const retParse = numberUtils.parseFloatFromAny(
                 splittedPart,
                 renderInfo.textValueMap
               );
@@ -971,7 +980,10 @@ export default class Tracker extends Plugin {
                   processInfo.gotAnyValidYValue ||= true;
                   collecting.addToDataMap(
                     dataMap,
-                    helper.dateToStr(xValues[indLine], renderInfo.dateFormat),
+                    dateTimeUtils.dateToStr(
+                      xValues[indLine],
+                      renderInfo.dateFormat
+                    ),
                     yDatasetQuery,
                     value
                   );

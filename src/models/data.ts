@@ -1,45 +1,12 @@
 import { Moment } from 'moment';
-
-export enum SearchType {
-  Tag,
-  Frontmatter,
-  Wiki,
-  WikiLink,
-  WikiDisplay,
-  Text,
-  dvField,
-  Table,
-  FileMeta,
-  Task,
-  TaskDone,
-  TaskNotDone,
-}
-
-export enum GraphType {
-  Line,
-  Bar,
-  Pie,
-  Radar,
-  Summary,
-  Table,
-  Month,
-  Heatmap,
-  Bullet,
-  Unknown,
-}
-
-export enum ValueType {
-  Number,
-  Int,
-  Date,
-  Time,
-  DateTime,
-  String,
-}
-
-export type TextValueMap = {
-  [key: string]: number;
-};
+import {
+  GraphType,
+  IGraph,
+  ILegend,
+  SearchType,
+  TextValueMap,
+  ValueType,
+} from './types';
 
 export class DataPoint {
   date: Moment;
@@ -181,11 +148,6 @@ export class Query {
   public getNumTargets() {
     return this.numTargets;
   }
-}
-
-export interface QueryValuePair {
-  query: Query;
-  value: number;
 }
 
 export class Dataset implements IterableIterator<DataPoint> {
@@ -654,18 +616,6 @@ export class CustomDatasetInfo {
   }
 }
 
-export interface IGraph {
-  GetGraphType(): GraphType;
-}
-
-export interface ILegend {
-  showLegend: boolean;
-  legendPosition: string;
-  legendOrientation: string;
-  legendBgColor: string;
-  legendBorderColor: string;
-}
-
 export class CommonChartInfo implements IGraph, ILegend {
   title: string;
   xAxisLabel: string;
@@ -1018,11 +968,6 @@ export class Transform {
   }
 }
 
-export type ChartElements = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-};
-
 export class TableData {
   filePath: string;
   tableIndex: number;
@@ -1060,6 +1005,3 @@ export class CollectingProcessInfo {
     this.gotAnyValidYValue = false;
   }
 }
-
-export type XValueMap = Map<number, string>;
-export type DataMap = Map<string, Array<QueryValuePair>>;

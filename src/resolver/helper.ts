@@ -1,49 +1,39 @@
 import * as d3 from 'd3';
 import jsep from 'jsep';
 import { Moment } from 'moment';
-import { sprintf } from 'sprintf-js';
-import { Dataset, RenderInfo } from './data';
-import * as helper from './utils/helper';
+import { Dataset, RenderInfo } from '../models/data';
 
 // Function accept datasetId as first argument
 type FnDatasetToValue = (
   dataset: Dataset,
   renderInfo: RenderInfo
 ) => number | Moment | string;
-
 type FnDatasetToDataset = (
   dataset: Dataset,
   args: Array<number | Dataset>,
   renderInfo: RenderInfo
 ) => Dataset | string;
-
 type FnUnaryOp = (
   u: number | Moment | Dataset
 ) => number | Moment | Dataset | string;
-
 type FnBinaryOp = (
   l: number | Moment | Dataset,
   r: number | Moment | Dataset
 ) => number | Moment | Dataset | string;
-
 interface FnMapDatasetToValue {
   [key: string]: FnDatasetToValue;
 }
-
 interface FnMapDatasetToDataset {
   [key: string]: FnDatasetToDataset;
 }
-
 interface FnMapBinaryOp {
   [key: string]: FnBinaryOp;
 }
-
 interface FnMapUnaryOp {
   [key: string]: FnUnaryOp;
 }
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const checkDivisor = (divisor: any): boolean => {
+export const checkDivisor = (divisor: any): boolean => {
   // console.log("checking divisor");
   if (typeof divisor === 'number') {
     if (divisor === 0) return false;
@@ -60,7 +50,7 @@ const checkDivisor = (divisor: any): boolean => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const checkBinaryOperantType = (left: any, right: any): string => {
+export const checkBinaryOperantType = (left: any, right: any): string => {
   if (typeof left === 'string') return left;
   if (typeof right === 'string') return right;
   if (
@@ -80,7 +70,7 @@ const checkBinaryOperantType = (left: any, right: any): string => {
   return '';
 };
 
-const mapDatasetToValue: FnMapDatasetToValue = {
+export const mapDatasetToValue: FnMapDatasetToValue = {
   // min value of a dataset
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   min: (dataset, _renderInfo) => {
@@ -482,7 +472,7 @@ const mapDatasetToValue: FnMapDatasetToValue = {
   variance: (dataset, _renderInfo): number => d3.variance(dataset.getValues()),
 };
 
-const fnMapUnaryOp: FnMapUnaryOp = {
+export const mapUnaryOp: FnMapUnaryOp = {
   '-': (u): number | Dataset | string => {
     if (typeof u === 'number') {
       return -1 * u;
@@ -509,7 +499,7 @@ const fnMapUnaryOp: FnMapUnaryOp = {
   },
 };
 
-const fnMapBinaryOp: FnMapBinaryOp = {
+export const mapBinaryOp: FnMapBinaryOp = {
   '+': (l, r): number | Dataset | string => {
     if (typeof l === 'number' && typeof r === 'number') {
       // return number
@@ -732,7 +722,7 @@ const fnMapBinaryOp: FnMapBinaryOp = {
   },
 };
 
-const fnMapDatasetToDataset: FnMapDatasetToDataset = {
+export const mapDatasetToDataset: FnMapDatasetToDataset = {
   // min value of a dataset
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   normalize: (dataset, _args, _renderInfo): Dataset | string => {
@@ -775,17 +765,21 @@ const fnMapDatasetToDataset: FnMapDatasetToDataset = {
   },
 };
 
-const getDatasetById = (datasetId: number, renderInfo: RenderInfo): Dataset =>
-  renderInfo.datasets.getDatasetById(datasetId);
+export const getDatasetById = (
+  datasetId: number,
+  renderInfo: RenderInfo
+): Dataset => renderInfo.datasets.getDatasetById(datasetId);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const evaluateArray = (arr: any, renderInfo: RenderInfo): any =>
+export const evaluateArray = (arr: any, renderInfo: RenderInfo): any =>
   arr.map((expr: jsep.Expression) => evaluate(expr, renderInfo));
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const evaluate = (expr: jsep.Expression, renderInfo: RenderInfo): any => {
+export const evaluate = (
+  expr: jsep.Expression,
+  renderInfo: RenderInfo
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any => {
   // console.log(expr);
-
   switch (expr.type) {
     case 'Literal':
       const literalExpr = expr as jsep.Literal;
@@ -796,7 +790,7 @@ const evaluate = (expr: jsep.Expression, renderInfo: RenderInfo): any => {
       const identifierName = identifierExpr.name;
       if (identifierName in mapDatasetToValue) {
         return `Error: deprecated template variable '${identifierName}', use '${identifierName}()' instead`;
-      } else if (identifierName in fnMapDatasetToDataset) {
+      } else if (identifierName in mapDatasetToDataset) {
         return `Error: deprecated template variable '${identifierName}', use '${identifierName}()' instead`;
       }
       return `Error: unknown function name '${identifierName}'`;
@@ -807,7 +801,7 @@ const evaluate = (expr: jsep.Expression, renderInfo: RenderInfo): any => {
       if (typeof retUnaryArg === 'string') {
         return retUnaryArg;
       }
-      return fnMapUnaryOp[unaryExpr.operator](retUnaryArg);
+      return mapUnaryOp[unaryExpr.operator](retUnaryArg);
 
     case 'BinaryExpression':
       const binaryExpr = expr as jsep.BinaryExpression;
@@ -817,7 +811,7 @@ const evaluate = (expr: jsep.Expression, renderInfo: RenderInfo): any => {
       if (typeof retCheck === 'string' && retCheck.startsWith('Error:')) {
         return retCheck;
       }
-      return fnMapBinaryOp[binaryExpr.operator](leftValue, rightValue);
+      return mapBinaryOp[binaryExpr.operator](leftValue, rightValue);
 
     case 'CallExpression':
       const callExpr = expr as jsep.CallExpression;
@@ -845,6 +839,7 @@ const evaluate = (expr: jsep.Expression, renderInfo: RenderInfo): any => {
           return dataset;
         }
       }
+
       // fnDataset accept only one arg in number or Dataset
       else if (fnName in mapDatasetToValue) {
         if (evaluatedArgs.length === 0) {
@@ -871,12 +866,12 @@ const evaluate = (expr: jsep.Expression, renderInfo: RenderInfo): any => {
           }
         }
         return `Error: Too many arguments for function ${fnName}`;
-      } else if (fnName in fnMapDatasetToDataset) {
+      } else if (fnName in mapDatasetToDataset) {
         if (evaluatedArgs.length === 1) {
           if (typeof evaluatedArgs[0] === 'string') return evaluatedArgs[0]; // error message
           if (evaluatedArgs[0] instanceof Dataset) {
             const dataset = evaluatedArgs[0];
-            return fnMapDatasetToDataset[fnName](dataset, null, renderInfo);
+            return mapDatasetToDataset[fnName](dataset, null, renderInfo);
           } else {
             return `Error: function ${fnName} only accept Dataset`;
           }
@@ -886,7 +881,7 @@ const evaluate = (expr: jsep.Expression, renderInfo: RenderInfo): any => {
           }
           if (evaluatedArgs[0] instanceof Dataset) {
             const dataset = evaluatedArgs[0];
-            return fnMapDatasetToDataset[fnName](
+            return mapDatasetToDataset[fnName](
               dataset,
               // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
               evaluatedArgs.filter((_value: any, index: number, _arr: any) => {
@@ -905,19 +900,18 @@ const evaluate = (expr: jsep.Expression, renderInfo: RenderInfo): any => {
   return 'Error: unknown expression';
 };
 
-interface ExprResolved {
+export interface ExprResolved {
   source: string;
   value: number | Moment;
   format: string;
 }
 
 // Get a list of resolved result containing source, value, and format
-const resolve = (
+export const resolve = (
   text: string,
   renderInfo: RenderInfo
 ): Array<ExprResolved> | string => {
   // console.log(text);
-
   const exprMap: Array<ExprResolved> = [];
 
   // {{(?<expr>[\w+\-*\/0-9\s()\[\]%.]+)(::(?<format>[\w+\-*\/0-9\s()\[\]%.:]+))?}}
@@ -944,7 +938,6 @@ const resolve = (
           return 'Error: failed to parse expression';
         }
         // console.log(ast);
-
         const value = evaluate(ast, renderInfo);
         if (typeof value === 'string') {
           return value; // error message
@@ -965,72 +958,5 @@ const resolve = (
       }
     }
   }
-
   return exprMap;
-};
-
-// Resolve the template expression in string and return a resolved string
-export const resolveTemplate = (
-  template: string,
-  renderInfo: RenderInfo
-): string => {
-  const retResolve = resolve(template, renderInfo);
-  if (typeof retResolve === 'string') {
-    return retResolve; // error message
-  }
-  const exprMap = retResolve as Array<ExprResolved>;
-
-  for (const exprResolved of exprMap) {
-    const source = exprResolved.source;
-    const value = exprResolved.value;
-    const format = exprResolved.format;
-    let strValue = '';
-    if (typeof value === 'number') {
-      if (format) {
-        strValue = sprintf('%' + format, value);
-      } else {
-        strValue = value.toFixed(1);
-      }
-    } else if (window.moment.isMoment(value)) {
-      if (format) {
-        strValue = helper.dateToStr(value, format);
-      } else {
-        strValue = helper.dateToStr(value, renderInfo.dateFormat);
-      }
-    }
-
-    if (strValue) {
-      // console.log(exprResolved);
-      template = template.split(source).join(strValue);
-    }
-  }
-
-  return template;
-};
-
-// Resolve the template expression in string and return a number or date
-export const resolveValue = (
-  text: string,
-  renderInfo: RenderInfo
-): number | Moment | string => {
-  // console.log(template);
-  text = text.trim();
-
-  // input is pure number
-  if (/^([\-]?[0-9]+[\.][0-9]+|[\-]?[0-9]+)$/.test(text)) {
-    return parseFloat(text);
-  }
-
-  // template
-  const retResolve = resolve(text, renderInfo);
-  if (typeof retResolve === 'string') {
-    return retResolve; // error message
-  }
-  const exprMap = retResolve as Array<ExprResolved>;
-
-  if (exprMap.length > 0) {
-    return exprMap[0].value; // only first value will be return
-  }
-
-  return 'Error: failed to resolve values';
 };
