@@ -1,11 +1,9 @@
 import * as d3 from 'd3';
 import { Moment } from 'moment';
-import { ChartElements, ValueType } from 'src/models/types';
-import * as dateTimeUtils from 'src/utils/date-time.utils';
-import * as domUtils from 'src/utils/dom.utils';
-import * as stringUtils from 'src/utils/string.utils';
-import { MonthInfo, RenderInfo } from '../models/data';
-import { renderMonth } from './renderer';
+import { ValueType } from 'src/models/enums';
+import { MonthInfo, RenderInfo } from '../../models/data';
+import { ChartElements } from '../../models/types';
+import { DateTimeUtils, DomUtils, StringUtils } from '../../utils';
 
 let logToConsole = false;
 const RATIO_CELL_TO_TEXT = 2.8;
@@ -24,6 +22,7 @@ interface DayInfo {
   streakOut: boolean;
   annotation: string;
 }
+
 export const setChartScale = (
   _canvas: HTMLElement,
   elements: ChartElements,
@@ -49,6 +48,7 @@ export const setChartScale = (
     );
   }
 };
+
 export const toNextDataset = (
   renderInfo: RenderInfo,
   monthInfo: MonthInfo
@@ -100,6 +100,7 @@ export const toNextDataset = (
 
   return false;
 };
+
 export const createAreas = (
   elements: ChartElements,
   canvas: HTMLElement,
@@ -156,7 +157,11 @@ export const createAreas = (
 
   return elements;
 };
-const clearSelection = (elements: ChartElements, monthInfo: MonthInfo) => {
+
+export const clearSelection = (
+  elements: ChartElements,
+  monthInfo: MonthInfo
+) => {
   const circles = elements.svg.selectAll('circle');
   // console.log(circles);
   for (const circle of circles) {
@@ -171,6 +176,7 @@ const clearSelection = (elements: ChartElements, monthInfo: MonthInfo) => {
 
   elements.monitor.text('');
 };
+
 export const renderMonthHeader = (
   canvas: HTMLElement,
   elements: ChartElements,
@@ -197,7 +203,7 @@ export const renderMonthHeader = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const curYear = curMonthDate.year();
 
-  const maxDayTextSize = stringUtils.measureTextSize(
+  const maxDayTextSize = StringUtils.measureTextSize(
     '30',
     'tracker-month-label'
   );
@@ -210,11 +216,11 @@ export const renderMonthHeader = (
 
   const headerYearText = curMonthDate.format('YYYY');
   const headerMonthText = curMonthDate.format('MMM');
-  const headerYearSize = stringUtils.measureTextSize(
+  const headerYearSize = StringUtils.measureTextSize(
     headerYearText,
     'tracker-month-header-year'
   );
-  const headerMonthSize = stringUtils.measureTextSize(
+  const headerMonthSize = StringUtils.measureTextSize(
     headerMonthText,
     'tracker-month-header-month'
   );
@@ -290,7 +296,7 @@ export const renderMonthHeader = (
   headerHeight += headerYearSize.height;
 
   // dataset rotator
-  const datasetNameSize = stringUtils.measureTextSize(
+  const datasetNameSize = StringUtils.measureTextSize(
     datasetName,
     'tracker-month-title-rotator'
   );
@@ -321,7 +327,7 @@ export const renderMonthHeader = (
   }
 
   // value monitor
-  const monitorTextSize = stringUtils.measureTextSize(
+  const monitorTextSize = StringUtils.measureTextSize(
     '0.0000',
     'tracker-month-title-monitor'
   );
@@ -343,7 +349,7 @@ export const renderMonthHeader = (
   elements['monitor'] = monitor;
 
   // arrow left
-  const arrowSize = stringUtils.measureTextSize(
+  const arrowSize = StringUtils.measureTextSize(
     '<',
     'tracker-month-title-arrow'
   );
@@ -413,7 +419,7 @@ export const renderMonthHeader = (
       // console.log("today arrow clicked");
       clearSelection(elements, monthInfo);
 
-      const todayDate = dateTimeUtils.getDateToday(renderInfo.dateFormat);
+      const todayDate = DateTimeUtils.getDateToday(renderInfo.dateFormat);
       refresh(canvas, elements, renderInfo, monthInfo, todayDate);
     })
     .style('cursor', 'pointer');
@@ -425,7 +431,7 @@ export const renderMonthHeader = (
   if (monthInfo.startWeekOn.toLowerCase() === 'mon') {
     weekdayNames.push(weekdayNames.shift());
   }
-  const weekdayNameSize = stringUtils.measureTextSize(
+  const weekdayNameSize = StringUtils.measureTextSize(
     weekdayNames[0],
     'tracker-month-weekday'
   );
@@ -482,8 +488,9 @@ export const renderMonthHeader = (
   elements['header'] = headerGroup;
 
   // Move sibling areas
-  domUtils.moveArea(elements.dataArea, 0, headerHeight);
+  DomUtils.moveArea(elements.dataArea, 0, headerHeight);
 };
+
 export function renderMonthDays(
   _canvas: HTMLElement,
   elements: ChartElements,
@@ -519,7 +526,7 @@ export function renderMonthDays(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const curDaysInMonth = curMonthDate.daysInMonth(); // 28~31
 
-  const maxDayTextSize = stringUtils.measureTextSize(
+  const maxDayTextSize = StringUtils.measureTextSize(
     '30',
     'tracker-month-label'
   );
@@ -579,8 +586,8 @@ export function renderMonthDays(
   ) {
     // not sure why we need to do this to stabilize the date
     // sometimes, curValue is wrong without doing this
-    curDate = dateTimeUtils.strToDate(
-      dateTimeUtils.dateToStr(curDate, renderInfo.dateFormat),
+    curDate = DateTimeUtils.strToDate(
+      DateTimeUtils.dateToStr(curDate, renderInfo.dateFormat),
       renderInfo.dateFormat
     );
     if (curDate.format('YYYY-MM-DD') === '2021-09-13') {
@@ -617,7 +624,7 @@ export function renderMonthDays(
     const curValue = dataset.getValue(curDate);
     if (logToConsole) {
       console.log(dataset);
-      console.log(dateTimeUtils.dateToStr(curDate, renderInfo.dateFormat));
+      console.log(DateTimeUtils.dateToStr(curDate, renderInfo.dateFormat));
       console.log(curValue);
     }
 
@@ -703,7 +710,7 @@ export function renderMonthDays(
     }
 
     daysInMonthView.push({
-      date: dateTimeUtils.dateToStr(curDate, renderInfo.dateFormat),
+      date: DateTimeUtils.dateToStr(curDate, renderInfo.dateFormat),
       value: curValue,
       scaledValue: scaledValue,
       dayInMonth: curDate.date(),
@@ -899,7 +906,7 @@ export function renderMonthDays(
   }
 
   // today rings
-  const today = dateTimeUtils.dateToStr(window.moment(), renderInfo.dateFormat);
+  const today = DateTimeUtils.dateToStr(window.moment(), renderInfo.dateFormat);
   if (mode === 'circle' && monthInfo.showTodayRing) {
     const todayRings = elements.dataArea
       .selectAll('todayRing')
@@ -1042,19 +1049,20 @@ export function renderMonthDays(
   const totalHeight = 7 * cellSize + parseFloat(elements.header.attr('height'));
   const totalWidth = 7 * cellSize;
   if (totalHeight > svgHeight) {
-    domUtils.expandArea(elements.svg, 0, totalHeight - svgHeight);
+    DomUtils.expandArea(elements.svg, 0, totalHeight - svgHeight);
   }
   if (totalWidth > svgWidth) {
-    domUtils.expandArea(elements.svg, totalWidth - svgWidth, 0);
+    DomUtils.expandArea(elements.svg, totalWidth - svgWidth, 0);
   }
   if (totalHeight > graphAreaHeight) {
-    domUtils.expandArea(elements.graphArea, 0, totalHeight - graphAreaHeight);
+    DomUtils.expandArea(elements.graphArea, 0, totalHeight - graphAreaHeight);
   }
   if (totalWidth > graphAreaWidth) {
-    domUtils.expandArea(elements.svg, totalWidth - graphAreaWidth, 0);
+    DomUtils.expandArea(elements.svg, totalWidth - graphAreaWidth, 0);
   }
 }
-const refresh = (
+
+export const refresh = (
   canvas: HTMLElement,
   elements: ChartElements,
   renderInfo: RenderInfo,
@@ -1063,12 +1071,11 @@ const refresh = (
 ): void => {
   // console.log("refresh");
   // console.log(renderInfo);
-  if (!renderInfo || !renderMonth) return;
+  if (!renderInfo) return;
 
   elements = createAreas(elements, canvas, renderInfo, monthInfo);
 
   // render
   renderMonthHeader(canvas, elements, renderInfo, monthInfo, curMonthDate);
-
   renderMonthDays(canvas, elements, renderInfo, monthInfo, curMonthDate);
 };

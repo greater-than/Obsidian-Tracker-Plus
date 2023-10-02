@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
-import { RenderInfo, SummaryInfo } from '../models/data';
-import * as expr from '../resolver/resolver';
+import { RenderInfo, SummaryInfo } from '../../models/data';
+import * as Resolver from '../../resolver/resolver';
 import { checkSummaryTemplateValid } from './helper';
 
 export const renderSummary = (
@@ -20,7 +20,10 @@ export const renderSummary = (
     return 'Invalid summary template';
   }
 
-  const retResolvedTemplate = expr.resolveTemplate(outputSummary, renderInfo);
+  const retResolvedTemplate = Resolver.resolveTemplate(
+    outputSummary,
+    renderInfo
+  );
   // console.log(retResolvedTemplate);
   if (retResolvedTemplate.startsWith('Error:')) {
     return retResolvedTemplate;

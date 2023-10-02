@@ -1,12 +1,6 @@
 import { Moment } from 'moment';
-import {
-  GraphType,
-  IGraph,
-  ILegend,
-  SearchType,
-  TextValueMap,
-  ValueType,
-} from './types';
+import { GraphType, SearchType, ValueType } from './enums';
+import { IGraph, ILegend, IQuery, TextValueMap } from './types';
 
 export class DataPoint {
   date: Moment;
@@ -18,39 +12,62 @@ export class DataPoint {
   }
 }
 
-export class Query {
-  private type: SearchType | null;
-  private target: string;
-  private parentTarget: string | null;
-  private separator: string; // multiple value separator
-  private id: number;
-  private accessor: number;
-  private accessor1: number;
-  private accessor2: number;
-  private numTargets: number;
+export class Query implements IQuery {
+  private _parentTarget: string | null;
+  private _separator: string; // multiple value separator
+  readonly accessors: number[];
+  private _numTargets: number;
 
-  valueType: ValueType;
-  usedAsXDataset: boolean;
+  _valueType: ValueType;
+  _usedAsXDataset: boolean;
 
-  constructor(id: number, searchType: SearchType, searchTarget: string) {
-    this.type = searchType;
-    this.target = searchTarget;
-    this.separator = ''; // separator to separate multiple values
-    this.id = id;
-    this.accessor = -1;
-    this.accessor1 = -1;
-    this.accessor2 = -1;
-    this.valueType = ValueType.Number;
-    this.usedAsXDataset = false;
-    this.numTargets = 0;
+  get usedAsXDataset() {
+    return this._usedAsXDataset;
+  }
 
-    if (searchType === SearchType.Table) {
+  set usedAsXDataset(val: boolean) {
+    this._usedAsXDataset = val;
+  }
+
+  get valueType() {
+    return this._valueType;
+  }
+
+  set valueType(val: ValueType) {
+    this._valueType = val;
+  }
+
+  get numTargets() {
+    return this._numTargets;
+  }
+
+  get separator() {
+    return this._separator;
+  }
+
+  get parentTarget() {
+    return this._parentTarget;
+  }
+
+  // TODO move code out of constructor
+  constructor(
+    readonly id: number,
+    readonly type: SearchType,
+    readonly target: string
+  ) {
+    this._separator = ''; // separator to separate multiple values
+    this._valueType = ValueType.Number;
+    this._usedAsXDataset = false;
+    this._numTargets = 0;
+    this.accessors = [-1, -1, -1];
+
+    if (type === SearchType.Table) {
       // searchTarget --> {{filePath}}[{{table}}][{{column}}]
       const strRegex =
         '\\[(?<accessor>[0-9]+)\\]\\[(?<accessor1>[0-9]+)\\](\\[(?<accessor2>[0-9]+)\\])?';
       const regex = new RegExp(strRegex, 'gm');
       let match;
-      while ((match = regex.exec(searchTarget))) {
+      while ((match = regex.exec(target))) {
         if (typeof match.groups.accessor !== 'undefined') {
           const accessor = parseFloat(match.groups.accessor);
           if (Number.isNumber(accessor)) {
@@ -62,12 +79,12 @@ export class Query {
                   accessor2 = parseFloat(match.groups.accessor2);
                 }
 
-                this.accessor = accessor;
-                this.accessor1 = accessor1;
+                this.accessors[0] = accessor;
+                this.accessors[1] = accessor1;
                 if (Number.isNumber(accessor2)) {
-                  this.accessor2 = accessor2;
+                  this.accessors[2] = accessor2;
                 }
-                this.parentTarget = searchTarget.replace(regex, '');
+                this._parentTarget = target.replace(regex, '');
               }
               break;
             }
@@ -78,12 +95,12 @@ export class Query {
       const strRegex = '\\[(?<accessor>[0-9]+)\\]';
       const regex = new RegExp(strRegex, 'gm');
       let match;
-      while ((match = regex.exec(searchTarget))) {
+      while ((match = regex.exec(target))) {
         if (typeof match.groups.accessor !== 'undefined') {
           const accessor = parseFloat(match.groups.accessor);
           if (Number.isNumber(accessor)) {
-            this.accessor = accessor;
-            this.parentTarget = searchTarget.replace(regex, '');
+            this.accessors[0] = accessor;
+            this._parentTarget = target.replace(regex, '');
           }
           break;
         }
@@ -91,7 +108,7 @@ export class Query {
     }
   }
 
-  public equalTo(other: Query): boolean {
+  public equalTo(other: IQuery): boolean {
     if (this.type === other.type && this.target === other.target) {
       return true;
     }
@@ -107,7 +124,7 @@ export class Query {
   }
 
   public getParentTarget() {
-    return this.parentTarget;
+    return this._parentTarget;
   }
 
   public getId() {
@@ -117,36 +134,35 @@ export class Query {
   public getAccessor(index = 0) {
     switch (index) {
       case 0:
-        return this.accessor;
+        return this.accessors[0];
       case 1:
-        return this.accessor1;
+        return this.accessors[1];
       case 2:
-        return this.accessor2;
+        return this.accessors[2];
     }
-
     return null;
   }
 
   public setSeparator(sep: string) {
-    this.separator = sep;
+    this._separator = sep;
   }
 
   public getSeparator(isForFrontmatterTags: boolean = false) {
-    if (this.separator === '') {
+    if (this._separator === '') {
       if (isForFrontmatterTags) {
         return ',';
       }
       return '/';
     }
-    return this.separator;
+    return this._separator;
   }
 
   public addNumTargets(num: number = 1) {
-    this.numTargets = this.numTargets + num;
+    this._numTargets = this._numTargets + num;
   }
 
   public getNumTargets() {
-    return this.numTargets;
+    return this._numTargets;
   }
 }
 

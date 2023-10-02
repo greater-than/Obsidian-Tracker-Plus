@@ -1,5 +1,5 @@
-import { ChartElements } from 'src/models/types';
-import { HeatmapInfo, RenderInfo } from '../models/data';
+import { HeatmapInfo, RenderInfo } from '../../models/data';
+import { ChartElements } from '../../models/types';
 import { createAreas, renderHeatmapDays, renderHeatmapHeader } from './helper';
 
 export const renderHeatmap = (

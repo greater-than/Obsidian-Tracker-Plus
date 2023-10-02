@@ -1,7 +1,5 @@
 import { TFolder, normalizePath, parseYaml } from 'obsidian';
-import { SearchType } from 'src/models/types';
-import * as dateTimeUtils from 'src/utils/date-time.utils';
-import * as stringUtils from 'src/utils/string.utils';
+import { SearchType } from 'src/models/enums';
 import Tracker from '../main';
 import {
   AspectRatio,
@@ -17,6 +15,7 @@ import {
   RenderInfo,
   SummaryInfo,
 } from '../models/data';
+import { DateTimeUtils, StringUtils } from '../utils';
 import {
   getAvailableKeysOfClass,
   getBoolArrayFromInput,
@@ -97,7 +96,7 @@ export const getRenderInfoFromYaml = (
     errorMessage = 'Invalid search target (searchTarget)';
   }
   for (let ind = 0; ind < searchTarget.length; ind++) {
-    searchTarget[ind] = stringUtils.replaceImgTagByAlt(searchTarget[ind]);
+    searchTarget[ind] = StringUtils.replaceImgTagByAlt(searchTarget[ind]);
   }
   // console.log(searchTarget);
 
@@ -405,7 +404,7 @@ export const getRenderInfoFromYaml = (
         "'m' for 'minute' is too small for parameter startDate, please use 'd' for 'day' or 'M' for month";
       return errorMessage;
     }
-    const strStartDate = dateTimeUtils.getDateStringFromInputString(
+    const strStartDate = DateTimeUtils.getDateStringFromInputString(
       yaml.startDate,
       renderInfo.dateFormatPrefix,
       renderInfo.dateFormatSuffix
@@ -415,7 +414,7 @@ export const getRenderInfoFromYaml = (
     // relative date
     let startDate = null;
     let isStartDateValid = false;
-    startDate = dateTimeUtils.getDateByDurationToToday(
+    startDate = DateTimeUtils.getDateByDurationToToday(
       strStartDate,
       renderInfo.dateFormat
     );
@@ -424,7 +423,7 @@ export const getRenderInfoFromYaml = (
     if (startDate) {
       isStartDateValid = true;
     } else {
-      startDate = dateTimeUtils.strToDate(strStartDate, renderInfo.dateFormat);
+      startDate = DateTimeUtils.strToDate(strStartDate, renderInfo.dateFormat);
       if (startDate.isValid()) {
         isStartDateValid = true;
       }
@@ -447,7 +446,7 @@ export const getRenderInfoFromYaml = (
         "'m' for 'minute' is too small for parameter endDate, please use 'd' for 'day' or 'M' for month";
       return errorMessage;
     }
-    const strEndDate = dateTimeUtils.getDateStringFromInputString(
+    const strEndDate = DateTimeUtils.getDateStringFromInputString(
       yaml.endDate,
       renderInfo.dateFormatPrefix,
       renderInfo.dateFormatSuffix
@@ -455,14 +454,14 @@ export const getRenderInfoFromYaml = (
 
     let endDate = null;
     let isEndDateValid = false;
-    endDate = dateTimeUtils.getDateByDurationToToday(
+    endDate = DateTimeUtils.getDateByDurationToToday(
       strEndDate,
       renderInfo.dateFormat
     );
     if (endDate) {
       isEndDateValid = true;
     } else {
-      endDate = dateTimeUtils.strToDate(strEndDate, renderInfo.dateFormat);
+      endDate = DateTimeUtils.strToDate(strEndDate, renderInfo.dateFormat);
       if (endDate.isValid()) {
         isEndDateValid = true;
       }

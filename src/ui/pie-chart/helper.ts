@@ -1,9 +1,8 @@
 import * as d3 from 'd3';
-import { ChartElements } from 'src/models/types';
-import * as domUtils from 'src/utils/dom.utils';
-import * as stringUtils from 'src/utils/string.utils';
-import { PieInfo, RenderInfo } from '../models/data';
-import * as expr from '../resolver/resolver';
+import { PieInfo, RenderInfo } from '../../models/data';
+import { ChartElements } from '../../models/types';
+import * as Resolver from '../../resolver/resolver';
+import { DomUtils, StringUtils } from '../../utils';
 
 export const setChartScale = (
   _canvas: HTMLElement,
@@ -99,7 +98,7 @@ export const renderTitle = (
   if (!renderInfo || !pieInfo) return;
 
   if (!pieInfo.title) return;
-  const titleSize = stringUtils.measureTextSize(pieInfo.title, 'tracker-title');
+  const titleSize = StringUtils.measureTextSize(pieInfo.title, 'tracker-title');
 
   // Append title
   const title = elements.graphArea
@@ -119,11 +118,11 @@ export const renderTitle = (
   elements['title'] = title;
 
   // Expand parent areas
-  domUtils.expandArea(elements.svg, 0, titleSize.height);
-  domUtils.expandArea(elements.graphArea, 0, titleSize.height);
+  DomUtils.expandArea(elements.svg, 0, titleSize.height);
+  DomUtils.expandArea(elements.graphArea, 0, titleSize.height);
 
   // Move sibling areas
-  domUtils.moveArea(elements.dataArea, 0, titleSize.height);
+  DomUtils.moveArea(elements.dataArea, 0, titleSize.height);
 
   return;
 };
@@ -156,7 +155,7 @@ export const renderLegend = (
   // Get names and their dimension
   const names = pieInfo.dataName;
   const nameSizes = names.map((n) => {
-    return stringUtils.measureTextSize(n, 'tracker-legend-label');
+    return StringUtils.measureTextSize(n, 'tracker-legend-label');
   });
   let indMaxName = 0;
   let maxNameWidth = 0;
@@ -202,29 +201,29 @@ export const renderLegend = (
     legendX = renderInfo.dataAreaSize.width / 2 - legendWidth / 2;
     legendY = titleHeight;
     // Expand svg
-    domUtils.expandArea(svg, 0, legendHeight + ySpacing);
+    DomUtils.expandArea(svg, 0, legendHeight + ySpacing);
     // Move dataArea down
-    domUtils.moveArea(dataArea, 0, legendHeight + ySpacing);
+    DomUtils.moveArea(dataArea, 0, legendHeight + ySpacing);
   } else if (pieInfo.legendPosition === 'bottom') {
     // bellow x-axis label
     legendX = renderInfo.dataAreaSize.width / 2 - legendWidth / 2;
     legendY = titleHeight + renderInfo.dataAreaSize.height + ySpacing;
     // Expand svg
-    domUtils.expandArea(svg, 0, legendHeight + ySpacing);
+    DomUtils.expandArea(svg, 0, legendHeight + ySpacing);
   } else if (pieInfo.legendPosition === 'left') {
     legendX = 0;
     legendY =
       titleHeight + renderInfo.dataAreaSize.height / 2 - legendHeight / 2;
     // Expand svg
-    domUtils.expandArea(svg, legendWidth + xSpacing, 0);
+    DomUtils.expandArea(svg, legendWidth + xSpacing, 0);
     // Move dataArea right
-    domUtils.moveArea(dataArea, legendWidth + xSpacing, 0);
+    DomUtils.moveArea(dataArea, legendWidth + xSpacing, 0);
   } else if (pieInfo.legendPosition === 'right') {
     legendX = renderInfo.dataAreaSize.width + xSpacing;
     legendY =
       titleHeight + renderInfo.dataAreaSize.height / 2 - legendHeight / 2;
     // Expand svg
-    domUtils.expandArea(svg, legendWidth + xSpacing, 0);
+    DomUtils.expandArea(svg, legendWidth + xSpacing, 0);
   } else {
     return;
   }
@@ -356,7 +355,7 @@ export const renderPie = (
   // values
   const values: Array<number> = [];
   for (const strExpr of pieInfo.data) {
-    const retValue = expr.resolveValue(strExpr, renderInfo);
+    const retValue = Resolver.resolveValue(strExpr, renderInfo);
     if (typeof retValue === 'string') {
       errorMessage = retValue;
       break;
@@ -371,7 +370,7 @@ export const renderPie = (
   // labels
   const labels: Array<string> = [];
   for (const strExpr of pieInfo.label) {
-    const retLabel = expr.resolveTemplate(strExpr, renderInfo);
+    const retLabel = Resolver.resolveTemplate(strExpr, renderInfo);
     // console.log(retLabel);
     if (retLabel.startsWith('Error')) {
       errorMessage = retLabel;
@@ -388,13 +387,13 @@ export const renderPie = (
 
   // label sizes
   const labelSizes = labels.map((n) =>
-    stringUtils.measureTextSize(n, 'tracker-tick-label')
+    StringUtils.measureTextSize(n, 'tracker-tick-label')
   );
 
   // extLabel
   const extLabels: Array<string> = [];
   for (const strExpr of pieInfo.extLabel) {
-    const retExtLabel = expr.resolveTemplate(strExpr, renderInfo);
+    const retExtLabel = Resolver.resolveTemplate(strExpr, renderInfo);
     if (retExtLabel.startsWith('Error')) {
       errorMessage = retExtLabel;
       break;
@@ -407,7 +406,7 @@ export const renderPie = (
   // console.log(extLabels);
   // extLabel sizes
   const extLabelSizes = extLabels.map((n) => {
-    return stringUtils.measureTextSize(n, 'tracker-pie-label');
+    return StringUtils.measureTextSize(n, 'tracker-pie-label');
   });
   // console.log(extLabelSizes);
   const showExtLabelOnlyIfNoLabel = pieInfo.showExtLabelOnlyIfNoLabel;

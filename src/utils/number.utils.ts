@@ -1,4 +1,5 @@
-import { TextValueMap, ValueType } from 'src/models/types';
+import { ValueType } from 'src/models/enums';
+import { TextValueMap } from '../models/types';
 import { timeFormat } from './date-time.utils';
 
 // Parsing

@@ -1,6 +1,5 @@
-import * as numberUtils from 'src/utils/number.utils';
-import * as stringUtils from 'src/utils/string.utils';
 import { CommonChartInfo } from '../models/data';
+import { NumberUtils, StringUtils } from '../utils';
 
 export const strToBool = (str: string): boolean | null => {
   switch (str.trim().toLowerCase()) {
@@ -284,7 +283,7 @@ export const getNumberArrayFromInput = (
           const curr = splitted[ind].trim();
           let prev = null;
           if (ind > 0) {
-            prev = numberUtils.parseFloatFromAny(
+            prev = NumberUtils.parseFloatFromAny(
               splitted[ind - 1].trim()
             ).value;
           }
@@ -295,7 +294,7 @@ export const getNumberArrayFromInput = (
               array[ind] = defaultValue;
             }
           } else {
-            const currNum = numberUtils.parseFloatFromAny(curr).value;
+            const currNum = NumberUtils.parseFloatFromAny(curr).value;
             if (currNum !== null) {
               array[ind] = currNum;
               numValidValue++;
@@ -306,7 +305,7 @@ export const getNumberArrayFromInput = (
           }
         } else {
           // Exceeds the length of input, use prev value
-          const last = numberUtils.parseFloatFromAny(
+          const last = NumberUtils.parseFloatFromAny(
             splitted[input.length - 1].trim()
           ).value;
           if (numValidValue > 0 && last !== null) {
@@ -320,7 +319,7 @@ export const getNumberArrayFromInput = (
       if (input === '') {
         // all defaultValue
       } else {
-        const inputNum = numberUtils.parseFloatFromAny(input).value;
+        const inputNum = NumberUtils.parseFloatFromAny(input).value;
         if (inputNum !== null) {
           array[0] = inputNum;
           numValidValue++;
@@ -363,7 +362,7 @@ export const getStringFromInput = (
   defaultValue: string
 ): string => {
   if (typeof input === 'string') {
-    return stringUtils.replaceImgTagByAlt(input);
+    return StringUtils.replaceImgTagByAlt(input);
   } else if (typeof input === 'number') {
     return input.toString();
   }
@@ -545,7 +544,7 @@ export const getStringArrayFromInput = (
   }
 
   for (let ind = 0; ind < array.length; ind++) {
-    array[ind] = stringUtils.replaceImgTagByAlt(array[ind]);
+    array[ind] = StringUtils.replaceImgTagByAlt(array[ind]);
   }
 
   return array;
@@ -645,7 +644,7 @@ export const getStringArray = (
   }
 
   for (let ind = 0; ind < strArray.length; ind++) {
-    strArray[ind] = stringUtils.replaceImgTagByAlt(strArray[ind]);
+    strArray[ind] = StringUtils.replaceImgTagByAlt(strArray[ind]);
   }
 
   return strArray;

@@ -1,9 +1,8 @@
 import * as d3 from 'd3';
-import { ChartElements } from 'src/models/types';
-import * as domUtils from 'src/utils/dom.utils';
-import * as stringUtils from 'src/utils/string.utils';
-import { BulletInfo, Dataset, RenderInfo } from '../models/data';
-import * as expr from '../resolver/resolver';
+import { BulletInfo, Dataset, RenderInfo } from '../../models/data';
+import { ChartElements } from '../../models/types';
+import * as Resolver from '../../resolver/resolver';
+import { DomUtils, StringUtils } from '../../utils';
 
 /**
  * Create Areas
@@ -116,7 +115,7 @@ export const renderTitle = (
   const spacing = 6; // spacing between title and dataArea
 
   if (bulletInfo.title) {
-    const titleSize = stringUtils.measureTextSize(
+    const titleSize = StringUtils.measureTextSize(
       bulletInfo.title,
       'tracker-title-small'
     );
@@ -133,27 +132,27 @@ export const renderTitle = (
       elements['title'] = title;
 
       // Expand parent areas
-      domUtils.expandArea(elements.svg, titleSize.width + spacing, 0);
-      domUtils.expandArea(elements.graphArea, titleSize.width + spacing, 0);
+      DomUtils.expandArea(elements.svg, titleSize.width + spacing, 0);
+      DomUtils.expandArea(elements.graphArea, titleSize.width + spacing, 0);
 
       // Move sibling areas
-      domUtils.moveArea(elements.dataArea, titleSize.width + spacing, 0);
+      DomUtils.moveArea(elements.dataArea, titleSize.width + spacing, 0);
     } else if (bulletInfo.orientation === 'vertical') {
       // if label width > dataArea width
       let xMiddle = renderInfo.dataAreaSize.width / 2;
       if (titleSize.width > renderInfo.dataAreaSize.width) {
         // console.log("expand area for vertical title");
-        domUtils.expandArea(
+        DomUtils.expandArea(
           elements.svg,
           titleSize.width - renderInfo.dataAreaSize.width,
           0
         );
-        domUtils.expandArea(
+        DomUtils.expandArea(
           elements.graphArea,
           titleSize.width - renderInfo.dataAreaSize.width,
           0
         );
-        domUtils.moveArea(
+        DomUtils.moveArea(
           elements.dataArea,
           titleSize.width / 2 - renderInfo.dataAreaSize.width / 2,
           0
@@ -174,16 +173,16 @@ export const renderTitle = (
       elements['title'] = title;
 
       // Expand parent areas
-      domUtils.expandArea(elements.svg, 0, titleSize.height + spacing);
-      domUtils.expandArea(elements.graphArea, 0, titleSize.height + spacing);
+      DomUtils.expandArea(elements.svg, 0, titleSize.height + spacing);
+      DomUtils.expandArea(elements.graphArea, 0, titleSize.height + spacing);
 
       // Move sibling areas
-      domUtils.moveArea(elements.dataArea, 0, titleSize.height + spacing);
+      DomUtils.moveArea(elements.dataArea, 0, titleSize.height + spacing);
     }
   }
 
   if (bulletInfo.valueUnit) {
-    const unitSize = stringUtils.measureTextSize(
+    const unitSize = StringUtils.measureTextSize(
       bulletInfo.valueUnit,
       'tracker-tick-label'
     );
@@ -210,11 +209,11 @@ export const renderTitle = (
       elements['unit'] = unit;
 
       // Expand parent areas
-      domUtils.expandArea(elements.svg, 0, unitSize.height + spacing);
-      domUtils.expandArea(elements.graphArea, 0, unitSize.height + spacing);
+      DomUtils.expandArea(elements.svg, 0, unitSize.height + spacing);
+      DomUtils.expandArea(elements.graphArea, 0, unitSize.height + spacing);
 
       // Move dataArea down
-      domUtils.moveArea(elements.dataArea, 0, unitSize.height + spacing);
+      DomUtils.moveArea(elements.dataArea, 0, unitSize.height + spacing);
     }
   }
 };
@@ -252,7 +251,7 @@ export const renderAxis = (
     return d3.tickFormat(0, lastRange, 7)(value);
   };
   const maxTickLabel = tickFormatFn(lastRange);
-  const maxTickLabelSize = stringUtils.measureTextSize(
+  const maxTickLabelSize = StringUtils.measureTextSize(
     maxTickLabel,
     'tracker-tick-label'
   );
@@ -279,12 +278,12 @@ export const renderAxis = (
     axis.attr('height', tickLength + maxTickLabelSize.height);
 
     // Expand areas
-    domUtils.expandArea(
+    DomUtils.expandArea(
       elements.svg,
       +maxTickLabelSize.width,
       tickLength + maxTickLabelSize.height
     );
-    domUtils.expandArea(
+    DomUtils.expandArea(
       elements.graphArea,
       +maxTickLabelSize.width,
       tickLength + maxTickLabelSize.height
@@ -312,14 +311,14 @@ export const renderAxis = (
     axis.attr('height', renderInfo.dataAreaSize.width);
 
     // Expand areas
-    domUtils.expandArea(elements.svg, tickLength + maxTickLabelSize.width, 0);
-    domUtils.expandArea(
+    DomUtils.expandArea(elements.svg, tickLength + maxTickLabelSize.width, 0);
+    DomUtils.expandArea(
       elements.graphArea,
       tickLength + maxTickLabelSize.width,
       0
     );
 
-    domUtils.moveArea(
+    DomUtils.moveArea(
       elements.dataArea,
       tickLength + maxTickLabelSize.width,
       0
@@ -422,7 +421,7 @@ export const renderBar = (
   // console.log(dataset);
   if (!renderInfo || !bulletInfo) return;
 
-  const retActualValue = expr.resolveValue(bulletInfo.value, renderInfo);
+  const retActualValue = Resolver.resolveValue(bulletInfo.value, renderInfo);
   // console.log(retActualValue);
   if (typeof retActualValue === 'string') return retActualValue;
 

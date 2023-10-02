@@ -1,48 +1,33 @@
-import { Query } from './data';
-import { GraphType, QueryValuePair } from './types';
-
-export enum SearchType {
-  Tag,
-  Frontmatter,
-  Wiki,
-  WikiLink,
-  WikiDisplay,
-  Text,
-  dvField,
-  Table,
-  FileMeta,
-  Task,
-  TaskDone,
-  TaskNotDone,
-}
-
-export enum GraphType {
-  Line,
-  Bar,
-  Pie,
-  Radar,
-  Summary,
-  Table,
-  Month,
-  Heatmap,
-  Bullet,
-  Unknown,
-}
-
-export enum ValueType {
-  Number,
-  Int,
-  Date,
-  Time,
-  DateTime,
-  String,
-}
+import { GraphType, SearchType, ValueType } from './enums';
 
 export type TextValueMap = {
   [key: string]: number;
 };
+
+export interface IQuery {
+  id: number;
+  type: SearchType;
+  target: string;
+  parentTarget: string | null;
+  separator: string; // multiple value separator
+  accessors: number[];
+  valueType: ValueType;
+  usedAsXDataset: boolean;
+
+  equalTo: (other: IQuery) => boolean;
+  getType: () => SearchType;
+  getTarget: () => string;
+  getParentTarget: () => string;
+  getId: () => number;
+  getAccessor: (index: number) => number;
+  setSeparator: (sep: string) => void;
+  getSeparator: (isForFrontmatterTags: boolean) => string;
+  addNumTargets: (num: number) => void;
+  getNumTargets: () => number;
+}
+
 export interface QueryValuePair {
-  query: Query;
+  query: IQuery;
   value: number;
 }
 export interface IGraph {

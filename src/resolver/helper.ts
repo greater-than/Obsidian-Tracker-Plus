@@ -32,6 +32,7 @@ interface FnMapBinaryOp {
 interface FnMapUnaryOp {
   [key: string]: FnUnaryOp;
 }
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const checkDivisor = (divisor: any): boolean => {
   // console.log("checking divisor");

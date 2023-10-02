@@ -17,16 +17,10 @@ import {
   RenderInfo,
   TableData,
 } from './models/data';
-import {
-  DataMap,
-  GraphType,
-  QueryValuePair,
-  SearchType,
-  ValueType,
-  XValueMap,
-} from './models/types';
+import { GraphType, SearchType, ValueType } from './models/enums';
+import { DataMap, QueryValuePair, XValueMap } from './models/types';
 import { getRenderInfoFromYaml } from './parser/yaml-parser';
-import * as rendering from './renderer/rendering';
+import * as renderer from './renderer';
 import {
   DEFAULT_SETTINGS,
   TrackerSettings,
@@ -96,10 +90,10 @@ export default class Tracker extends Plugin {
   renderErrorMessage(
     message: string,
     canvas: HTMLElement,
-    el: HTMLElement
+    element: HTMLElement
   ): void {
-    rendering.renderErrorMessage(canvas, message);
-    el.appendChild(canvas);
+    renderer.renderErrorMessage(canvas, message);
+    element.appendChild(canvas);
     return;
   }
 
@@ -727,7 +721,7 @@ export default class Tracker extends Plugin {
     renderInfo.datasets = datasets;
     // console.log(renderInfo.datasets);
 
-    const retRender = rendering.render(canvas, renderInfo);
+    const retRender = renderer.render(canvas, renderInfo);
     if (typeof retRender === 'string') {
       return this.renderErrorMessage(retRender, canvas, el);
     }
@@ -942,7 +936,7 @@ export default class Tracker extends Plugin {
               // console.log(retParse);
               if (retParse.value !== null) {
                 if (retParse.type === ValueType.Time) {
-                  yDatasetQuery.valueType = ValueType.Time;
+                  yDatasetQuery._valueType = ValueType.Time;
                 }
                 const value = retParse.value;
                 if (indLine < xValues.length && xValues[indLine]) {
@@ -973,7 +967,7 @@ export default class Tracker extends Plugin {
               // console.log(retParse);
               if (retParse.value !== null) {
                 if (retParse.type === ValueType.Time) {
-                  yDatasetQuery.valueType = ValueType.Time;
+                  yDatasetQuery._valueType = ValueType.Time;
                 }
                 value = retParse.value;
                 if (indLine < xValues.length && xValues[indLine]) {

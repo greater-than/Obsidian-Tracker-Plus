@@ -1,7 +1,7 @@
 import { Moment } from 'moment';
 import { sprintf } from 'sprintf-js';
-import * as dateTimeUtils from 'src/utils/date-time.utils';
 import { RenderInfo } from '../models/data';
+import { DateTimeUtils } from '../utils';
 import { ExprResolved, resolve } from './helper';
 
 /**
@@ -33,9 +33,9 @@ export const resolveTemplate = (
       }
     } else if (window.moment.isMoment(value)) {
       if (format) {
-        strValue = dateTimeUtils.dateToStr(value, format);
+        strValue = DateTimeUtils.dateToStr(value, format);
       } else {
-        strValue = dateTimeUtils.dateToStr(value, renderInfo.dateFormat);
+        strValue = DateTimeUtils.dateToStr(value, renderInfo.dateFormat);
       }
     }
 

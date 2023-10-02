@@ -1,11 +1,14 @@
 import * as d3 from 'd3';
-import * as bullet from '../bullet-graph/renderer';
-import * as heatmap from '../heatmap/renderer';
-import { RenderInfo } from '../models/data';
-import * as month from '../month/renderer';
-import * as pie from '../pie-chart/renderer';
-import * as summary from '../summary/renderer';
-import { renderBarChart, renderLineChart } from './helper';
+import { RenderInfo } from './models/data';
+import {
+  renderBarChart,
+  renderBulletGraph,
+  renderHeatmap,
+  renderLineChart,
+  renderMonth,
+  renderPieChart,
+  renderSummary,
+} from './ui';
 
 export const render = (canvas: HTMLElement, renderInfo: RenderInfo): string => {
   // console.log("render");
@@ -45,31 +48,31 @@ export const render = (canvas: HTMLElement, renderInfo: RenderInfo): string => {
     }
   }
   for (const pieInfo of renderInfo.pie) {
-    const ret = pie.renderPieChart(canvas, renderInfo, pieInfo);
+    const ret = renderPieChart(canvas, renderInfo, pieInfo);
     if (typeof ret === 'string') {
       return ret;
     }
   }
   for (const summaryInfo of renderInfo.summary) {
-    const ret = summary.renderSummary(canvas, renderInfo, summaryInfo);
+    const ret = renderSummary(canvas, renderInfo, summaryInfo);
     if (typeof ret === 'string') {
       return ret;
     }
   }
   for (const bulletInfo of renderInfo.bullet) {
-    const ret = bullet.renderBulletGraph(canvas, renderInfo, bulletInfo);
+    const ret = renderBulletGraph(canvas, renderInfo, bulletInfo);
     if (typeof ret === 'string') {
       return ret;
     }
   }
   for (const monthInfo of renderInfo.month) {
-    const ret = month.renderMonth(canvas, renderInfo, monthInfo);
+    const ret = renderMonth(canvas, renderInfo, monthInfo);
     if (typeof ret === 'string') {
       return ret;
     }
   }
   for (const heatmapInfo of renderInfo.heatmap) {
-    const ret = heatmap.renderHeatmap(canvas, renderInfo, heatmapInfo);
+    const ret = renderHeatmap(canvas, renderInfo, heatmapInfo);
     if (typeof ret === 'string') {
       return ret;
     }

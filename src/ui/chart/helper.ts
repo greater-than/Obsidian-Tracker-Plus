@@ -1,10 +1,7 @@
 import * as d3 from 'd3';
 import { Duration, Moment } from 'moment';
 import { sprintf } from 'sprintf-js';
-import { ChartElements, GraphType, ValueType } from 'src/models/types';
-import * as dateTimeUtils from 'src/utils/date-time.utils';
-import * as domUtils from 'src/utils/dom.utils';
-import * as stringUtils from 'src/utils/string.utils';
+import { GraphType, ValueType } from 'src/models/enums';
 import {
   BarInfo,
   CommonChartInfo,
@@ -12,9 +9,11 @@ import {
   Dataset,
   LineInfo,
   RenderInfo,
-} from '../models/data';
+} from '../../models/data';
+import { ChartElements } from '../../models/types';
+import { DateTimeUtils, DomUtils, StringUtils } from '../../utils';
 
-const getXTickValues = (
+export const getXTickValues = (
   dates: Moment[],
   interval: Duration
 ): [Array<Date>, d3.TimeInterval] => {
@@ -58,13 +57,13 @@ const getXTickValues = (
   return [tickValues, tickInterval];
 };
 
-const getXTickLabelFormat = (
+export const getXTickLabelFormat = (
   dates: Moment[],
   inTickLabelFormat: string
 ): ((date: Date) => string) => {
   if (inTickLabelFormat) {
     const fnTickLabelFormat = (date: Date): string => {
-      return dateTimeUtils.dateToStr(window.moment(date), inTickLabelFormat);
+      return DateTimeUtils.dateToStr(window.moment(date), inTickLabelFormat);
     };
     return fnTickLabelFormat;
   } else {
@@ -94,7 +93,7 @@ const getXTickLabelFormat = (
   }
 };
 
-const getYTickValues = (
+export const getYTickValues = (
   yLower: number,
   yUpper: number,
   interval: number | Duration,
@@ -141,7 +140,7 @@ const getYTickValues = (
   return tickValues;
 };
 
-const getYTickLabelFormat = (
+export const getYTickLabelFormat = (
   yLower: number,
   yUpper: number,
   inTickLabelFormat: string,
@@ -213,7 +212,7 @@ export const renderXAxis = (
     .range([0, renderInfo.dataAreaSize.width]);
   elements['xScale'] = xScale;
 
-  const tickIntervalInDuration = dateTimeUtils.parseDurationString(
+  const tickIntervalInDuration = DateTimeUtils.parseDurationString(
     chartInfo.xAxisTickInterval
   );
 
@@ -248,7 +247,7 @@ export const renderXAxis = (
   }
   elements['xAxis'] = xAxis;
 
-  const textSize = stringUtils.measureTextSize('99-99-99');
+  const textSize = StringUtils.measureTextSize('99-99-99');
 
   const xAxisTickLabels = xAxis
     .selectAll('text')
@@ -283,8 +282,8 @@ export const renderXAxis = (
   xAxis.attr('height', tickLength + tickLabelHeight);
 
   // Expand areas
-  domUtils.expandArea(elements.svg, 0, tickLength + tickLabelHeight);
-  domUtils.expandArea(elements.graphArea, 0, tickLength + tickLabelHeight);
+  DomUtils.expandArea(elements.svg, 0, tickLength + tickLabelHeight);
+  DomUtils.expandArea(elements.graphArea, 0, tickLength + tickLabelHeight);
 };
 
 export const renderYAxis = (
@@ -442,7 +441,7 @@ export const renderYAxis = (
   // get interval from string
   let tickInterval = null;
   if (valueIsTime) {
-    tickInterval = dateTimeUtils.parseDurationString(yAxisTickInterval);
+    tickInterval = DateTimeUtils.parseDurationString(yAxisTickInterval);
   } else {
     tickInterval = parseFloat(yAxisTickInterval);
     if (!Number.isNumber(tickInterval) || Number.isNaN(tickInterval)) {
@@ -516,7 +515,7 @@ export const renderYAxis = (
   for (const label of yAxisTickLabels) {
     // console.log(label.textContent);
     if (label.textContent) {
-      const labelSize = stringUtils.measureTextSize(
+      const labelSize = StringUtils.measureTextSize(
         label.textContent,
         'tracker-axis-label'
       );
@@ -530,7 +529,7 @@ export const renderYAxis = (
     yAxisLabelText += ' (' + yAxisUnitText + ')';
   }
   const yTickLength = 6;
-  const yAxisLabelSize = stringUtils.measureTextSize(yAxisLabelText);
+  const yAxisLabelSize = StringUtils.measureTextSize(yAxisLabelText);
   const yAxisLabel = yAxis
     .append('text')
     .text(yAxisLabelText)
@@ -556,17 +555,17 @@ export const renderYAxis = (
   yAxis.attr('width', yAxisWidth);
 
   // Expand areas
-  domUtils.expandArea(elements.svg, yAxisWidth, 0);
-  domUtils.expandArea(elements.graphArea, yAxisWidth, 0);
+  DomUtils.expandArea(elements.svg, yAxisWidth, 0);
+  DomUtils.expandArea(elements.graphArea, yAxisWidth, 0);
 
   // Move areas
   if (yAxisLocation === 'left') {
     // Move dataArea
-    domUtils.moveArea(elements.dataArea, yAxisWidth, 0);
+    DomUtils.moveArea(elements.dataArea, yAxisWidth, 0);
 
     // Move title
     if (elements.title) {
-      domUtils.moveArea(elements.title, yAxisWidth, 0);
+      DomUtils.moveArea(elements.title, yAxisWidth, 0);
     }
   }
 };
@@ -674,7 +673,7 @@ export const renderPoints = (
   }
 };
 
-function renderTooltip(
+export function renderTooltip(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   targetElements: any,
   elements: ChartElements,
@@ -702,7 +701,7 @@ function renderTooltip(
       // Date
       const labelDateText = 'date: ' + d3.select(this).attr('date');
       // labelDateText = x.toString();// debug
-      const labelDateSize = stringUtils.measureTextSize(
+      const labelDateSize = StringUtils.measureTextSize(
         labelDateText,
         'tracker-tooltip-label'
       );
@@ -728,7 +727,7 @@ function renderTooltip(
         labelValueText += strValue;
         tooltipLabelValue.text(labelValueText);
       }
-      const labelValueSize = stringUtils.measureTextSize(
+      const labelValueSize = StringUtils.measureTextSize(
         labelValueText,
         'tracker-tooltip-label'
       );
@@ -900,7 +899,7 @@ export const renderLegend = (
   // Get names and their dimension
   const names = datasets.getNames(); // xDataset name included
   const nameSizes = names.map((n) => {
-    return stringUtils.measureTextSize(n, 'tracker-legend-label');
+    return StringUtils.measureTextSize(n, 'tracker-legend-label');
   });
   let indMaxName = 0;
   let maxNameWidth = 0;
@@ -947,9 +946,9 @@ export const renderLegend = (
       leftYAxisWidth + renderInfo.dataAreaSize.width / 2 - legendWidth / 2;
     legendY = titleHeight;
     // Expand svg
-    domUtils.expandArea(svg, 0, legendHeight + ySpacing);
+    DomUtils.expandArea(svg, 0, legendHeight + ySpacing);
     // Move dataArea down
-    domUtils.moveArea(dataArea, 0, legendHeight + ySpacing);
+    DomUtils.moveArea(dataArea, 0, legendHeight + ySpacing);
   } else if (chartInfo.legendPosition === 'bottom') {
     // bellow x-axis label
     legendX =
@@ -957,15 +956,15 @@ export const renderLegend = (
     legendY =
       titleHeight + renderInfo.dataAreaSize.height + xAxisHeight + ySpacing;
     // Expand svg
-    domUtils.expandArea(svg, 0, legendHeight + ySpacing);
+    DomUtils.expandArea(svg, 0, legendHeight + ySpacing);
   } else if (chartInfo.legendPosition === 'left') {
     legendX = 0;
     legendY =
       titleHeight + renderInfo.dataAreaSize.height / 2 - legendHeight / 2;
     // Expand svg
-    domUtils.expandArea(svg, legendWidth + xSpacing, 0);
+    DomUtils.expandArea(svg, legendWidth + xSpacing, 0);
     // Move dataArea right
-    domUtils.moveArea(dataArea, legendWidth + xSpacing, 0);
+    DomUtils.moveArea(dataArea, legendWidth + xSpacing, 0);
   } else if (chartInfo.legendPosition === 'right') {
     legendX =
       renderInfo.dataAreaSize.width +
@@ -975,7 +974,7 @@ export const renderLegend = (
     legendY =
       titleHeight + renderInfo.dataAreaSize.height / 2 - legendHeight / 2;
     // Expand svg
-    domUtils.expandArea(svg, legendWidth + xSpacing, 0);
+    DomUtils.expandArea(svg, legendWidth + xSpacing, 0);
   } else {
     return;
   }
@@ -1267,7 +1266,7 @@ export const renderTitle = (
   if (!renderInfo || !chartInfo) return;
 
   if (!chartInfo.title) return;
-  const titleSize = stringUtils.measureTextSize(
+  const titleSize = StringUtils.measureTextSize(
     chartInfo.title,
     'tracker-title'
   );
@@ -1290,11 +1289,11 @@ export const renderTitle = (
   elements['title'] = title;
 
   // Expand parent areas
-  domUtils.expandArea(elements.svg, 0, titleSize.height);
-  domUtils.expandArea(elements.graphArea, 0, titleSize.height);
+  DomUtils.expandArea(elements.svg, 0, titleSize.height);
+  DomUtils.expandArea(elements.graphArea, 0, titleSize.height);
 
   // Move sibling areas
-  domUtils.moveArea(elements.dataArea, 0, titleSize.height);
+  DomUtils.moveArea(elements.dataArea, 0, titleSize.height);
 
   return;
 };
@@ -1370,183 +1369,4 @@ export const createAreas = (
   elements['dataArea'] = dataArea;
 
   return elements;
-};
-export const renderLineChart = (
-  canvas: HTMLElement,
-  renderInfo: RenderInfo,
-  lineInfo: LineInfo
-): string => {
-  // console.log("renderLineChart");
-  // console.log(renderInfo);
-  if (!renderInfo || !lineInfo) return;
-
-  const elements = createAreas(canvas, renderInfo);
-
-  renderTitle(elements, renderInfo, lineInfo);
-
-  renderXAxis(elements, renderInfo, lineInfo);
-  // console.log(elements.xAxis);
-  // console.log(elements.xScale);
-  const datasetOnLeftYAxis = [];
-  const datasetOnRightYAxis = [];
-  const xDatasetIds = renderInfo.datasets.getXDatasetIds();
-  for (let ind = 0; ind < lineInfo.yAxisLocation.length; ind++) {
-    if (xDatasetIds.includes(ind)) continue;
-    const yAxisLocation = lineInfo.yAxisLocation[ind];
-    if (yAxisLocation.toLowerCase() === 'left') {
-      datasetOnLeftYAxis.push(ind);
-    } else if (yAxisLocation.toLocaleLowerCase() === 'right') {
-      datasetOnRightYAxis.push(ind);
-    }
-  }
-
-  const retRenderLeftYAxis = renderYAxis(
-    elements,
-    renderInfo,
-    lineInfo,
-    'left',
-    datasetOnLeftYAxis
-  );
-  if (typeof retRenderLeftYAxis === 'string') {
-    return retRenderLeftYAxis;
-  }
-
-  if (elements.leftYAxis && elements.leftYScale) {
-    for (const datasetId of datasetOnLeftYAxis) {
-      const dataset = renderInfo.datasets.getDatasetById(datasetId);
-      if (dataset.getQuery().usedAsXDataset) continue;
-
-      renderLine(elements, renderInfo, lineInfo, dataset, 'left');
-
-      renderPoints(elements, renderInfo, lineInfo, dataset, 'left');
-    }
-  }
-
-  const retRenderRightYAxis = renderYAxis(
-    elements,
-    renderInfo,
-    lineInfo,
-    'right',
-    datasetOnRightYAxis
-  );
-  if (typeof retRenderRightYAxis === 'string') {
-    return retRenderRightYAxis;
-  }
-
-  if (elements.rightYAxis && elements.rightYScale) {
-    for (const datasetId of datasetOnRightYAxis) {
-      const dataset = renderInfo.datasets.getDatasetById(datasetId);
-      if (dataset.getQuery().usedAsXDataset) continue;
-
-      renderLine(elements, renderInfo, lineInfo, dataset, 'right');
-
-      renderPoints(elements, renderInfo, lineInfo, dataset, 'right');
-    }
-  }
-
-  if (lineInfo.showLegend) {
-    renderLegend(elements, renderInfo, lineInfo);
-  }
-
-  setChartScale(canvas, elements, renderInfo);
-};
-
-export const renderBarChart = (
-  canvas: HTMLElement,
-  renderInfo: RenderInfo,
-  barInfo: BarInfo
-): string => {
-  // console.log("renderBarChart");
-  // console.log(renderInfo);
-  if (!renderInfo || !barInfo) return;
-
-  const elements = createAreas(canvas, renderInfo);
-
-  renderTitle(elements, renderInfo, barInfo);
-
-  renderXAxis(elements, renderInfo, barInfo);
-
-  const datasetOnLeftYAxis = [];
-  const datasetOnRightYAxis = [];
-  const xDatasetIds = renderInfo.datasets.getXDatasetIds();
-  for (let ind = 0; ind < barInfo.yAxisLocation.length; ind++) {
-    if (xDatasetIds.includes(ind)) continue;
-    const yAxisLocation = barInfo.yAxisLocation[ind];
-    if (yAxisLocation.toLowerCase() === 'left') {
-      datasetOnLeftYAxis.push(ind);
-    } else if (yAxisLocation.toLocaleLowerCase() === 'right') {
-      // right
-      datasetOnRightYAxis.push(ind);
-    }
-  }
-
-  const retRenderLeftYAxis = renderYAxis(
-    elements,
-    renderInfo,
-    barInfo,
-    'left',
-    datasetOnLeftYAxis
-  );
-  if (typeof retRenderLeftYAxis === 'string') {
-    return retRenderLeftYAxis;
-  }
-
-  const totalNumOfBarSets =
-    datasetOnLeftYAxis.length + datasetOnRightYAxis.length;
-  let currBarSet = 0;
-
-  if (elements.leftYAxis && elements.leftYScale) {
-    for (const datasetId of datasetOnLeftYAxis) {
-      const dataset = renderInfo.datasets.getDatasetById(datasetId);
-      if (dataset.getQuery().usedAsXDataset) continue;
-
-      renderBar(
-        elements,
-        renderInfo,
-        barInfo,
-        dataset,
-        'left',
-        currBarSet,
-        totalNumOfBarSets
-      );
-
-      currBarSet++;
-    }
-  }
-
-  const retRenderRightYAxis = renderYAxis(
-    elements,
-    renderInfo,
-    barInfo,
-    'right',
-    datasetOnRightYAxis
-  );
-  if (typeof retRenderRightYAxis === 'string') {
-    return retRenderRightYAxis;
-  }
-
-  if (elements.rightYAxis && elements.rightYScale) {
-    for (const datasetId of datasetOnRightYAxis) {
-      const dataset = renderInfo.datasets.getDatasetById(datasetId);
-      if (dataset.getQuery().usedAsXDataset) continue;
-
-      renderBar(
-        elements,
-        renderInfo,
-        barInfo,
-        dataset,
-        'right',
-        currBarSet,
-        totalNumOfBarSets
-      );
-
-      currBarSet++;
-    }
-  }
-
-  if (barInfo.showLegend) {
-    renderLegend(elements, renderInfo, barInfo);
-  }
-
-  setChartScale(canvas, elements, renderInfo);
 };

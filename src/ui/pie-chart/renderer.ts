@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
-import { ChartElements } from 'src/models/types';
-import { PieInfo, RenderInfo } from '../models/data';
+import { PieInfo, RenderInfo } from '../../models/data';
+import { ChartElements } from '../../models/types';
 import {
   createAreas,
   renderLegend,

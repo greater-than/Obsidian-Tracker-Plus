@@ -1,4 +1,4 @@
-import { BulletInfo, RenderInfo } from '../models/data';
+import { BulletInfo, RenderInfo } from '../../models/data';
 import {
   createAreas,
   renderAxis,

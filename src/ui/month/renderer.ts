@@ -1,7 +1,7 @@
 import { Moment } from 'moment';
-import { ChartElements } from 'src/models/types';
-import * as dateTimeUtils from 'src/utils/date-time.utils';
-import { MonthInfo, RenderInfo } from '../models/data';
+import { MonthInfo, RenderInfo } from '../../models/data';
+import { ChartElements } from '../../models/types';
+import * as dateTimeUtils from '../../utils/date-time.utils';
 import {
   createAreas,
   renderMonthDays,
@@ -18,6 +18,8 @@ export const renderMonth = (
   // console.log("renderMonth");
   // console.log(renderInfo);
   // console.log(monthInfo);
+
+  // TODO Why check for renderMonth?
   if (!renderInfo || !renderMonth) return;
 
   // dataset
