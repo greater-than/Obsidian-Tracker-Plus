@@ -30,5 +30,5 @@
 
 ### Still having problems?
 
-You might have an idea for a new feature or discovered a bug.
+You might have an idea for a new feature, or discovered a bug.
 Feel free to [submit it here](https://github.com/greater-than/Obsidian-TrackerGT/issues).

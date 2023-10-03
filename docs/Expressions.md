@@ -8,7 +8,13 @@ From version 1.9.0, template variables, e.g. '{{sum}}', are deprecated. Instead,
 
 ## Where to Use
 
-Currently, we can only use expressions in some parameters. These includes `template` in `summary` output, `value` in `bullet` output, and `data` `label` `extLabel` in `pie` output. In future release, there will be more parameters using expressions as input.
+Currently, expressions can only be used in some parameters. These include:
+
+- `template` in `summary` output
+- `value` in `bullet` output
+- `data` `label` `extLabel` in `pie` output
+
+_In future releases, there will be more parameters using expressions as input._
 
 ## How to Use
 

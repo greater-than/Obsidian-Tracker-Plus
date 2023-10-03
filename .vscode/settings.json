@@ -18,6 +18,8 @@
     "codemirror",
     "dataview",
     "datetime",
+    "dvfield",
+    "filemeta",
     "frontmatter",
     "getFirstLinkpathDest",
     "jsep",
