@@ -44,7 +44,9 @@ export const extractDateUsingRegexWithValue = (
     }
   }
   return date;
-}; /**
+};
+
+/**
  * Helper function
  * - Accept multiple values using custom separators
  * - regex with value --> extract value
@@ -156,6 +158,7 @@ export const extractDataUsingRegexWithMultipleValues = (
 
   return false;
 };
+
 export const addToDataMap = (
   dataMap: DataMap,
   date: string,

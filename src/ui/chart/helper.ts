@@ -11,7 +11,7 @@ import {
   RenderInfo,
 } from '../../models/data';
 import { ChartElements } from '../../models/types';
-import { DateTimeUtils, DomUtils, StringUtils } from '../../utils';
+import { ChartUtils, DateTimeUtils, DomUtils } from '../../utils';
 
 export const getXTickValues = (
   dates: Moment[],
@@ -247,7 +247,7 @@ export const renderXAxis = (
   }
   elements['xAxis'] = xAxis;
 
-  const textSize = StringUtils.measureTextSize('99-99-99');
+  const textSize = ChartUtils.measureTextSize('99-99-99');
 
   const xAxisTickLabels = xAxis
     .selectAll('text')
@@ -515,7 +515,7 @@ export const renderYAxis = (
   for (const label of yAxisTickLabels) {
     // console.log(label.textContent);
     if (label.textContent) {
-      const labelSize = StringUtils.measureTextSize(
+      const labelSize = ChartUtils.measureTextSize(
         label.textContent,
         'tracker-axis-label'
       );
@@ -529,7 +529,7 @@ export const renderYAxis = (
     yAxisLabelText += ' (' + yAxisUnitText + ')';
   }
   const yTickLength = 6;
-  const yAxisLabelSize = StringUtils.measureTextSize(yAxisLabelText);
+  const yAxisLabelSize = ChartUtils.measureTextSize(yAxisLabelText);
   const yAxisLabel = yAxis
     .append('text')
     .text(yAxisLabelText)
@@ -701,7 +701,7 @@ export function renderTooltip(
       // Date
       const labelDateText = 'date: ' + d3.select(this).attr('date');
       // labelDateText = x.toString();// debug
-      const labelDateSize = StringUtils.measureTextSize(
+      const labelDateSize = ChartUtils.measureTextSize(
         labelDateText,
         'tracker-tooltip-label'
       );
@@ -727,7 +727,7 @@ export function renderTooltip(
         labelValueText += strValue;
         tooltipLabelValue.text(labelValueText);
       }
-      const labelValueSize = StringUtils.measureTextSize(
+      const labelValueSize = ChartUtils.measureTextSize(
         labelValueText,
         'tracker-tooltip-label'
       );
@@ -899,7 +899,7 @@ export const renderLegend = (
   // Get names and their dimension
   const names = datasets.getNames(); // xDataset name included
   const nameSizes = names.map((n) => {
-    return StringUtils.measureTextSize(n, 'tracker-legend-label');
+    return ChartUtils.measureTextSize(n, 'tracker-legend-label');
   });
   let indMaxName = 0;
   let maxNameWidth = 0;
@@ -1266,7 +1266,7 @@ export const renderTitle = (
   if (!renderInfo || !chartInfo) return;
 
   if (!chartInfo.title) return;
-  const titleSize = StringUtils.measureTextSize(
+  const titleSize = ChartUtils.measureTextSize(
     chartInfo.title,
     'tracker-title'
   );

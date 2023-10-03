@@ -3,7 +3,7 @@ import { Moment } from 'moment';
 import { ValueType } from 'src/models/enums';
 import { MonthInfo, RenderInfo } from '../../models/data';
 import { ChartElements } from '../../models/types';
-import { DateTimeUtils, DomUtils, StringUtils } from '../../utils';
+import { ChartUtils, DateTimeUtils, DomUtils } from '../../utils';
 
 let logToConsole = false;
 const RATIO_CELL_TO_TEXT = 2.8;
@@ -203,7 +203,7 @@ export const renderMonthHeader = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const curYear = curMonthDate.year();
 
-  const maxDayTextSize = StringUtils.measureTextSize(
+  const maxDayTextSize = ChartUtils.measureTextSize(
     '30',
     'tracker-month-label'
   );
@@ -216,11 +216,11 @@ export const renderMonthHeader = (
 
   const headerYearText = curMonthDate.format('YYYY');
   const headerMonthText = curMonthDate.format('MMM');
-  const headerYearSize = StringUtils.measureTextSize(
+  const headerYearSize = ChartUtils.measureTextSize(
     headerYearText,
     'tracker-month-header-year'
   );
-  const headerMonthSize = StringUtils.measureTextSize(
+  const headerMonthSize = ChartUtils.measureTextSize(
     headerMonthText,
     'tracker-month-header-month'
   );
@@ -296,7 +296,7 @@ export const renderMonthHeader = (
   headerHeight += headerYearSize.height;
 
   // dataset rotator
-  const datasetNameSize = StringUtils.measureTextSize(
+  const datasetNameSize = ChartUtils.measureTextSize(
     datasetName,
     'tracker-month-title-rotator'
   );
@@ -327,7 +327,7 @@ export const renderMonthHeader = (
   }
 
   // value monitor
-  const monitorTextSize = StringUtils.measureTextSize(
+  const monitorTextSize = ChartUtils.measureTextSize(
     '0.0000',
     'tracker-month-title-monitor'
   );
@@ -349,7 +349,7 @@ export const renderMonthHeader = (
   elements['monitor'] = monitor;
 
   // arrow left
-  const arrowSize = StringUtils.measureTextSize(
+  const arrowSize = ChartUtils.measureTextSize(
     '<',
     'tracker-month-title-arrow'
   );
@@ -431,7 +431,7 @@ export const renderMonthHeader = (
   if (monthInfo.startWeekOn.toLowerCase() === 'mon') {
     weekdayNames.push(weekdayNames.shift());
   }
-  const weekdayNameSize = StringUtils.measureTextSize(
+  const weekdayNameSize = ChartUtils.measureTextSize(
     weekdayNames[0],
     'tracker-month-weekday'
   );
@@ -526,7 +526,7 @@ export function renderMonthDays(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const curDaysInMonth = curMonthDate.daysInMonth(); // 28~31
 
-  const maxDayTextSize = StringUtils.measureTextSize(
+  const maxDayTextSize = ChartUtils.measureTextSize(
     '30',
     'tracker-month-label'
   );

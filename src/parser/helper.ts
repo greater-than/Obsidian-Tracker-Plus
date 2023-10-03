@@ -41,10 +41,9 @@ export const validateSearchType = (searchType: string): boolean => {
 };
 
 export const validateYAxisLocation = (location: string): boolean => {
-  if (location === 'left' || location === 'right' || location === 'none') {
-    return true;
-  }
-  return false;
+  return location === 'left' || location === 'right' || location === 'none'
+    ? true
+    : false;
 };
 
 // TODO Why does this function exist?
