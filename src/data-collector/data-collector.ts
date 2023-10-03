@@ -2,9 +2,10 @@ import { Moment } from 'moment';
 import { CachedMetadata, TFile } from 'obsidian';
 import { SearchType, ValueType } from 'src/models/enums';
 import { Query, RenderInfo } from '../models/data';
-import { DataMap, QueryValuePair, XValueMap } from '../models/types';
+import { DataMap, XValueMap } from '../models/types';
 import { CountUtils, DateTimeUtils, NumberUtils, ObjectUtils } from '../utils';
 import {
+  addToDataMap,
   extractDataUsingRegexWithMultipleValues,
   extractDateUsingRegexWithValue,
 } from './helper';
@@ -40,7 +41,6 @@ export const getDateFromFilename = (
 
   return fileDate;
 };
-
 // Not support multiple targets
 // In form 'key: value', target used to identify 'frontmatter key'
 export const getDateFromFrontmatter = (
@@ -270,22 +270,6 @@ export const getDateFromTask = (
   // console.log(strTextRegex);
 
   return extractDateUsingRegexWithValue(content, strRegex, renderInfo);
-};
-
-export const addToDataMap = (
-  dataMap: DataMap,
-  date: string,
-  query: Query,
-  value: number | null
-) => {
-  if (!dataMap.has(date)) {
-    const queryValuePairs = new Array<QueryValuePair>();
-    queryValuePairs.push({ query: query, value: value });
-    dataMap.set(date, queryValuePairs);
-  } else {
-    const targetValuePairs = dataMap.get(date);
-    targetValuePairs.push({ query: query, value: value });
-  }
 };
 
 // No value, count occurrences only
@@ -756,3 +740,25 @@ export const collectDataFromTask = (
     renderInfo
   );
 };
+
+const DataCollector = {
+  getDateFromFilename,
+  getDateFromFrontmatter,
+  getDateFromTag,
+  getDateFromText,
+  getDateFromDvField,
+  getDateFromWiki,
+  getDateFromFileMeta,
+  getDateFromTask,
+  collectDataFromFrontmatterTag,
+  collectDataFromFrontmatterKey,
+  collectDataFromWiki,
+  collectDataFromInlineTag,
+  collectDataFromText,
+  collectDataFromFileMeta,
+  collectDataFromDvField,
+  collectDataFromInlineDvField,
+  collectDataFromTask,
+};
+
+export default DataCollector;

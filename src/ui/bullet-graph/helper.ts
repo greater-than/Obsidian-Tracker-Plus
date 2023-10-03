@@ -1,8 +1,8 @@
 import * as d3 from 'd3';
 import { BulletInfo, Dataset, RenderInfo } from '../../models/data';
 import { ChartElements } from '../../models/types';
-import * as Resolver from '../../resolver/resolver';
-import { DomUtils, StringUtils } from '../../utils';
+import Resolver from '../../resolver/resolver';
+import { ChartUtils, DomUtils } from '../../utils';
 
 /**
  * Create Areas
@@ -115,7 +115,7 @@ export const renderTitle = (
   const spacing = 6; // spacing between title and dataArea
 
   if (bulletInfo.title) {
-    const titleSize = StringUtils.measureTextSize(
+    const titleSize = ChartUtils.measureTextSize(
       bulletInfo.title,
       'tracker-title-small'
     );
@@ -182,7 +182,7 @@ export const renderTitle = (
   }
 
   if (bulletInfo.valueUnit) {
-    const unitSize = StringUtils.measureTextSize(
+    const unitSize = ChartUtils.measureTextSize(
       bulletInfo.valueUnit,
       'tracker-tick-label'
     );
@@ -251,7 +251,7 @@ export const renderAxis = (
     return d3.tickFormat(0, lastRange, 7)(value);
   };
   const maxTickLabel = tickFormatFn(lastRange);
-  const maxTickLabelSize = StringUtils.measureTextSize(
+  const maxTickLabelSize = ChartUtils.measureTextSize(
     maxTickLabel,
     'tracker-tick-label'
   );

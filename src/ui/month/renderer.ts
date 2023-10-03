@@ -1,7 +1,7 @@
 import { Moment } from 'moment';
 import { MonthInfo, RenderInfo } from '../../models/data';
 import { ChartElements } from '../../models/types';
-import * as dateTimeUtils from '../../utils/date-time.utils';
+import { DateTimeUtils } from '../../utils';
 import {
   createAreas,
   renderMonthDays,
@@ -47,7 +47,7 @@ export const renderMonth = (
 
   let monthDate: Moment = null;
   if (monthInfo.initMonth) {
-    monthDate = dateTimeUtils.getDateByDurationToToday(
+    monthDate = DateTimeUtils.getDateByDurationToToday(
       monthInfo.initMonth,
       renderInfo.dateFormat
     );

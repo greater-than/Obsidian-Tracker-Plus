@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import { RenderInfo, SummaryInfo } from '../../models/data';
-import * as Resolver from '../../resolver/resolver';
+import Resolver from '../../resolver/resolver';
 import { checkSummaryTemplateValid } from './helper';
 
 export const renderSummary = (

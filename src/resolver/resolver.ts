@@ -5,7 +5,7 @@ import { DateTimeUtils } from '../utils';
 import { ExprResolved, resolve } from './helper';
 
 /**
- * Resolve the template expression in string and return a resolved string
+ * @summary Resolve the template expression in string and return a resolved string
  * @param template
  * @param renderInfo
  * @returns
@@ -49,7 +49,7 @@ export const resolveTemplate = (
 };
 
 /**
- * Resolve the template expression in string and return a number or date
+ * @summary Resolve the template expression in string and return a number or date
  * @param text
  * @param renderInfo
  * @returns
@@ -79,3 +79,10 @@ export const resolveValue = (
 
   return 'Error: failed to resolve values';
 };
+
+const Resolver = {
+  resolveTemplate,
+  resolveValue,
+};
+
+export default Resolver;

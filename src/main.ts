@@ -10,7 +10,8 @@ import {
   TFile,
   TFolder,
 } from 'obsidian';
-import * as collecting from './data-collector/data-collector';
+import DataCollector from './data-collector/data-collector';
+import * as helper from './data-collector/helper';
 import {
   CollectingProcessInfo,
   Datasets,
@@ -20,15 +21,13 @@ import {
 import { GraphType, SearchType, ValueType } from './models/enums';
 import { DataMap, QueryValuePair, XValueMap } from './models/types';
 import { getRenderInfoFromYaml } from './parser/yaml-parser';
-import * as renderer from './renderer';
+import Renderer from './renderer';
 import {
   DEFAULT_SETTINGS,
   TrackerSettings,
   TrackerSettingTab,
 } from './settings';
-import * as dateTimeUtils from './utils/date-time.utils';
-import * as numberUtils from './utils/number.utils';
-import * as stringUtils from './utils/string.utils';
+import { DateTimeUtils, NumberUtils, StringUtils } from './utils';
 // import { getDailyNoteSettings } from "obsidian-daily-notes-interface";
 
 declare global {
@@ -92,7 +91,7 @@ export default class Tracker extends Plugin {
     canvas: HTMLElement,
     element: HTMLElement
   ): void {
-    renderer.renderErrorMessage(canvas, message);
+    Renderer.renderErrorMessage(canvas, message);
     element.appendChild(canvas);
     return;
   }
@@ -230,7 +229,7 @@ export default class Tracker extends Plugin {
                       typeof match.groups.value !== 'undefined'
                     ) {
                       // must have group name 'value'
-                      const retParse = numberUtils.parseFloatFromAny(
+                      const retParse = NumberUtils.parseFloatFromAny(
                         match.groups.value.trim(),
                         renderInfo.textValueMap
                       );
@@ -370,42 +369,42 @@ export default class Tracker extends Plugin {
           let xDate = window.moment('');
           if (xDatasetId === -1) {
             // Default using date in filename as xValue
-            xDate = collecting.getDateFromFilename(file, renderInfo);
+            xDate = DataCollector.getDateFromFilename(file, renderInfo);
             // console.log(xDate);
           } else {
             const xDatasetQuery = renderInfo.queries[xDatasetId];
             // console.log(xDatasetQuery);
             switch (xDatasetQuery.getType()) {
               case SearchType.Frontmatter:
-                xDate = collecting.getDateFromFrontmatter(
+                xDate = DataCollector.getDateFromFrontmatter(
                   fileCache,
                   xDatasetQuery,
                   renderInfo
                 );
                 break;
               case SearchType.Tag:
-                xDate = collecting.getDateFromTag(
+                xDate = DataCollector.getDateFromTag(
                   content,
                   xDatasetQuery,
                   renderInfo
                 );
                 break;
               case SearchType.Text:
-                xDate = collecting.getDateFromText(
+                xDate = DataCollector.getDateFromText(
                   content,
                   xDatasetQuery,
                   renderInfo
                 );
                 break;
               case SearchType.dvField:
-                xDate = collecting.getDateFromDvField(
+                xDate = DataCollector.getDateFromDvField(
                   content,
                   xDatasetQuery,
                   renderInfo
                 );
                 break;
               case SearchType.FileMeta:
-                xDate = collecting.getDateFromFileMeta(
+                xDate = DataCollector.getDateFromFileMeta(
                   file,
                   xDatasetQuery,
                   renderInfo
@@ -414,7 +413,7 @@ export default class Tracker extends Plugin {
               case SearchType.Task:
               case SearchType.TaskDone:
               case SearchType.TaskNotDone:
-                xDate = collecting.getDateFromTask(
+                xDate = DataCollector.getDateFromTask(
                   content,
                   xDatasetQuery,
                   renderInfo
@@ -447,7 +446,7 @@ export default class Tracker extends Plugin {
             processInfo.gotAnyValidXValue ||= true;
             xValueMap.set(
               xDatasetId,
-              dateTimeUtils.dateToStr(xDate, renderInfo.dateFormat)
+              DateTimeUtils.dateToStr(xDate, renderInfo.dateFormat)
             );
             processInfo.fileAvailable++;
 
@@ -486,7 +485,7 @@ export default class Tracker extends Plugin {
         // console.log("Search frontmatter tags");
         if (fileCache && query.getType() === SearchType.Tag) {
           // Add frontmatter tags, allow simple tag only
-          const gotAnyValue = collecting.collectDataFromFrontmatterTag(
+          const gotAnyValue = DataCollector.collectDataFromFrontmatterTag(
             fileCache,
             query,
             renderInfo,
@@ -502,7 +501,7 @@ export default class Tracker extends Plugin {
           query.getType() === SearchType.Frontmatter &&
           query.getTarget() !== 'tags'
         ) {
-          const gotAnyValue = collecting.collectDataFromFrontmatterKey(
+          const gotAnyValue = DataCollector.collectDataFromFrontmatterKey(
             fileCache,
             query,
             renderInfo,
@@ -519,7 +518,7 @@ export default class Tracker extends Plugin {
             query.getType() === SearchType.WikiLink ||
             query.getType() === SearchType.WikiDisplay)
         ) {
-          const gotAnyValue = collecting.collectDataFromWiki(
+          const gotAnyValue = DataCollector.collectDataFromWiki(
             fileCache,
             query,
             renderInfo,
@@ -531,7 +530,7 @@ export default class Tracker extends Plugin {
 
         // console.log("Search inline tags");
         if (content && query.getType() === SearchType.Tag) {
-          const gotAnyValue = collecting.collectDataFromInlineTag(
+          const gotAnyValue = DataCollector.collectDataFromInlineTag(
             content,
             query,
             renderInfo,
@@ -543,7 +542,7 @@ export default class Tracker extends Plugin {
 
         // console.log("Search Text");
         if (content && query.getType() === SearchType.Text) {
-          const gotAnyValue = collecting.collectDataFromText(
+          const gotAnyValue = DataCollector.collectDataFromText(
             content,
             query,
             renderInfo,
@@ -555,7 +554,7 @@ export default class Tracker extends Plugin {
 
         // console.log("Search FileMeta");
         if (query.getType() === SearchType.FileMeta) {
-          const gotAnyValue = collecting.collectDataFromFileMeta(
+          const gotAnyValue = DataCollector.collectDataFromFileMeta(
             file,
             content,
             query,
@@ -568,7 +567,7 @@ export default class Tracker extends Plugin {
 
         // console.log("Search dvField");
         if (content && query.getType() === SearchType.dvField) {
-          const gotAnyValue = collecting.collectDataFromDvField(
+          const gotAnyValue = DataCollector.collectDataFromDvField(
             content,
             query,
             renderInfo,
@@ -585,7 +584,7 @@ export default class Tracker extends Plugin {
             query.getType() === SearchType.TaskDone ||
             query.getType() === SearchType.TaskNotDone)
         ) {
-          const gotAnyValue = collecting.collectDataFromTask(
+          const gotAnyValue = DataCollector.collectDataFromTask(
             content,
             query,
             renderInfo,
@@ -689,10 +688,10 @@ export default class Tracker extends Plugin {
 
         // dataMap --> {date: [query: value, ...]}
         if (
-          dataMap.has(dateTimeUtils.dateToStr(curDate, renderInfo.dateFormat))
+          dataMap.has(DateTimeUtils.dateToStr(curDate, renderInfo.dateFormat))
         ) {
           const queryValuePairs = dataMap
-            .get(dateTimeUtils.dateToStr(curDate, renderInfo.dateFormat))
+            .get(DateTimeUtils.dateToStr(curDate, renderInfo.dateFormat))
             .filter((pair: QueryValuePair) => {
               return pair.query.equalTo(query);
             });
@@ -721,7 +720,7 @@ export default class Tracker extends Plugin {
     renderInfo.datasets = datasets;
     // console.log(renderInfo.datasets);
 
-    const retRender = renderer.render(canvas, renderInfo);
+    const retRender = Renderer.render(canvas, renderInfo);
     if (typeof retRender === 'string') {
       return this.renderErrorMessage(retRender, canvas, el);
     }
@@ -841,12 +840,12 @@ export default class Tracker extends Plugin {
       if (tableLines.length >= 2) {
         // Must have header and separator line
         let headerLine = tableLines.shift().trim();
-        headerLine = stringUtils.trimByChar(headerLine, '|');
+        headerLine = StringUtils.trimByChar(headerLine, '|');
         const headerSplitted = headerLine.split('|');
         numColumns = headerSplitted.length;
 
         let sepLine = tableLines.shift().trim();
-        sepLine = stringUtils.trimByChar(sepLine, '|');
+        sepLine = StringUtils.trimByChar(sepLine, '|');
         const sepLineSplitted = sepLine.split('|');
         for (const col of sepLineSplitted) {
           if (!col.includes('-')) {
@@ -866,11 +865,11 @@ export default class Tracker extends Plugin {
 
       let indLine = 0;
       for (const tableLine of tableLines) {
-        const dataRow = stringUtils.trimByChar(tableLine.trim(), '|');
+        const dataRow = StringUtils.trimByChar(tableLine.trim(), '|');
         const dataRowSplitted = dataRow.split('|');
         if (columnXDataset < dataRowSplitted.length) {
           const data = dataRowSplitted[columnXDataset].trim();
-          const date = dateTimeUtils.strToDate(data, renderInfo.dateFormat);
+          const date = DateTimeUtils.strToDate(data, renderInfo.dateFormat);
 
           if (date.isValid()) {
             xValues.push(date);
@@ -921,7 +920,7 @@ export default class Tracker extends Plugin {
 
         let indLine = 0;
         for (const tableLine of tableLines) {
-          const dataRow = stringUtils.trimByChar(tableLine.trim(), '|');
+          const dataRow = StringUtils.trimByChar(tableLine.trim(), '|');
           const dataRowSplitted = dataRow.split('|');
           if (columnOfInterest < dataRowSplitted.length) {
             const data = dataRowSplitted[columnOfInterest].trim();
@@ -929,7 +928,7 @@ export default class Tracker extends Plugin {
             // console.log(splitted);
             if (!splitted) continue;
             if (splitted.length === 1) {
-              const retParse = numberUtils.parseFloatFromAny(
+              const retParse = NumberUtils.parseFloatFromAny(
                 splitted[0],
                 renderInfo.textValueMap
               );
@@ -941,9 +940,9 @@ export default class Tracker extends Plugin {
                 const value = retParse.value;
                 if (indLine < xValues.length && xValues[indLine]) {
                   processInfo.gotAnyValidYValue ||= true;
-                  collecting.addToDataMap(
+                  helper.addToDataMap(
                     dataMap,
-                    dateTimeUtils.dateToStr(
+                    DateTimeUtils.dateToStr(
                       xValues[indLine],
                       renderInfo.dateFormat
                     ),
@@ -960,7 +959,7 @@ export default class Tracker extends Plugin {
               const splittedPart =
                 splitted[yDatasetQuery.getAccessor(2)].trim();
               // console.log(splittedPart);
-              const retParse = numberUtils.parseFloatFromAny(
+              const retParse = NumberUtils.parseFloatFromAny(
                 splittedPart,
                 renderInfo.textValueMap
               );
@@ -972,9 +971,9 @@ export default class Tracker extends Plugin {
                 value = retParse.value;
                 if (indLine < xValues.length && xValues[indLine]) {
                   processInfo.gotAnyValidYValue ||= true;
-                  collecting.addToDataMap(
+                  helper.addToDataMap(
                     dataMap,
-                    dateTimeUtils.dateToStr(
+                    DateTimeUtils.dateToStr(
                       xValues[indLine],
                       renderInfo.dateFormat
                     ),

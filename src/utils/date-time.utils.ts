@@ -1,7 +1,5 @@
 import { Duration, Moment } from 'moment';
 
-// date and time
-
 export const timeFormat = ((): string[] => {
   // HH: 2-digits hours (24 hour time) from 0 to 23, H:, 2-digits hours (24 hour time) from 0 to 23 without leading 0
   // hh: 2-digits hours (12 hour time), h: 2-digits hours (12 hour time) without leading 0
@@ -32,34 +30,35 @@ export const timeFormat = ((): string[] => {
   return timeFormat;
 })();
 
+/**
+ *
+ * @param {string} inputString
+ * @param {string} prefix
+ * @param {string} suffix
+ * @returns
+ */
 export const getDateStringFromInputString = (
   inputString: string,
-  dateFormatPrefix: string,
-  dateFormatSuffix: string
+  prefix: string,
+  suffix: string
 ) => {
-  if (!dateFormatPrefix && !dateFormatSuffix) return inputString;
+  if (!prefix && !suffix) return inputString;
 
   let dateString = inputString;
-  if (dateString.startsWith('^')) {
-    dateString = dateString.slice(1);
-  }
+  if (dateString.startsWith('^')) dateString = dateString.slice(1);
   // console.log(dateString);
-  if (dateFormatPrefix) {
-    const strRegex = '^(' + dateFormatPrefix + ')';
+  if (prefix) {
+    const strRegex = '^(' + prefix + ')';
     // console.log(strRegex);
     const regex = new RegExp(strRegex, 'gm');
-    if (regex.test(dateString)) {
-      dateString = dateString.replace(regex, '');
-    }
+    if (regex.test(dateString)) dateString = dateString.replace(regex, '');
   }
   // console.log(dateString);
-  if (dateFormatSuffix) {
-    const strRegex = '(' + dateFormatSuffix + ')$';
+  if (suffix) {
+    const strRegex = '(' + suffix + ')$';
     // console.log(strRegex);
     const regex = new RegExp(strRegex, 'gm');
-    if (regex.test(dateString)) {
-      dateString = dateString.replace(regex, '');
-    }
+    if (regex.test(dateString)) dateString = dateString.replace(regex, '');
   }
   // console.log(dateString);
   return dateString;
@@ -77,9 +76,7 @@ export const strToDate = (strDate: string, dateFormat: string): Moment => {
     strDate = strDate.substring(2, strDate.length - 2);
   }
 
-  if (dateFormat.toLowerCase() === 'iso-8601') {
-    format = window.moment.ISO_8601;
-  }
+  if (dateFormat.toLowerCase() === 'iso-8601') format = window.moment.ISO_8601;
 
   let date = window.moment(strDate, format, true);
 
@@ -94,9 +91,7 @@ export const extractValueFromDurationString = (
   units: Array<string>,
   removePattern: boolean = true
 ): [number, string] => {
-  if (!strDuration || !units || units.length === 0) {
-    return [null, strDuration];
-  }
+  if (!strDuration || !units || units.length === 0) return [null, strDuration];
 
   let value = null;
   const strRegex = '^(?<value>[0-9]+)(' + units.join('|') + ')$';
@@ -123,7 +118,7 @@ export const extractValueFromDurationString = (
   return [null, strDuration];
 };
 
-export const parseDurationString = (strDuration: string): Duration => {
+export const parseDurationString = (durationString: string): Duration => {
   //duration string format:
   //year (years, y, Y),
   //month (months, M), // m will conflict with minute!!!
@@ -132,120 +127,102 @@ export const parseDurationString = (strDuration: string): Duration => {
   //hour (hours, h, H),
   //minute (minutes, m), // M will conflict with month!!!
   //second (seconds, s, S)
-  if (!strDuration) return null;
+  if (!durationString) return null;
 
   const duration: Duration = window.moment.duration(0);
   let hasValue = false;
 
   let negativeValue = false;
-  if (strDuration.startsWith('+')) {
+  if (durationString.startsWith('+')) {
     negativeValue = false;
-    strDuration = strDuration.substring(1);
+    durationString = durationString.substring(1);
   }
-  if (strDuration.startsWith('-')) {
+  if (durationString.startsWith('-')) {
     negativeValue = true;
-    strDuration = strDuration.substring(1);
+    durationString = durationString.substring(1);
   }
 
   let yearValue = null;
-  [yearValue, strDuration] = extractValueFromDurationString(strDuration, [
+  [yearValue, durationString] = extractValueFromDurationString(durationString, [
     'year',
     'years',
     'Y',
     'y',
   ]);
   if (yearValue !== null) {
-    if (negativeValue) {
-      yearValue *= -1;
-    }
+    if (negativeValue) yearValue *= -1;
     duration.add(yearValue, 'years');
     hasValue = true;
   }
 
   let monthValue = null;
-  [monthValue, strDuration] = extractValueFromDurationString(strDuration, [
-    'month',
-    'months',
-    'M',
-  ]);
+  [monthValue, durationString] = extractValueFromDurationString(
+    durationString,
+    ['month', 'months', 'M']
+  );
   if (monthValue !== null) {
-    if (negativeValue) {
-      monthValue *= -1;
-    }
+    if (negativeValue) monthValue *= -1;
     duration.add(monthValue, 'months');
     hasValue = true;
   }
 
   let weekValue = null;
-  [weekValue, strDuration] = extractValueFromDurationString(strDuration, [
+  [weekValue, durationString] = extractValueFromDurationString(durationString, [
     'week',
     'weeks',
     'W',
     'w',
   ]);
   if (weekValue !== null) {
-    if (negativeValue) {
-      weekValue *= -1;
-    }
+    if (negativeValue) weekValue *= -1;
     duration.add(weekValue, 'weeks');
     hasValue = true;
   }
 
   let dayValue = null;
-  [dayValue, strDuration] = extractValueFromDurationString(strDuration, [
+  [dayValue, durationString] = extractValueFromDurationString(durationString, [
     'day',
     'days',
     'D',
     'd',
   ]);
   if (dayValue !== null) {
-    if (negativeValue) {
-      dayValue *= -1;
-    }
+    if (negativeValue) dayValue *= -1;
     duration.add(dayValue, 'days');
     hasValue = true;
   }
 
   let hourValue = null;
-  [hourValue, strDuration] = extractValueFromDurationString(strDuration, [
+  [hourValue, durationString] = extractValueFromDurationString(durationString, [
     'hour',
     'hours',
     'H',
     'h',
   ]);
   if (hourValue !== null) {
-    if (negativeValue) {
-      hourValue *= -1;
-    }
+    if (negativeValue) hourValue *= -1;
     duration.add(hourValue, 'hours');
     hasValue = true;
   }
 
   let minuteValue = null;
-  [minuteValue, strDuration] = extractValueFromDurationString(strDuration, [
-    'minute',
-    'minutes',
-    'm',
-  ]);
+  [minuteValue, durationString] = extractValueFromDurationString(
+    durationString,
+    ['minute', 'minutes', 'm']
+  );
   if (minuteValue !== null) {
-    if (negativeValue) {
-      minuteValue *= -1;
-    }
+    if (negativeValue) minuteValue *= -1;
     duration.add(minuteValue, 'minutes');
     hasValue = true;
   }
 
   let secondValue = null;
-  [secondValue, strDuration] = extractValueFromDurationString(strDuration, [
-    'second',
-    'seconds',
-    'S',
-    's',
-  ]);
+  [secondValue, durationString] = extractValueFromDurationString(
+    durationString,
+    ['second', 'seconds', 'S', 's']
+  );
   if (secondValue !== null) {
-    if (negativeValue) {
-      secondValue *= -1;
-    }
+    if (negativeValue) secondValue *= -1;
     duration.add(secondValue, 'seconds');
     hasValue = true;
   }
@@ -263,20 +240,14 @@ export const getDateByDurationToToday = (
   if (duration && window.moment.isDuration(duration)) {
     date = getDateToday(dateFormat);
     date = date.add(duration);
-
-    if (date && date.isValid()) {
-      return date;
-    }
+    if (date && date.isValid()) return date;
   }
   return date;
 };
 
 export const dateToStr = (date: Moment, dateFormat: string): string => {
   if (typeof date === 'undefined' || date === null) return null;
-
-  if (dateFormat.toLowerCase() === 'iso-8601') {
-    return date.format();
-  }
+  if (dateFormat.toLowerCase() === 'iso-8601') return date.format();
   return date.format(dateFormat);
 };
 

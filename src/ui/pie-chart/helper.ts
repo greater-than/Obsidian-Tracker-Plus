@@ -1,8 +1,8 @@
 import * as d3 from 'd3';
 import { PieInfo, RenderInfo } from '../../models/data';
 import { ChartElements } from '../../models/types';
-import * as Resolver from '../../resolver/resolver';
-import { DomUtils, StringUtils } from '../../utils';
+import Resolver from '../../resolver/resolver';
+import { ChartUtils, DomUtils } from '../../utils';
 
 export const setChartScale = (
   _canvas: HTMLElement,
@@ -98,7 +98,7 @@ export const renderTitle = (
   if (!renderInfo || !pieInfo) return;
 
   if (!pieInfo.title) return;
-  const titleSize = StringUtils.measureTextSize(pieInfo.title, 'tracker-title');
+  const titleSize = ChartUtils.measureTextSize(pieInfo.title, 'tracker-title');
 
   // Append title
   const title = elements.graphArea
@@ -155,7 +155,7 @@ export const renderLegend = (
   // Get names and their dimension
   const names = pieInfo.dataName;
   const nameSizes = names.map((n) => {
-    return StringUtils.measureTextSize(n, 'tracker-legend-label');
+    return ChartUtils.measureTextSize(n, 'tracker-legend-label');
   });
   let indMaxName = 0;
   let maxNameWidth = 0;
@@ -387,7 +387,7 @@ export const renderPie = (
 
   // label sizes
   const labelSizes = labels.map((n) =>
-    StringUtils.measureTextSize(n, 'tracker-tick-label')
+    ChartUtils.measureTextSize(n, 'tracker-tick-label')
   );
 
   // extLabel
@@ -406,7 +406,7 @@ export const renderPie = (
   // console.log(extLabels);
   // extLabel sizes
   const extLabelSizes = extLabels.map((n) => {
-    return StringUtils.measureTextSize(n, 'tracker-pie-label');
+    return ChartUtils.measureTextSize(n, 'tracker-pie-label');
   });
   // console.log(extLabelSizes);
   const showExtLabelOnlyIfNoLabel = pieInfo.showExtLabelOnlyIfNoLabel;

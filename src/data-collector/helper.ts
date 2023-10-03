@@ -1,9 +1,8 @@
 import { Moment } from 'moment';
 import { ValueType } from 'src/models/enums';
 import { Query, RenderInfo } from '../models/data';
-import { DataMap, XValueMap } from '../models/types';
+import { DataMap, QueryValuePair, XValueMap } from '../models/types';
 import { DateTimeUtils, NumberUtils } from '../utils';
-import { addToDataMap } from './data-collector';
 
 /**
  * Helper function
@@ -156,4 +155,19 @@ export const extractDataUsingRegexWithMultipleValues = (
   }
 
   return false;
+};
+export const addToDataMap = (
+  dataMap: DataMap,
+  date: string,
+  query: Query,
+  value: number | null
+) => {
+  if (!dataMap.has(date)) {
+    const queryValuePairs = new Array<QueryValuePair>();
+    queryValuePairs.push({ query: query, value: value });
+    dataMap.set(date, queryValuePairs);
+  } else {
+    const targetValuePairs = dataMap.get(date);
+    targetValuePairs.push({ query: query, value: value });
+  }
 };

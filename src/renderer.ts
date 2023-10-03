@@ -97,3 +97,10 @@ export const renderErrorMessage = (
     .style('padding', '10px')
     .style('color', 'red');
 };
+
+const Renderer = {
+  render,
+  renderErrorMessage,
+};
+
+export default Renderer;

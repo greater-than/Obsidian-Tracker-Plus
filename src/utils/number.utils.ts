@@ -12,7 +12,7 @@ export const parseFloatFromAny = (
   // console.log("parseFloatFromAny");
   // console.log(toParse);
   let value = null;
-  let valueType = ValueType.Number;
+  let type = ValueType.Number;
   if (typeof toParse === 'string') {
     // time value
     if (toParse.includes(':')) {
@@ -27,10 +27,9 @@ export const parseFloatFromAny = (
           window.moment('00:00', 'HH:mm', true),
           'seconds'
         );
-        if (negativeValue) {
-          value = -1 * value;
-        }
-        valueType = ValueType.Time;
+        if (negativeValue) value = -1 * value;
+
+        type = ValueType.Time;
       }
     } else {
       if (textValueMap) {
@@ -49,19 +48,15 @@ export const parseFloatFromAny = (
         }
 
         value = parseFloat(toParse);
-        if (Number.isNaN(value)) {
-          value = null;
-        }
+        if (Number.isNaN(value)) value = null;
       } else {
         value = parseFloat(toParse);
-        if (Number.isNaN(value)) {
-          value = null;
-        }
+        if (Number.isNaN(value)) value = null;
       }
     }
   } else if (typeof toParse === 'number') {
     value = toParse;
   }
 
-  return { type: valueType, value: value };
+  return { type, value };
 };
