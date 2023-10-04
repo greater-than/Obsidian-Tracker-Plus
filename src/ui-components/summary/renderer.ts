@@ -1,34 +1,32 @@
 import * as d3 from 'd3';
-import { RenderInfo, SummaryInfo } from '../../models/data';
+import { RenderInfo } from '../../models/render-info';
+import { Summary } from '../../models/summary';
 import Resolver from '../../resolver/resolver';
 import { checkSummaryTemplateValid } from './helper';
 
 export const renderSummary = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  summaryInfo: SummaryInfo
+  component: Summary
 ): string => {
   // console.log("renderSummary");
   // console.log(renderInfo);
-  if (!renderInfo || !summaryInfo) return;
+  if (!renderInfo || !component) return;
 
-  // console.log(summaryInfo.template);
+  // console.log(component.template);
   let outputSummary = '';
-  if (checkSummaryTemplateValid(summaryInfo.template)) {
-    outputSummary = summaryInfo.template;
+  if (checkSummaryTemplateValid(component.template)) {
+    outputSummary = component.template;
   } else {
     return 'Invalid summary template';
   }
 
-  const retResolvedTemplate = Resolver.resolveTemplate(
-    outputSummary,
-    renderInfo
-  );
-  // console.log(retResolvedTemplate);
-  if (retResolvedTemplate.startsWith('Error:')) {
-    return retResolvedTemplate;
+  const resolvedTemplate = Resolver.resolveTemplate(outputSummary, renderInfo);
+  // console.log(resolvedTemplate);
+  if (resolvedTemplate.startsWith('Error:')) {
+    return resolvedTemplate;
   }
-  outputSummary = retResolvedTemplate;
+  outputSummary = resolvedTemplate;
 
   if (outputSummary !== '') {
     const textBlock = d3.select(canvas).append('div');
@@ -43,8 +41,8 @@ export const renderSummary = (
       textBlock.text(outputSummary);
     }
 
-    if (summaryInfo.style !== '') {
-      textBlock.attr('style', summaryInfo.style);
+    if (component.style !== '') {
+      textBlock.attr('style', component.style);
     }
   }
 };

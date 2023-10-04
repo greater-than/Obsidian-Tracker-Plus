@@ -1,15 +1,13 @@
 import * as d3 from 'd3';
 import { Duration, Moment } from 'moment';
 import { sprintf } from 'sprintf-js';
-import { GraphType, ValueType } from 'src/models/enums';
-import {
-  BarInfo,
-  CommonChartInfo,
-  DataPoint,
-  Dataset,
-  LineInfo,
-  RenderInfo,
-} from '../../models/data';
+import { BarChart } from '../../models/bar-chart';
+import { BaseChart } from '../../models/base-chart';
+import { DataPoint } from '../../models/data-point';
+import { Dataset } from '../../models/dataset';
+import { ComponentType, ValueType } from '../../models/enums';
+import { LineChart } from '../../models/line-chart';
+import { RenderInfo } from '../../models/render-info';
 import { ChartElements } from '../../models/types';
 import { ChartUtils, DateTimeUtils, DomUtils } from '../../utils';
 
@@ -199,10 +197,10 @@ export const getYTickLabelFormat = (
 export const renderXAxis = (
   elements: ChartElements,
   renderInfo: RenderInfo,
-  chartInfo: CommonChartInfo
+  component: BaseChart
 ): void => {
   // console.log("renderXAxis");
-  if (!renderInfo || !chartInfo) return;
+  if (!renderInfo || !component) return;
 
   const datasets = renderInfo.datasets;
   const xDomain = d3.extent(datasets.getDates());
@@ -213,7 +211,7 @@ export const renderXAxis = (
   elements['xScale'] = xScale;
 
   const tickIntervalInDuration = DateTimeUtils.parseDurationString(
-    chartInfo.xAxisTickInterval
+    component.xAxisTickInterval
   );
 
   const [tickValues, tickInterval] = getXTickValues(
@@ -222,7 +220,7 @@ export const renderXAxis = (
   );
   const tickFormat = getXTickLabelFormat(
     datasets.getDates(),
-    chartInfo.xAxisTickLabelFormat
+    component.xAxisTickLabelFormat
   );
 
   const xAxisGen = d3.axisBottom(xScale);
@@ -242,8 +240,8 @@ export const renderXAxis = (
     .attr('transform', 'translate(0,' + renderInfo.dataAreaSize.height + ')') // relative to graphArea
     .call(xAxisGen)
     .attr('class', 'tracker-axis');
-  if (chartInfo.xAxisColor) {
-    xAxis.style('stroke', chartInfo.xAxisColor);
+  if (component.xAxisColor) {
+    xAxis.style('stroke', component.xAxisColor);
   }
   elements['xAxis'] = xAxis;
 
@@ -256,15 +254,15 @@ export const renderXAxis = (
     .attr('transform', 'rotate(-65)')
     .style('text-anchor', 'end')
     .attr('class', 'tracker-tick-label');
-  if (chartInfo.xAxisColor) {
-    xAxisTickLabels.style('fill', chartInfo.xAxisColor);
+  if (component.xAxisColor) {
+    xAxisTickLabels.style('fill', component.xAxisColor);
   }
 
   const tickLength = 6;
   const tickLabelHeight = textSize.width * Math.sin((65 / 180) * Math.PI);
   const xAxisLabel = xAxis
     .append('text')
-    .text(chartInfo.xAxisLabel)
+    .text(component.xAxisLabel)
     .attr(
       'transform',
       'translate(' +
@@ -274,8 +272,8 @@ export const renderXAxis = (
         ')'
     )
     .attr('class', 'tracker-axis-label');
-  if (chartInfo.xAxisLabelColor) {
-    xAxisLabel.style('fill', chartInfo.xAxisLabelColor);
+  if (component.xAxisLabelColor) {
+    xAxisLabel.style('fill', component.xAxisLabelColor);
   }
 
   // xAxis height
@@ -289,7 +287,7 @@ export const renderXAxis = (
 export const renderYAxis = (
   elements: ChartElements,
   renderInfo: RenderInfo,
-  chartInfo: CommonChartInfo,
+  component: BaseChart,
   yAxisLocation: string,
   datasetIds: Array<number>
 ): string => {
@@ -297,7 +295,7 @@ export const renderYAxis = (
   // console.log(datasets);
   // console.log(renderInfo);
   // console.log(datasetIds);
-  if (!renderInfo || !chartInfo) return;
+  if (!renderInfo || !component) return;
 
   const datasets = renderInfo.datasets;
   if (datasetIds.length === 0) {
@@ -335,9 +333,9 @@ export const renderYAxis = (
   // console.log(yMaxOfDatasets);
   let yMin = null;
   if (yAxisLocation === 'left') {
-    yMin = chartInfo.yMin[0];
+    yMin = component.yMin[0];
   } else if (yAxisLocation === 'right') {
-    yMin = chartInfo.yMin[1];
+    yMin = component.yMin[1];
   }
   let yMinAssigned = false;
   if (typeof yMin !== 'number') {
@@ -348,9 +346,9 @@ export const renderYAxis = (
 
   let yMax = null;
   if (yAxisLocation === 'left') {
-    yMax = chartInfo.yMax[0];
+    yMax = component.yMax[0];
   } else if (yAxisLocation === 'right') {
-    yMax = chartInfo.yMax[1];
+    yMax = component.yMax[1];
   }
   let yMaxAssigned = false;
   if (typeof yMax !== 'number') {
@@ -382,7 +380,7 @@ export const renderYAxis = (
     yUpper = yMax + yExtent * 0.2;
   }
   // if it is bar chart, zero must be contained in the range
-  if (chartInfo.GetGraphType() === GraphType.Bar) {
+  if (component.componentType === ComponentType.BarChart) {
     if (yUpper < 0) {
       yUpper = 0;
     }
@@ -392,8 +390,8 @@ export const renderYAxis = (
   }
   let domain = [yLower, yUpper];
   if (
-    (yAxisLocation === 'left' && chartInfo.reverseYAxis[0]) ||
-    (yAxisLocation === 'right' && chartInfo.reverseYAxis[1])
+    (yAxisLocation === 'left' && component.reverseYAxis[0]) ||
+    (yAxisLocation === 'right' && component.reverseYAxis[1])
   ) {
     domain = [yUpper, yLower];
   }
@@ -407,36 +405,36 @@ export const renderYAxis = (
 
   let yAxisColor = '';
   if (yAxisLocation === 'left') {
-    yAxisColor = chartInfo.yAxisColor[0];
+    yAxisColor = component.yAxisColor[0];
   } else if (yAxisLocation === 'right') {
-    yAxisColor = chartInfo.yAxisColor[1];
+    yAxisColor = component.yAxisColor[1];
   }
 
   let yAxisLabelColor = '';
   if (yAxisLocation === 'left') {
-    yAxisLabelColor = chartInfo.yAxisLabelColor[0];
+    yAxisLabelColor = component.yAxisLabelColor[0];
   } else if (yAxisLocation === 'right') {
-    yAxisLabelColor = chartInfo.yAxisLabelColor[1];
+    yAxisLabelColor = component.yAxisLabelColor[1];
   }
 
   let yAxisLabelText = '';
   if (yAxisLocation === 'left') {
-    yAxisLabelText = chartInfo.yAxisLabel[0];
+    yAxisLabelText = component.yAxisLabel[0];
   } else if (yAxisLocation === 'right') {
-    yAxisLabelText = chartInfo.yAxisLabel[1];
+    yAxisLabelText = component.yAxisLabel[1];
   }
 
   let yAxisUnitText = '';
   let yAxisTickInterval = null;
   let yAxisTickLabelFormat = null;
   if (yAxisLocation === 'left') {
-    yAxisUnitText = chartInfo.yAxisUnit[0];
-    yAxisTickInterval = chartInfo.yAxisTickInterval[0]; // string
-    yAxisTickLabelFormat = chartInfo.yAxisTickLabelFormat[0];
+    yAxisUnitText = component.yAxisUnit[0];
+    yAxisTickInterval = component.yAxisTickInterval[0]; // string
+    yAxisTickLabelFormat = component.yAxisTickLabelFormat[0];
   } else if (yAxisLocation === 'right') {
-    yAxisUnitText = chartInfo.yAxisUnit[1];
-    yAxisTickInterval = chartInfo.yAxisTickInterval[1]; // string
-    yAxisTickLabelFormat = chartInfo.yAxisTickLabelFormat[1];
+    yAxisUnitText = component.yAxisUnit[1];
+    yAxisTickInterval = component.yAxisTickInterval[1]; // string
+    yAxisTickLabelFormat = component.yAxisTickLabelFormat[1];
   }
   // get interval from string
   let tickInterval = null;
@@ -573,13 +571,13 @@ export const renderYAxis = (
 export const renderLine = (
   elements: ChartElements,
   renderInfo: RenderInfo,
-  lineInfo: LineInfo,
+  component: LineChart,
   dataset: Dataset,
   yAxisLocation: string
 ): void => {
   // console.log(dataset);
   // console.log(renderInfo);
-  if (!renderInfo || !lineInfo) return;
+  if (!renderInfo || !component) return;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let yScale: any = null;
@@ -589,7 +587,7 @@ export const renderLine = (
     yScale = elements.rightYScale;
   }
 
-  if (lineInfo.showLine[dataset.getId()]) {
+  if (component.showLine[dataset.getId()]) {
     const lineGen = d3
       .line<DataPoint>()
       .defined((p: DataPoint) => p.value !== null)
@@ -599,9 +597,9 @@ export const renderLine = (
     const line = elements.dataArea
       .append('path')
       .attr('class', 'tracker-line')
-      .style('stroke-width', lineInfo.lineWidth[dataset.getId()]);
+      .style('stroke-width', component.lineWidth[dataset.getId()]);
 
-    if (lineInfo.fillGap[dataset.getId()]) {
+    if (component.fillGap[dataset.getId()]) {
       line
         .datum(Array.from(dataset).filter((p) => p.value !== null))
         .attr('d', lineGen);
@@ -609,8 +607,8 @@ export const renderLine = (
       line.datum(dataset).attr('d', lineGen);
     }
 
-    if (lineInfo.lineColor[dataset.getId()]) {
-      line.style('stroke', lineInfo.lineColor[dataset.getId()]);
+    if (component.lineColor[dataset.getId()]) {
+      line.style('stroke', component.lineColor[dataset.getId()]);
     }
   }
 };
@@ -618,13 +616,13 @@ export const renderLine = (
 export const renderPoints = (
   elements: ChartElements,
   renderInfo: RenderInfo,
-  lineInfo: LineInfo,
+  component: LineChart,
   dataset: Dataset,
   yAxisLocation: string
 ): void => {
-  // console.log(lineInfo);
+  // console.log(component);
   // console.log(dataset);
-  if (!renderInfo || !lineInfo) return;
+  if (!renderInfo || !component) return;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let yScale: any = null;
@@ -634,13 +632,13 @@ export const renderPoints = (
     yScale = elements.rightYScale;
   }
 
-  if (lineInfo.showPoint[dataset.getId()]) {
+  if (component.showPoint[dataset.getId()]) {
     const dots = elements.dataArea
       .selectAll('dot')
       .data(Array.from(dataset).filter((p: DataPoint) => p.value !== null))
       .enter()
       .append('circle')
-      .attr('r', lineInfo.pointSize[dataset.getId()])
+      .attr('r', component.pointSize[dataset.getId()])
       .attr('cx', (p: DataPoint) => elements.xScale(p.date))
       .attr('cy', (p: DataPoint) => yScale(p.value))
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -655,19 +653,19 @@ export const renderPoints = (
       })
       .attr('valueType', ValueType[dataset.valueType])
       .attr('class', 'tracker-dot');
-    if (lineInfo.pointColor[dataset.getId()]) {
-      dots.style('fill', lineInfo.pointColor[dataset.getId()]);
+    if (component.pointColor[dataset.getId()]) {
+      dots.style('fill', component.pointColor[dataset.getId()]);
 
       if (
-        lineInfo.pointBorderColor[dataset.getId()] &&
-        lineInfo.pointBorderWidth[dataset.getId()] > 0
+        component.pointBorderColor[dataset.getId()] &&
+        component.pointBorderWidth[dataset.getId()] > 0
       ) {
-        dots.style('stroke', lineInfo.pointBorderColor[dataset.getId()]);
-        dots.style('stroke-width', lineInfo.pointBorderWidth[dataset.getId()]);
+        dots.style('stroke', component.pointBorderColor[dataset.getId()]);
+        dots.style('stroke-width', component.pointBorderWidth[dataset.getId()]);
       }
     }
 
-    if (lineInfo.allowInspectData) {
+    if (component.allowInspectData) {
       renderTooltip(dots, elements, renderInfo);
     }
   }
@@ -777,7 +775,7 @@ export function renderTooltip(
 export const renderBar = (
   elements: ChartElements,
   renderInfo: RenderInfo,
-  barInfo: BarInfo,
+  component: BarChart,
   dataset: Dataset,
   yAxisLocation: string,
   currBarSet: number,
@@ -786,7 +784,7 @@ export const renderBar = (
   // console.log(dataset);
   // console.log(barInfo);
   // console.log("%d/%d", currBarSet, totalNumOfBarSets);
-  if (!renderInfo || !barInfo) return;
+  if (!renderInfo || !component) return;
 
   const barGap = 1;
   const barSetWidth = renderInfo.dataAreaSize.width / dataset.getLength();
@@ -855,18 +853,18 @@ export const renderBar = (
     })
     .attr('class', 'tracker-bar');
 
-  if (barInfo.barColor[dataset.getId()]) {
-    bars.style('fill', barInfo.barColor[dataset.getId()]);
+  if (component.barColor[dataset.getId()]) {
+    bars.style('fill', component.barColor[dataset.getId()]);
   }
 };
 
 export const renderLegend = (
   elements: ChartElements,
   renderInfo: RenderInfo,
-  chartInfo: CommonChartInfo
+  component: BaseChart
 ): void => {
-  // console.log(chartInfo.legendPosition);
-  // console.log(chartInfo.legendOrientation);
+  // console.log(component.legendPosition);
+  // console.log(component.legendOrientation);
   // Get chart elements
   const svg = elements.svg;
   // TODO Why is this here?
@@ -922,10 +920,10 @@ export const renderLegend = (
   // Get legend width and height
   let legendWidth = 0;
   let legendHeight = 0;
-  if (chartInfo.legendOrientation === 'vertical') {
+  if (component.legendOrientation === 'vertical') {
     legendWidth = xSpacing * 3 + markerWidth + maxNameWidth;
     legendHeight = (numNames + 1) * ySpacing;
-  } else if (chartInfo.legendOrientation === 'horizontal') {
+  } else if (component.legendOrientation === 'horizontal') {
     legendWidth =
       (2 * xSpacing + markerWidth) * numNames +
       xSpacing +
@@ -940,7 +938,7 @@ export const renderLegend = (
   // Calculate legendX and legendY
   let legendX = 0; // relative to graphArea
   let legendY = 0;
-  if (chartInfo.legendPosition === 'top') {
+  if (component.legendPosition === 'top') {
     // below title
     legendX =
       leftYAxisWidth + renderInfo.dataAreaSize.width / 2 - legendWidth / 2;
@@ -949,7 +947,7 @@ export const renderLegend = (
     DomUtils.expandArea(svg, 0, legendHeight + ySpacing);
     // Move dataArea down
     DomUtils.moveArea(dataArea, 0, legendHeight + ySpacing);
-  } else if (chartInfo.legendPosition === 'bottom') {
+  } else if (component.legendPosition === 'bottom') {
     // bellow x-axis label
     legendX =
       leftYAxisWidth + renderInfo.dataAreaSize.width / 2 - legendWidth / 2;
@@ -957,7 +955,7 @@ export const renderLegend = (
       titleHeight + renderInfo.dataAreaSize.height + xAxisHeight + ySpacing;
     // Expand svg
     DomUtils.expandArea(svg, 0, legendHeight + ySpacing);
-  } else if (chartInfo.legendPosition === 'left') {
+  } else if (component.legendPosition === 'left') {
     legendX = 0;
     legendY =
       titleHeight + renderInfo.dataAreaSize.height / 2 - legendHeight / 2;
@@ -965,7 +963,7 @@ export const renderLegend = (
     DomUtils.expandArea(svg, legendWidth + xSpacing, 0);
     // Move dataArea right
     DomUtils.moveArea(dataArea, legendWidth + xSpacing, 0);
-  } else if (chartInfo.legendPosition === 'right') {
+  } else if (component.legendPosition === 'right') {
     legendX =
       renderInfo.dataAreaSize.width +
       leftYAxisWidth +
@@ -989,11 +987,11 @@ export const renderLegend = (
     .attr('class', 'tracker-legend')
     .attr('width', legendWidth)
     .attr('height', legendHeight);
-  if (chartInfo.legendBgColor) {
-    legendBg.style('fill', chartInfo.legendBgColor);
+  if (component.legendBgColor) {
+    legendBg.style('fill', component.legendBgColor);
   }
-  if (chartInfo.legendBorderColor) {
-    legendBg.style('stroke', chartInfo.legendBorderColor);
+  if (component.legendBorderColor) {
+    legendBg.style('stroke', component.legendBorderColor);
   }
 
   const firstMarkerX = xSpacing;
@@ -1001,8 +999,8 @@ export const renderLegend = (
   const firstLabelX = firstMarkerX + xSpacing + markerWidth; // xSpacing + 2 * xSpacing
   const firstLabelY = firstMarkerY;
 
-  if (chartInfo.legendOrientation === 'vertical') {
-    if (chartInfo.GetGraphType() === GraphType.Line) {
+  if (component.legendOrientation === 'vertical') {
+    if (component.componentType === ComponentType.LineChart) {
       // lines
       legend
         .selectAll('markers')
@@ -1027,7 +1025,7 @@ export const renderLegend = (
         })
         .style('stroke', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          return (chartInfo as LineInfo).lineColor[i];
+          return (component as LineChart).lineColor[i];
         });
 
       // points
@@ -1046,16 +1044,16 @@ export const renderLegend = (
         })
         .attr('r', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          if ((chartInfo as LineInfo).showPoint[i]) {
-            return (chartInfo as LineInfo).pointSize[i];
+          if ((component as LineChart).showPoint[i]) {
+            return (component as LineChart).pointSize[i];
           }
           return 0;
         })
         .style('fill', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          return (chartInfo as LineInfo).pointColor[i];
+          return (component as LineChart).pointColor[i];
         });
-    } else if (chartInfo.GetGraphType() === GraphType.Bar) {
+    } else if (component.componentType === ComponentType.BarChart) {
       // bars
       legend
         .selectAll('markers')
@@ -1074,7 +1072,7 @@ export const renderLegend = (
         .attr('height', nameHeight)
         .style('fill', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          return (chartInfo as BarInfo).barColor[i];
+          return (component as BarChart).barColor[i];
         });
     }
 
@@ -1099,19 +1097,19 @@ export const renderLegend = (
       .style('alignment-baseline', 'middle')
       .attr('class', 'tracker-legend-label');
 
-    if (chartInfo.GetGraphType() === GraphType.Line) {
+    if (component.componentType === ComponentType.LineChart) {
       nameLabels.style('fill', (name: string, i: number) => {
         if (xDatasetIds.includes(i)) return;
-        return (chartInfo as LineInfo).lineColor[i];
+        return (component as LineChart).lineColor[i];
       });
-    } else if (chartInfo.GetGraphType() === GraphType.Bar) {
+    } else if (component.componentType === ComponentType.BarChart) {
       nameLabels.style('fill', (name: string, i: number) => {
         if (xDatasetIds.includes(i)) return;
-        return (chartInfo as BarInfo).barColor[i];
+        return (component as BarChart).barColor[i];
       });
     }
-  } else if (chartInfo.legendOrientation === 'horizontal') {
-    if (chartInfo.GetGraphType() === GraphType.Line) {
+  } else if (component.legendOrientation === 'horizontal') {
+    if (component.componentType === ComponentType.LineChart) {
       // lines
       legend
         .selectAll('markers')
@@ -1146,7 +1144,7 @@ export const renderLegend = (
         .attr('y2', firstMarkerY)
         .style('stroke', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          return (chartInfo as LineInfo).lineColor[i];
+          return (component as LineChart).lineColor[i];
         });
 
       // points
@@ -1175,16 +1173,16 @@ export const renderLegend = (
         .attr('cy', firstMarkerY)
         .attr('r', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          if ((chartInfo as LineInfo).showPoint[i]) {
-            return (chartInfo as LineInfo).pointSize[i];
+          if ((component as LineChart).showPoint[i]) {
+            return (component as LineChart).pointSize[i];
           }
           return 0;
         })
         .style('fill', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          return (chartInfo as LineInfo).pointColor[i];
+          return (component as LineChart).pointColor[i];
         });
-    } else if (chartInfo.GetGraphType() === GraphType.Bar) {
+    } else if (component.componentType === ComponentType.BarChart) {
       // bars
       legend
         .selectAll('markers')
@@ -1212,7 +1210,7 @@ export const renderLegend = (
         .attr('height', nameHeight)
         .style('fill', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          return (chartInfo as BarInfo).barColor[i];
+          return (component as BarChart).barColor[i];
         });
     }
 
@@ -1242,15 +1240,15 @@ export const renderLegend = (
       .style('alignment-baseline', 'middle')
       .attr('class', 'tracker-legend-label');
 
-    if (chartInfo.GetGraphType() === GraphType.Line) {
+    if (component.componentType === ComponentType.LineChart) {
       nameLabels.style('fill', (name: string, i: number) => {
         if (xDatasetIds.includes(i)) return;
-        return (chartInfo as LineInfo).lineColor[i];
+        return (component as LineChart).lineColor[i];
       });
-    } else if (chartInfo.GetGraphType() === GraphType.Bar) {
+    } else if (component.componentType === ComponentType.BarChart) {
       nameLabels.style('fill', (name: string, i: number) => {
         if (xDatasetIds.includes(i)) return;
-        return (chartInfo as BarInfo).barColor[i];
+        return (component as BarChart).barColor[i];
       });
     }
   }
@@ -1259,22 +1257,22 @@ export const renderLegend = (
 export const renderTitle = (
   elements: ChartElements,
   renderInfo: RenderInfo,
-  chartInfo: CommonChartInfo
+  component: BaseChart
 ): void => {
   // console.log("renderTitle")
   // under graphArea
-  if (!renderInfo || !chartInfo) return;
+  if (!renderInfo || !component) return;
 
-  if (!chartInfo.title) return;
+  if (!component.title) return;
   const titleSize = ChartUtils.measureTextSize(
-    chartInfo.title,
+    component.title,
     'tracker-title'
   );
 
   // Append title
   const title = elements.graphArea
     .append('text')
-    .text(chartInfo.title) // pivot at center
+    .text(component.title) // pivot at center
     .attr('id', 'title')
     .attr(
       'transform',

@@ -1,86 +1,75 @@
-import { BarInfo, RenderInfo } from '../../models/data';
+import { LineChart } from '../../models/line-chart';
+import { RenderInfo } from '../../models/render-info';
 import {
   createAreas,
-  renderBar,
   renderLegend,
+  renderLine,
+  renderPoints,
   renderTitle,
   renderXAxis,
   renderYAxis,
   setChartScale,
 } from './helper';
 
-export const renderBarChart = (
+export const renderLineChart = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  barInfo: BarInfo
+  component: LineChart
 ): string => {
-  // console.log("renderBarChart");
+  // console.log("renderLineChart");
   // console.log(renderInfo);
-  if (!renderInfo || !barInfo) return;
+  if (!renderInfo || !component) return;
 
   const elements = createAreas(canvas, renderInfo);
 
-  renderTitle(elements, renderInfo, barInfo);
+  renderTitle(elements, renderInfo, component);
 
-  renderXAxis(elements, renderInfo, barInfo);
-
+  renderXAxis(elements, renderInfo, component);
+  // console.log(elements.xAxis);
+  // console.log(elements.xScale);
   const datasetOnLeftYAxis = [];
   const datasetOnRightYAxis = [];
   const xDatasetIds = renderInfo.datasets.getXDatasetIds();
-  for (let ind = 0; ind < barInfo.yAxisLocation.length; ind++) {
+  for (let ind = 0; ind < component.yAxisLocation.length; ind++) {
     if (xDatasetIds.includes(ind)) continue;
-    const yAxisLocation = barInfo.yAxisLocation[ind];
+    const yAxisLocation = component.yAxisLocation[ind];
     if (yAxisLocation.toLowerCase() === 'left') {
       datasetOnLeftYAxis.push(ind);
     } else if (yAxisLocation.toLocaleLowerCase() === 'right') {
-      // right
       datasetOnRightYAxis.push(ind);
     }
   }
 
-  const retRenderLeftYAxis = renderYAxis(
+  const renderLeftYAxis = renderYAxis(
     elements,
     renderInfo,
-    barInfo,
+    component,
     'left',
     datasetOnLeftYAxis
   );
-  if (typeof retRenderLeftYAxis === 'string') {
-    return retRenderLeftYAxis;
+  if (typeof renderLeftYAxis === 'string') {
+    return renderLeftYAxis;
   }
-
-  const totalNumOfBarSets =
-    datasetOnLeftYAxis.length + datasetOnRightYAxis.length;
-  let currBarSet = 0;
 
   if (elements.leftYAxis && elements.leftYScale) {
     for (const datasetId of datasetOnLeftYAxis) {
       const dataset = renderInfo.datasets.getDatasetById(datasetId);
       if (dataset.getQuery().usedAsXDataset) continue;
 
-      renderBar(
-        elements,
-        renderInfo,
-        barInfo,
-        dataset,
-        'left',
-        currBarSet,
-        totalNumOfBarSets
-      );
-
-      currBarSet++;
+      renderLine(elements, renderInfo, component, dataset, 'left');
+      renderPoints(elements, renderInfo, component, dataset, 'left');
     }
   }
 
-  const retRenderRightYAxis = renderYAxis(
+  const renderRightYAxis = renderYAxis(
     elements,
     renderInfo,
-    barInfo,
+    component,
     'right',
     datasetOnRightYAxis
   );
-  if (typeof retRenderRightYAxis === 'string') {
-    return retRenderRightYAxis;
+  if (typeof renderRightYAxis === 'string') {
+    return renderRightYAxis;
   }
 
   if (elements.rightYAxis && elements.rightYScale) {
@@ -88,22 +77,13 @@ export const renderBarChart = (
       const dataset = renderInfo.datasets.getDatasetById(datasetId);
       if (dataset.getQuery().usedAsXDataset) continue;
 
-      renderBar(
-        elements,
-        renderInfo,
-        barInfo,
-        dataset,
-        'right',
-        currBarSet,
-        totalNumOfBarSets
-      );
-
-      currBarSet++;
+      renderLine(elements, renderInfo, component, dataset, 'right');
+      renderPoints(elements, renderInfo, component, dataset, 'right');
     }
   }
 
-  if (barInfo.showLegend) {
-    renderLegend(elements, renderInfo, barInfo);
+  if (component.showLegend) {
+    renderLegend(elements, renderInfo, component);
   }
 
   setChartScale(canvas, elements, renderInfo);

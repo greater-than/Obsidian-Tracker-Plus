@@ -1,27 +1,15 @@
 import * as d3 from 'd3';
 import { Moment } from 'moment';
-import { ValueType } from 'src/models/enums';
-import { MonthInfo, RenderInfo } from '../../models/data';
+import { ValueType } from '../../models/enums';
+import { MonthInfo } from '../../models/month';
+import { RenderInfo } from '../../models/render-info';
 import { ChartElements } from '../../models/types';
 import { ChartUtils, DateTimeUtils, DomUtils } from '../../utils';
+import { DayInfo } from './types';
 
 let logToConsole = false;
 const RATIO_CELL_TO_TEXT = 2.8;
 const RATIO_DOT_TO_TEXT = 1.8;
-interface DayInfo {
-  date: string;
-  value: number;
-  scaledValue: number;
-  dayInMonth: number;
-  isInThisMonth: boolean;
-  isOutOfDataRange: boolean;
-  row: number;
-  col: number;
-  showCircle: boolean;
-  streakIn: boolean;
-  streakOut: boolean;
-  annotation: string;
-}
 
 export const setChartScale = (
   _canvas: HTMLElement,
@@ -51,35 +39,35 @@ export const setChartScale = (
 
 export const toNextDataset = (
   renderInfo: RenderInfo,
-  monthInfo: MonthInfo
+  component: MonthInfo
 ): boolean => {
-  const datasetIds = monthInfo.dataset;
+  const datasetIds = component.dataset;
   if (datasetIds.length === 0) return false; // false if selected dataset not changed
 
   let dataset = null;
-  if (monthInfo.selectedDataset === null) {
+  if (component.selectedDataset === null) {
     for (const datasetId of datasetIds) {
       dataset = renderInfo.datasets.getDatasetById(datasetId);
       if (dataset && !dataset.getQuery().usedAsXDataset) break;
     }
     if (dataset) {
-      monthInfo.selectedDataset = dataset.getId();
+      component.selectedDataset = dataset.getId();
       return true; // true if selected dataset changed
     }
   } else {
-    const curDatasetId = monthInfo.selectedDataset;
+    const curDatasetId = component.selectedDataset;
     let curIndex = datasetIds.findIndex((id) => {
       return id === curDatasetId;
     });
     if (curIndex >= 0) {
-      if (curIndex === monthInfo.dataset.length - 1) {
+      if (curIndex === component.dataset.length - 1) {
         // search from start
         for (const datasetId of datasetIds) {
           dataset = renderInfo.datasets.getDatasetById(datasetId);
           if (dataset && !dataset.getQuery().usedAsXDataset) break;
         }
         if (dataset) {
-          monthInfo.selectedDataset = dataset.getId();
+          component.selectedDataset = dataset.getId();
           return true; // true if selected dataset changed
         } else {
           return false;
@@ -88,11 +76,11 @@ export const toNextDataset = (
         curIndex++;
         const datasetId = datasetIds[curIndex];
         dataset = renderInfo.datasets.getDatasetById(datasetId);
-        monthInfo.selectedDataset = datasetId;
+        component.selectedDataset = datasetId;
         if (dataset && !dataset.getQuery().usedAsXDataset) {
           return true;
         } else {
-          toNextDataset(renderInfo, monthInfo);
+          toNextDataset(renderInfo, component);
         }
       }
     }
@@ -106,7 +94,7 @@ export const createAreas = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _monthInfo: MonthInfo
+  _component: MonthInfo
 ): ChartElements => {
   // clean areas
   d3.select(canvas).select('#svg').remove();
@@ -160,7 +148,7 @@ export const createAreas = (
 
 export const clearSelection = (
   elements: ChartElements,
-  monthInfo: MonthInfo
+  component: MonthInfo
 ) => {
   const circles = elements.svg.selectAll('circle');
   // console.log(circles);
@@ -172,7 +160,7 @@ export const clearSelection = (
     }
   }
 
-  monthInfo.selectedDate = '';
+  component.selectedDate = '';
 
   elements.monitor.text('');
 };
@@ -181,13 +169,13 @@ export const renderMonthHeader = (
   canvas: HTMLElement,
   elements: ChartElements,
   renderInfo: RenderInfo,
-  monthInfo: MonthInfo,
+  component: MonthInfo,
   curMonthDate: Moment
 ): void => {
   // console.log("renderMonthHeader")
-  if (!renderInfo || !monthInfo) return;
+  if (!renderInfo || !component) return;
 
-  const curDatasetId = monthInfo.selectedDataset;
+  const curDatasetId = component.selectedDataset;
   if (curDatasetId === null) return;
   const dataset = renderInfo.datasets.getDatasetById(curDatasetId);
   if (!dataset) return;
@@ -233,11 +221,11 @@ export const renderMonthHeader = (
 
   // header month
   let headerMonthColor = null;
-  if (monthInfo.headerMonthColor) {
-    headerMonthColor = monthInfo.headerMonthColor;
+  if (component.headerMonthColor) {
+    headerMonthColor = component.headerMonthColor;
   } else {
-    if (monthInfo.color) {
-      headerMonthColor = monthInfo.color;
+    if (component.color) {
+      headerMonthColor = component.color;
     }
   }
   const headerMonth = headerGroup
@@ -252,7 +240,7 @@ export const renderMonthHeader = (
     .style('cursor', 'default')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
-      clearSelection(elements, monthInfo);
+      clearSelection(elements, component);
     });
 
   if (headerMonthColor) {
@@ -262,11 +250,11 @@ export const renderMonthHeader = (
 
   // header year
   let headerYearColor = null;
-  if (monthInfo.headerYearColor) {
-    headerYearColor = monthInfo.headerYearColor;
+  if (component.headerYearColor) {
+    headerYearColor = component.headerYearColor;
   } else {
-    if (monthInfo.color) {
-      headerYearColor = monthInfo.color;
+    if (component.color) {
+      headerYearColor = component.color;
     }
   }
   const headerYear = headerGroup
@@ -286,7 +274,7 @@ export const renderMonthHeader = (
     .attr('font-weight', 'bold')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
-      clearSelection(elements, monthInfo);
+      clearSelection(elements, component);
     });
 
   if (headerYearColor) {
@@ -301,8 +289,8 @@ export const renderMonthHeader = (
     'tracker-month-title-rotator'
   );
   if (
-    monthInfo.mode === 'circle' ||
-    (monthInfo.mode === 'annotation' && !monthInfo.showAnnotationOfAllTargets)
+    component.mode === 'circle' ||
+    (component.mode === 'annotation' && !component.showAnnotationOfAllTargets)
   ) {
     const datasetRotator = headerGroup
       .append('text')
@@ -316,11 +304,11 @@ export const renderMonthHeader = (
       // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
       .on('click', (_event: any) => {
         // show next target
-        if (toNextDataset(renderInfo, monthInfo)) {
+        if (toNextDataset(renderInfo, component)) {
           // clear circles
-          clearSelection(elements, monthInfo);
+          clearSelection(elements, component);
 
-          refresh(canvas, elements, renderInfo, monthInfo, curMonthDate);
+          refresh(canvas, elements, renderInfo, component, curMonthDate);
         }
       });
     elements['rotator'] = datasetRotator;
@@ -345,7 +333,7 @@ export const renderMonthHeader = (
         ')'
     )
     .style('cursor', 'pointer')
-    .style('fill', monthInfo.selectedRingColor);
+    .style('fill', component.selectedRingColor);
   elements['monitor'] = monitor;
 
   // arrow left
@@ -369,10 +357,10 @@ export const renderMonthHeader = (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
       // console.log("left arrow clicked");
-      clearSelection(elements, monthInfo);
-      monthInfo.selectedDate = '';
+      clearSelection(elements, component);
+      component.selectedDate = '';
       const prevMonthDate = curMonthDate.clone().add(-1, 'month');
-      refresh(canvas, elements, renderInfo, monthInfo, prevMonthDate);
+      refresh(canvas, elements, renderInfo, component, prevMonthDate);
     })
     .style('cursor', 'pointer');
 
@@ -393,10 +381,10 @@ export const renderMonthHeader = (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
       // console.log("right arrow clicked");
-      clearSelection(elements, monthInfo);
+      clearSelection(elements, component);
 
       const nextMonthDate = curMonthDate.clone().add(1, 'month');
-      refresh(canvas, elements, renderInfo, monthInfo, nextMonthDate);
+      refresh(canvas, elements, renderInfo, component, nextMonthDate);
     })
     .style('cursor', 'pointer');
 
@@ -417,10 +405,10 @@ export const renderMonthHeader = (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
       // console.log("today arrow clicked");
-      clearSelection(elements, monthInfo);
+      clearSelection(elements, component);
 
       const todayDate = DateTimeUtils.getDateToday(renderInfo.dateFormat);
-      refresh(canvas, elements, renderInfo, monthInfo, todayDate);
+      refresh(canvas, elements, renderInfo, component, todayDate);
     })
     .style('cursor', 'pointer');
 
@@ -428,7 +416,7 @@ export const renderMonthHeader = (
 
   // week day names
   const weekdayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  if (monthInfo.startWeekOn.toLowerCase() === 'mon') {
+  if (component.startWeekOn.toLowerCase() === 'mon') {
     weekdayNames.push(weekdayNames.shift());
   }
   const weekdayNameSize = ChartUtils.measureTextSize(
@@ -457,18 +445,18 @@ export const renderMonthHeader = (
     .style('cursor', 'default')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
-      clearSelection(elements, monthInfo);
+      clearSelection(elements, component);
     });
   headerHeight += weekdayNameSize.height + ySpacing;
 
   // dividing line
   const dividingLineHeight = 1;
   let dividingLineColor = null;
-  if (monthInfo.dividingLineColor) {
-    dividingLineColor = monthInfo.dividingLineColor;
+  if (component.dividingLineColor) {
+    dividingLineColor = component.dividingLineColor;
   } else {
-    if (monthInfo.color) {
-      dividingLineColor = monthInfo.color;
+    if (component.color) {
+      dividingLineColor = component.color;
     }
   }
   const dividingLine = elements.graphArea
@@ -495,29 +483,29 @@ export function renderMonthDays(
   _canvas: HTMLElement,
   elements: ChartElements,
   renderInfo: RenderInfo,
-  monthInfo: MonthInfo,
+  component: MonthInfo,
   curMonthDate: Moment
 ): string {
   // console.log("renderMonthDays");
   // console.log(renderInfo);
-  // console.log(monthInfo);
-  if (!renderInfo || !monthInfo) return;
+  // console.log(component);
+  if (!renderInfo || !component) return;
 
-  const mode = monthInfo.mode;
+  const mode = component.mode;
   if (mode !== 'circle' && mode !== 'annotation') {
     return 'Unknown month view mode';
   }
 
-  const curDatasetId = monthInfo.selectedDataset;
+  const curDatasetId = component.selectedDataset;
   if (curDatasetId === null) return;
   const dataset = renderInfo.datasets.getDatasetById(curDatasetId);
   if (!dataset) return;
   // console.log(dataset);
-  let curDatasetIndex = monthInfo.dataset.findIndex((id) => {
+  let curDatasetIndex = component.dataset.findIndex((id) => {
     return id === curDatasetId;
   });
   if (curDatasetId < 0) curDatasetIndex = 0;
-  const threshold = monthInfo.threshold[curDatasetIndex];
+  const threshold = component.threshold[curDatasetIndex];
 
   // TODO Why are these here?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -538,12 +526,12 @@ export function renderMonthDays(
 
   // Get min and max
   let yMin = d3.min(dataset.getValues());
-  if (monthInfo.yMin[curDatasetIndex] !== null) {
-    yMin = monthInfo.yMin[curDatasetIndex];
+  if (component.yMin[curDatasetIndex] !== null) {
+    yMin = component.yMin[curDatasetIndex];
   }
   let yMax = d3.max(dataset.getValues());
-  if (monthInfo.yMax[curDatasetIndex] !== null) {
-    yMax = monthInfo.yMax[curDatasetIndex];
+  if (component.yMax[curDatasetIndex] !== null) {
+    yMax = component.yMax[curDatasetIndex];
   }
   // console.log(`yMin:${yMin}, yMax:${yMax}`);
   let allowScaledValue = true;
@@ -556,12 +544,12 @@ export function renderMonthDays(
   // Start and end
   const monthStartDate = curMonthDate.clone().startOf('month');
   let startDate = monthStartDate.clone().subtract(monthStartDate.day(), 'days');
-  if (monthInfo.startWeekOn.toLowerCase() === 'mon') {
+  if (component.startWeekOn.toLowerCase() === 'mon') {
     startDate = startDate.add(1, 'days');
   }
   const monthEndDate = curMonthDate.clone().endOf('month');
   let endDate = monthEndDate.clone().add(7 - monthEndDate.day() - 1, 'days');
-  if (monthInfo.startWeekOn.toLowerCase() === 'mon') {
+  if (component.startWeekOn.toLowerCase() === 'mon') {
     endDate = endDate.add(1, 'days');
   }
   const dataStartDate = dataset.getStartDate();
@@ -569,10 +557,10 @@ export function renderMonthDays(
   // console.log(monthStartDate.format("YYYY-MM-DD"));
   // console.log(startDate.format("YYYY-MM-DD"));
   // annotations
-  const showAnnotation = monthInfo.showAnnotation;
-  const annotations = monthInfo.annotation;
+  const showAnnotation = component.showAnnotation;
+  const annotations = component.annotation;
   const curAnnotation = annotations[curDatasetIndex];
-  const showAnnotationOfAllTargets = monthInfo.showAnnotationOfAllTargets;
+  const showAnnotationOfAllTargets = component.showAnnotationOfAllTargets;
 
   // Prepare data for graph
   const daysInMonthView: Array<DayInfo> = [];
@@ -594,7 +582,7 @@ export function renderMonthDays(
       logToConsole = false; // Change this to do debugging
     }
 
-    if (monthInfo.startWeekOn.toLowerCase() === 'mon') {
+    if (component.startWeekOn.toLowerCase() === 'mon') {
       indCol = curDate.day() - 1;
       if (indCol < 0) {
         indCol = 6;
@@ -630,7 +618,7 @@ export function renderMonthDays(
 
     // showCircle
     let showCircle = false;
-    if (!monthInfo.circleColorByValue) {
+    if (!component.circleColorByValue) {
       // shown or not shown
       if (curValue !== null) {
         if (curValue > threshold) {
@@ -651,7 +639,7 @@ export function renderMonthDays(
 
     // scaledValue
     let scaledValue = null;
-    if (monthInfo.circleColorByValue) {
+    if (component.circleColorByValue) {
       if (allowScaledValue && curValue !== null) {
         scaledValue = (curValue - yMin) / (yMax - yMin);
       }
@@ -681,7 +669,7 @@ export function renderMonthDays(
       console.log(
         `preValue: ${prevValue}, curValue: ${curValue}, nextValue: ${nextValue}`
       );
-      console.log(monthInfo.threshold);
+      console.log(component.threshold);
       console.log(`streakIn: ${streakIn}, streakOut: ${streakOut}`);
     }
 
@@ -692,15 +680,15 @@ export function renderMonthDays(
           textAnnotation = curAnnotation;
         }
       } else {
-        for (const datasetId of monthInfo.dataset) {
-          const datasetIndex = monthInfo.dataset.findIndex((id) => {
+        for (const datasetId of component.dataset) {
+          const datasetIndex = component.dataset.findIndex((id) => {
             return id === datasetId;
           });
           if (datasetIndex >= 0) {
             const v = renderInfo.datasets
               .getDatasetById(datasetId)
               .getValue(curDate);
-            const t = monthInfo.threshold[datasetIndex];
+            const t = component.threshold[datasetIndex];
             if (v !== null && v > t) {
               textAnnotation += annotations[datasetIndex];
             }
@@ -751,12 +739,12 @@ export function renderMonthDays(
     .range([0, totalDayBlockWidth]);
 
   // streak lines
-  if (mode === 'circle' && monthInfo.showCircle && monthInfo.showStreak) {
+  if (mode === 'circle' && component.showCircle && component.showStreak) {
     let streakColor = '#69b3a2';
-    if (monthInfo.circleColor) {
-      streakColor = monthInfo.circleColor;
-    } else if (monthInfo.color) {
-      streakColor = monthInfo.color;
+    if (component.circleColor) {
+      streakColor = component.circleColor;
+    } else if (component.color) {
+      streakColor = component.color;
     }
     // console.log(streakColor);
     elements.dataArea
@@ -782,7 +770,7 @@ export function renderMonthDays(
       .attr('height', streakHeight)
       .style('fill', (d: DayInfo) => {
         if (d.showCircle) {
-          if (!monthInfo.circleColorByValue) {
+          if (!component.circleColorByValue) {
             return streakColor;
           }
           if (d.scaledValue !== null) {
@@ -799,7 +787,7 @@ export function renderMonthDays(
       .style('opacity', (d: DayInfo) => {
         if (
           d.isOutOfDataRange ||
-          (monthInfo.dimNotInMonth && !d.isInThisMonth)
+          (component.dimNotInMonth && !d.isInThisMonth)
         ) {
           return 0.2;
         }
@@ -829,7 +817,7 @@ export function renderMonthDays(
       .attr('height', streakHeight)
       .style('fill', (d: DayInfo) => {
         if (d.showCircle) {
-          if (!monthInfo.circleColorByValue) {
+          if (!component.circleColorByValue) {
             return streakColor;
           }
           if (d.scaledValue !== null) {
@@ -846,7 +834,7 @@ export function renderMonthDays(
       .style('opacity', (d: DayInfo) => {
         if (
           d.isOutOfDataRange ||
-          (monthInfo.dimNotInMonth && !d.isInThisMonth)
+          (component.dimNotInMonth && !d.isInThisMonth)
         ) {
           return 0.2;
         }
@@ -856,12 +844,12 @@ export function renderMonthDays(
 
   // circles
   let circleColor = '#69b3a2';
-  if (monthInfo.circleColor) {
-    circleColor = monthInfo.circleColor;
-  } else if (monthInfo.color) {
-    circleColor = monthInfo.color;
+  if (component.circleColor) {
+    circleColor = component.circleColor;
+  } else if (component.color) {
+    circleColor = component.color;
   }
-  if (mode === 'circle' && monthInfo.showCircle) {
+  if (mode === 'circle' && component.showCircle) {
     elements.dataArea
       .selectAll('dot')
       .data(daysInMonthView)
@@ -876,7 +864,7 @@ export function renderMonthDays(
       })
       .style('fill', (d: DayInfo) => {
         if (d.showCircle) {
-          if (!monthInfo.circleColorByValue) {
+          if (!component.circleColorByValue) {
             return circleColor;
           }
           if (d.scaledValue !== null) {
@@ -896,7 +884,7 @@ export function renderMonthDays(
       .style('opacity', (d: DayInfo) => {
         if (
           d.isOutOfDataRange ||
-          (monthInfo.dimNotInMonth && !d.isInThisMonth)
+          (component.dimNotInMonth && !d.isInThisMonth)
         ) {
           return 0.2;
         }
@@ -907,7 +895,7 @@ export function renderMonthDays(
 
   // today rings
   const today = DateTimeUtils.dateToStr(window.moment(), renderInfo.dateFormat);
-  if (mode === 'circle' && monthInfo.showTodayRing) {
+  if (mode === 'circle' && component.showTodayRing) {
     const todayRings = elements.dataArea
       .selectAll('todayRing')
       .data(
@@ -927,15 +915,15 @@ export function renderMonthDays(
       .attr('class', 'tracker-month-today-circle') // stroke not works??
       .style('cursor', 'default');
 
-    if (monthInfo.todayRingColor !== '') {
-      todayRings.style('stroke', monthInfo.todayRingColor);
+    if (component.todayRingColor !== '') {
+      todayRings.style('stroke', component.todayRingColor);
     } else {
       todayRings.style('stroke', 'white');
     }
   }
 
   // selected rings
-  if (mode === 'circle' && monthInfo.showSelectedRing) {
+  if (mode === 'circle' && component.showSelectedRing) {
     elements.dataArea
       .selectAll('selectedRing')
       .data(daysInMonthView)
@@ -973,7 +961,7 @@ export function renderMonthDays(
       return strTranslate;
     })
     .style('fill-opacity', (d: DayInfo) => {
-      if (d.isOutOfDataRange || (monthInfo.dimNotInMonth && !d.isInThisMonth)) {
+      if (d.isOutOfDataRange || (component.dimNotInMonth && !d.isInThisMonth)) {
         return 0.2;
       }
       return 1;
@@ -992,17 +980,17 @@ export function renderMonthDays(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
       // clear circles
-      clearSelection(elements, monthInfo);
+      clearSelection(elements, component);
       // show new selected circle
       const date = d3.select(this).attr('date');
-      monthInfo.selectedDate = date;
-      if (monthInfo.showSelectedRing) {
+      component.selectedDate = date;
+      if (component.showSelectedRing) {
         elements.dataArea
           .select('#tracker-selected-circle-' + date)
-          .style('stroke', monthInfo.selectedRingColor);
+          .style('stroke', component.selectedRingColor);
       }
       // show value on monitor
-      if (monthInfo.showSelectedValue) {
+      if (component.showSelectedValue) {
         const strValue = d3.select(this).attr('value');
         const valueType = d3.select(this).attr('valueType');
         let valueText = '';
@@ -1066,16 +1054,16 @@ export const refresh = (
   canvas: HTMLElement,
   elements: ChartElements,
   renderInfo: RenderInfo,
-  monthInfo: MonthInfo,
+  component: MonthInfo,
   curMonthDate: Moment
 ): void => {
   // console.log("refresh");
   // console.log(renderInfo);
   if (!renderInfo) return;
 
-  elements = createAreas(elements, canvas, renderInfo, monthInfo);
+  elements = createAreas(elements, canvas, renderInfo, component);
 
   // render
-  renderMonthHeader(canvas, elements, renderInfo, monthInfo, curMonthDate);
-  renderMonthDays(canvas, elements, renderInfo, monthInfo, curMonthDate);
+  renderMonthHeader(canvas, elements, renderInfo, component, curMonthDate);
+  renderMonthDays(canvas, elements, renderInfo, component, curMonthDate);
 };

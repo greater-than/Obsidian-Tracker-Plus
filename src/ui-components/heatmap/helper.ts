@@ -1,5 +1,7 @@
 import * as d3 from 'd3';
-import { Dataset, HeatmapInfo, RenderInfo } from '../../models/data';
+import { Dataset } from '../../models/dataset';
+import { Heatmap } from '../../models/heatmap';
+import { RenderInfo } from '../../models/render-info';
 import { ChartElements } from '../../models/types';
 import { DateTimeUtils, DomUtils } from '../../utils';
 
@@ -15,7 +17,7 @@ export const createAreas = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _heatmapInfo: HeatmapInfo
+  _component: Heatmap
 ): ChartElements => {
   // clean areas
   d3.select(canvas).select('#svg').remove();
@@ -70,47 +72,47 @@ export const renderHeatmapHeader = (
   _canvas: HTMLElement,
   _elements: ChartElements,
   renderInfo: RenderInfo,
-  heatmapInfo: HeatmapInfo,
+  component: Heatmap,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ): void => {
   // console.log("renderMonthHeader")
-  if (!renderInfo || !heatmapInfo) return;
+  if (!renderInfo || !component) return;
   // TODO What does this do?
 };
 export const renderHeatmapDays = (
   _canvas: HTMLElement,
   elements: ChartElements,
   renderInfo: RenderInfo,
-  heatmapInfo: HeatmapInfo,
+  component: Heatmap,
   dataset: Dataset
 ) => {
   // console.log("renderHeatmapDays");
-  if (!renderInfo || !heatmapInfo) return;
+  if (!renderInfo || !component) return;
 
   const cellSize = 20;
   const dotRadius = (cellSize / 2) * 0.6;
 
   // Get min and max, null values will be treated as zero here
   let yMin = d3.min(dataset.getValues());
-  if (heatmapInfo.yMin !== null) {
-    yMin = heatmapInfo.yMin;
+  if (component.yMin !== null) {
+    yMin = component.yMin;
   }
   let yMax = d3.max(dataset.getValues());
-  if (heatmapInfo.yMax !== null) {
-    yMax = heatmapInfo.yMax;
+  if (component.yMax !== null) {
+    yMax = component.yMax;
   }
   // console.log(`yMin:${yMin}, yMax:${yMax}`);
   // Prepare data for graph
   const daysInHeatmapView: Array<DayInfo> = [];
   const dataStartDate = dataset.getStartDate().clone();
   let startDate = dataStartDate.clone().subtract(dataStartDate.day(), 'days');
-  if (heatmapInfo.startWeekOn.toLowerCase() === 'mon') {
+  if (component.startWeekOn.toLowerCase() === 'mon') {
     startDate = startDate.add(1, 'days');
   }
   const dataEndDate = dataset.getEndDate().clone();
   let endDate = dataEndDate.clone().add(7 - dataEndDate.day() - 1, 'days');
-  if (heatmapInfo.startWeekOn.toLowerCase() === 'mon') {
+  if (component.startWeekOn.toLowerCase() === 'mon') {
     endDate = endDate.add(1, 'days');
   }
   // console.log(startDate.format("YYYY-MM-DD"));
@@ -123,7 +125,7 @@ export const renderHeatmapDays = (
     curDate <= endDate;
     curDate.add(1, 'days')
   ) {
-    if (heatmapInfo.startWeekOn.toLowerCase() === 'mon') {
+    if (component.startWeekOn.toLowerCase() === 'mon') {
       indCol = curDate.day() - 1;
       if (indCol < 0) {
         indCol = 6;
@@ -166,8 +168,8 @@ export const renderHeatmapDays = (
 
   // circles
   let heatmapColor = '#69b3a2';
-  if (heatmapInfo.color) {
-    heatmapColor = heatmapInfo.color;
+  if (component.color) {
+    heatmapColor = component.color;
   }
 
   // days, shown as dots or squares

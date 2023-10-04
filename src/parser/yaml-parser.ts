@@ -1,24 +1,22 @@
 import { TFolder, normalizePath, parseYaml } from 'obsidian';
-import { SearchType } from 'src/models/enums';
 import Tracker from '../main';
-import {
-  AspectRatio,
-  BarInfo,
-  BulletInfo,
-  CustomDatasetInfo,
-  HeatmapInfo,
-  LineInfo,
-  Margin,
-  MonthInfo,
-  PieInfo,
-  Query,
-  RenderInfo,
-  SummaryInfo,
-} from '../models/data';
+import { AspectRatio } from '../models/aspect-ratio';
+import { BarChart } from '../models/bar-chart';
+import { BulletGraph } from '../models/bullet-graph';
+import { CustomDataset } from '../models/custom-dataset';
+import { SearchType } from '../models/enums';
+import { Heatmap } from '../models/heatmap';
+import { LineChart } from '../models/line-chart';
+import { Margin } from '../models/margin';
+import { MonthInfo } from '../models/month';
+import { PieChart } from '../models/pie-chart';
+import { Query } from '../models/query';
+import { RenderInfo } from '../models/render-info';
+import { Summary } from '../models/summary';
 import { DateTimeUtils, StringUtils } from '../utils';
 import {
-  getAvailableKeysOfClass,
   getBoolArrayFromInput,
+  getKeys,
   getNumberArray,
   getNumberArrayFromInput,
   getStringArray,
@@ -29,6 +27,7 @@ import {
   validateColor,
   validateSearchType,
   validateYAxisLocation,
+  validateYamlKeys,
 } from './helper';
 
 // TODO Breakup this function
@@ -37,27 +36,27 @@ export const getRenderInfoFromYaml = (
   plugin: Tracker
 ): RenderInfo | string => {
   let yaml;
+  let errorMessage = '';
+
   try {
     // console.log(yamlText);
     yaml = parseYaml(yamlText);
   } catch (err) {
-    const errorMessage = 'Error parsing YAML';
+    errorMessage = 'Error parsing YAML';
     console.log(err);
     return errorMessage;
   }
   if (!yaml) {
-    const errorMessage = 'Error parsing YAML';
+    errorMessage = 'Error parsing YAML';
     return errorMessage;
   }
   // console.log(yaml);
-  const keysFoundInYAML = getAvailableKeysOfClass(yaml);
-  // console.log(keysFoundInYAML);
-
-  let errorMessage = '';
+  const yamlKeys = getKeys(yaml);
+  // console.log(yamlKeys);
 
   // Search target
-  if (!keysFoundInYAML.includes('searchTarget')) {
-    const errorMessage = "Parameter 'searchTarget' not found in YAML";
+  if (!yamlKeys.includes('searchTarget')) {
+    errorMessage = "Parameter 'searchTarget' not found in YAML";
     return errorMessage;
   }
   const searchTarget: Array<string> = [];
@@ -75,10 +74,10 @@ export const getRenderInfoFromYaml = (
       }
     }
   } else if (typeof yaml.searchTarget === 'string') {
-    const splitted = splitInputByComma(yaml.searchTarget);
-    // console.log(splitted);
-    if (splitted.length > 1) {
-      for (let piece of splitted) {
+    const splitInput = splitInputByComma(yaml.searchTarget);
+    // console.log(splitInput);
+    if (splitInput.length > 1) {
+      for (let piece of splitInput) {
         piece = piece.trim();
         if (piece !== '') {
           searchTarget.push(piece);
@@ -100,19 +99,17 @@ export const getRenderInfoFromYaml = (
   }
   // console.log(searchTarget);
 
-  if (errorMessage !== '') {
-    return errorMessage;
-  }
+  if (errorMessage !== '') return errorMessage;
 
   const numDatasets = searchTarget.length;
 
   // Search type
-  if (!keysFoundInYAML.includes('searchType')) {
+  if (!yamlKeys.includes('searchType')) {
     const errorMessage = "Parameter 'searchType' not found in YAML";
     return errorMessage;
   }
   const searchType: Array<SearchType> = [];
-  const retSearchType = getStringArrayFromInput(
+  const searchTypes = getStringArrayFromInput(
     'searchType',
     yaml.searchType,
     numDatasets,
@@ -120,10 +117,10 @@ export const getRenderInfoFromYaml = (
     validateSearchType,
     false
   );
-  if (typeof retSearchType === 'string') {
-    return retSearchType; // errorMessage
+  if (typeof searchTypes === 'string') {
+    return searchTypes; // errorMessage
   }
-  for (const strType of retSearchType) {
+  for (const strType of searchTypes) {
     switch (strType.toLowerCase()) {
       case 'tag':
         searchType.push(SearchType.Tag);
@@ -179,7 +176,7 @@ export const getRenderInfoFromYaml = (
 
   // separator
   let multipleValueSeparator: Array<string> = [];
-  const retMultipleValueSeparator = getStringArrayFromInput(
+  const separators = getStringArrayFromInput(
     'separator',
     yaml.separator,
     numDatasets,
@@ -187,34 +184,28 @@ export const getRenderInfoFromYaml = (
     null,
     true
   );
-  if (typeof retMultipleValueSeparator === 'string') {
-    return retMultipleValueSeparator; // errorMessage
+  if (typeof separators === 'string') {
+    return separators; // errorMessage
   }
-  multipleValueSeparator = retMultipleValueSeparator.map((sep) => {
-    if (sep === 'comma' || sep === '\\,') {
-      return ',';
-    }
-    return sep;
+  multipleValueSeparator = separators.map((sep) => {
+    return sep === 'comma' || sep === '\\,' ? ',' : sep;
   });
   // console.log(multipleValueSeparator);
 
   // xDataset
-  const retXDataset = getNumberArrayFromInput(
+  const datasets = getNumberArrayFromInput(
     'xDataset',
     yaml.xDataset,
     numDatasets,
     -1,
     true
   );
-  if (typeof retXDataset === 'string') {
-    return retXDataset; // errorMessage
+  if (typeof datasets === 'string') {
+    return datasets; // errorMessage
   }
-  const xDataset = retXDataset.map((d: number) => {
-    if (d < 0 || d >= numDatasets) {
-      return -1;
-    }
-    return d;
-  });
+  const xDataset = datasets.map((d: number) =>
+    d < 0 || d >= numDatasets ? -1 : d
+  );
   // assign this to renderInfo later
 
   // Create queries
@@ -229,49 +220,50 @@ export const getRenderInfoFromYaml = (
 
   // Create graph info
   const renderInfo = new RenderInfo(queries);
-  const keysOfRenderInfo = getAvailableKeysOfClass(renderInfo);
-  const additionalAllowedKeys = ['searchType', 'searchTarget', 'separator'];
+  const renderInfoKeys = getKeys(renderInfo);
+  const allowedKeys = ['searchType', 'searchTarget', 'separator'];
+  const allKeys = [...allowedKeys];
   // console.log(keysOfRenderInfo);
-  const yamlLineKeys = [];
-  const yamlBarKeys = [];
-  const yamlPieKeys = [];
-  const yamlSummaryKeys = [];
-  const yamlMonthKeys = [];
-  const yamlHeatmapKeys = [];
-  const yamlBulletKeys = [];
-  for (const key of keysFoundInYAML) {
+  const lineKeys = [];
+  const barKeys = [];
+  const pieKeys = [];
+  const summaryKeys = [];
+  const monthKeys = [];
+  const heatmapKeys = [];
+  const bulletKeys = [];
+  for (const key of yamlKeys) {
     if (/^line[0-9]*$/.test(key)) {
-      yamlLineKeys.push(key);
-      additionalAllowedKeys.push(key);
+      lineKeys.push(key);
+      allKeys.push(key);
     }
     if (/^bar[0-9]*$/.test(key)) {
-      yamlBarKeys.push(key);
-      additionalAllowedKeys.push(key);
+      barKeys.push(key);
+      allKeys.push(key);
     }
     if (/^pie[0-9]*$/.test(key)) {
-      yamlPieKeys.push(key);
-      additionalAllowedKeys.push(key);
+      pieKeys.push(key);
+      allKeys.push(key);
     }
     if (/^summary[0-9]*$/.test(key)) {
-      yamlSummaryKeys.push(key);
-      additionalAllowedKeys.push(key);
+      summaryKeys.push(key);
+      allKeys.push(key);
     }
     if (/^bullet[0-9]*$/.test(key)) {
-      yamlBulletKeys.push(key);
-      additionalAllowedKeys.push(key);
+      bulletKeys.push(key);
+      allKeys.push(key);
     }
     if (/^month[0-9]*$/.test(key)) {
-      yamlMonthKeys.push(key);
-      additionalAllowedKeys.push(key);
+      monthKeys.push(key);
+      allKeys.push(key);
     }
     if (/^heatmap[0-9]*$/.test(key)) {
-      yamlHeatmapKeys.push(key);
-      additionalAllowedKeys.push(key);
+      heatmapKeys.push(key);
+      allKeys.push(key);
     }
   }
   // Custom dataset
-  const yamlCustomDatasetKeys = [];
-  for (const key of keysFoundInYAML) {
+  const customDatasetKeys = [];
+  for (const key of yamlKeys) {
     if (/^dataset[0-9]*$/.test(key)) {
       // Check the id of custom dataset is not duplicated
       let customDatasetId = -1;
@@ -282,39 +274,23 @@ export const getRenderInfoFromYaml = (
         customDatasetId = parseFloat(strCustomDatasetId);
       }
 
-      if (
-        queries.some((q) => {
-          return q.getId() === customDatasetId;
-        })
-      ) {
+      if (queries.some((q) => q.id === customDatasetId)) {
         errorMessage = "Duplicated dataset id for key '" + key + "'";
         return errorMessage;
       }
 
-      yamlCustomDatasetKeys.push(key);
-      additionalAllowedKeys.push(key);
+      customDatasetKeys.push(key);
+      allKeys.push(key);
     }
   }
   // console.log(additionalAllowedKeys);
-  for (const key of keysFoundInYAML) {
-    if (
-      !keysOfRenderInfo.includes(key) &&
-      !additionalAllowedKeys.includes(key)
-    ) {
-      errorMessage = "'" + key + "' is not an available key";
-      return errorMessage;
-    }
+  try {
+    validateYamlKeys(yamlKeys, renderInfoKeys, allKeys);
+  } catch (error) {
+    return error.message;
   }
 
-  const totalNumOutputs =
-    yamlLineKeys.length +
-    yamlBarKeys.length +
-    yamlPieKeys.length +
-    yamlSummaryKeys.length +
-    yamlBulletKeys.length +
-    yamlMonthKeys.length +
-    yamlHeatmapKeys.length;
-  if (totalNumOutputs === 0) {
+  if (allKeys.length <= allowedKeys.length) {
     return 'No output parameter provided, please place line, bar, pie, month, bullet, or summary.';
   }
 
@@ -335,11 +311,11 @@ export const getRenderInfoFromYaml = (
 
   // file
   if (typeof yaml.file === 'string') {
-    const retFiles = getStringArray('file', yaml.file);
-    if (typeof retFiles === 'string') {
-      return retFiles; // error message
+    const files = getStringArray('file', yaml.file);
+    if (typeof files === 'string') {
+      return files; // error message
     }
-    renderInfo.file = retFiles;
+    renderInfo.file = files;
   }
   // console.log(renderInfo.file);
 
@@ -351,14 +327,14 @@ export const getRenderInfoFromYaml = (
 
   // fileContainsLinkedFiles
   if (typeof yaml.fileContainsLinkedFiles === 'string') {
-    const retFiles = getStringArray(
+    const files = getStringArray(
       'fileContainsLinkedFiles',
       yaml.fileContainsLinkedFiles
     );
-    if (typeof retFiles === 'string') {
-      return retFiles;
+    if (typeof files === 'string') {
+      return files;
     }
-    renderInfo.fileContainsLinkedFiles = retFiles;
+    renderInfo.fileContainsLinkedFiles = files;
   }
   // console.log(renderInfo.fileContainsLinkedFiles);
 
@@ -371,14 +347,11 @@ export const getRenderInfoFromYaml = (
 
   // Date format
   const dateFormat = yaml.dateFormat;
-  //?? not sure why I need this to make it work,
+  // ?? not sure why I need this to make it work,
   // without it, the assigned the renderInfo.dateFormat will become undefined
   if (typeof yaml.dateFormat === 'string') {
-    if (yaml.dateFormat === '') {
-      renderInfo.dateFormat = plugin.settings.dateFormat;
-    } else {
-      renderInfo.dateFormat = dateFormat;
-    }
+    renderInfo.dateFormat =
+      yaml.dateFormat === '' ? plugin.settings.dateFormat : dateFormat;
   } else {
     renderInfo.dateFormat = plugin.settings.dateFormat;
   }
@@ -496,7 +469,7 @@ export const getRenderInfoFromYaml = (
   // console.log(renderInfo.xDataset);
 
   // Dataset name (need xDataset to set default name)
-  const retDatasetName = getStringArrayFromInput(
+  const datasetName = getStringArrayFromInput(
     'datasetName',
     yaml.datasetName,
     numDatasets,
@@ -504,21 +477,21 @@ export const getRenderInfoFromYaml = (
     null,
     true
   );
-  if (typeof retDatasetName === 'string') {
-    return retDatasetName; // errorMessage
+  if (typeof datasetName === 'string') {
+    return datasetName; // errorMessage
   }
   // rename untitled
   let indUntitled = 0;
-  for (let ind = 0; ind < retDatasetName.length; ind++) {
+  for (let ind = 0; ind < datasetName.length; ind++) {
     if (renderInfo.xDataset.includes(ind)) continue;
-    if (retDatasetName[ind] === 'untitled') {
-      retDatasetName[ind] = 'untitled' + indUntitled.toString();
+    if (datasetName[ind] === 'untitled') {
+      datasetName[ind] = 'untitled' + indUntitled.toString();
       indUntitled++;
     }
   }
   // Check duplicated names
-  if (new Set(retDatasetName).size === retDatasetName.length) {
-    renderInfo.datasetName = retDatasetName;
+  if (new Set(datasetName).size === datasetName.length) {
+    renderInfo.datasetName = datasetName;
   } else {
     const errorMessage = 'Not enough dataset names or duplicated names';
     return errorMessage;
@@ -526,106 +499,106 @@ export const getRenderInfoFromYaml = (
   // console.log(renderInfo.datasetName);
 
   // constValue
-  const retConstValue = getNumberArrayFromInput(
+  const constValue = getNumberArrayFromInput(
     'constValue',
     yaml.constValue,
     numDatasets,
     1.0,
     true
   );
-  if (typeof retConstValue === 'string') {
-    return retConstValue; // errorMessage
+  if (typeof constValue === 'string') {
+    return constValue; // errorMessage
   }
-  renderInfo.constValue = retConstValue;
+  renderInfo.constValue = constValue;
   // console.log(renderInfo.constValue);
 
   // ignoreAttachedValue
-  const retIgnoreAttachedValue = getBoolArrayFromInput(
+  const ignoreAttachedValue = getBoolArrayFromInput(
     'ignoreAttachedValue',
     yaml.ignoreAttachedValue,
     numDatasets,
     false,
     true
   );
-  if (typeof retIgnoreAttachedValue === 'string') {
-    return retIgnoreAttachedValue;
+  if (typeof ignoreAttachedValue === 'string') {
+    return ignoreAttachedValue;
   }
-  renderInfo.ignoreAttachedValue = retIgnoreAttachedValue;
+  renderInfo.ignoreAttachedValue = ignoreAttachedValue;
   // console.log(renderInfo.ignoreAttachedValue);
 
   // ignoreZeroValue
-  const retIgnoreZeroValue = getBoolArrayFromInput(
+  const ignoreZeroValue = getBoolArrayFromInput(
     'ignoreZeroValue',
     yaml.ignoreZeroValue,
     numDatasets,
     false,
     true
   );
-  if (typeof retIgnoreZeroValue === 'string') {
-    return retIgnoreZeroValue;
+  if (typeof ignoreZeroValue === 'string') {
+    return ignoreZeroValue;
   }
-  renderInfo.ignoreZeroValue = retIgnoreZeroValue;
+  renderInfo.ignoreZeroValue = ignoreZeroValue;
   // console.log(renderInfo.ignoreAttachedValue);
 
   // accum
-  const retAccum = getBoolArrayFromInput(
+  const accum = getBoolArrayFromInput(
     'accum',
     yaml.accum,
     numDatasets,
     false,
     true
   );
-  if (typeof retAccum === 'string') {
-    return retAccum;
+  if (typeof accum === 'string') {
+    return accum;
   }
-  renderInfo.accum = retAccum;
+  renderInfo.accum = accum;
   // console.log(renderInfo.accum);
 
   // penalty
-  const retPenalty = getNumberArrayFromInput(
+  const penalty = getNumberArrayFromInput(
     'penalty',
     yaml.penalty,
     numDatasets,
     null,
     true
   );
-  if (typeof retPenalty === 'string') {
-    return retPenalty;
+  if (typeof penalty === 'string') {
+    return penalty;
   }
-  renderInfo.penalty = retPenalty;
+  renderInfo.penalty = penalty;
   // console.log(renderInfo.penalty);
 
   // valueShift
-  const retValueShift = getNumberArrayFromInput(
+  const valueShift = getNumberArrayFromInput(
     'valueShift',
     yaml.valueShift,
     numDatasets,
     0,
     true
   );
-  if (typeof retValueShift === 'string') {
-    return retValueShift;
+  if (typeof valueShift === 'string') {
+    return valueShift;
   }
-  renderInfo.valueShift = retValueShift;
+  renderInfo.valueShift = valueShift;
   // console.log(renderInfo.valueShift);
 
   // shiftOnlyValueLargerThan
-  const retShiftOnlyValueLargerThan = getNumberArrayFromInput(
+  const shiftOnlyValueLargerThan = getNumberArrayFromInput(
     'shiftOnlyValueLargerThan',
     yaml.shiftOnlyValueLargerThan,
     numDatasets,
     null,
     true
   );
-  if (typeof retShiftOnlyValueLargerThan === 'string') {
-    return retShiftOnlyValueLargerThan;
+  if (typeof shiftOnlyValueLargerThan === 'string') {
+    return shiftOnlyValueLargerThan;
   }
-  renderInfo.shiftOnlyValueLargerThan = retShiftOnlyValueLargerThan;
+  renderInfo.shiftOnlyValueLargerThan = shiftOnlyValueLargerThan;
   // console.log(renderInfo.shiftOnlyValueLargerThan);
 
   // textValueMap
   if (typeof yaml.textValueMap !== 'undefined') {
-    const keys = getAvailableKeysOfClass(yaml.textValueMap);
+    const keys = getKeys(yaml.textValueMap);
     // console.log(texts);
     for (const key of keys) {
       const text = key.trim();
@@ -660,32 +633,27 @@ export const getRenderInfoFromYaml = (
   }
 
   // margin
-  const retMargin = getNumberArrayFromInput('margin', yaml.margin, 4, 10, true);
-  if (typeof retMargin === 'string') {
-    return retMargin; // errorMessage
+  const margin = getNumberArrayFromInput('margin', yaml.margin, 4, 10, true);
+  if (typeof margin === 'string') {
+    return margin; // errorMessage
   }
-  if (retMargin.length > 4) {
+  if (margin.length > 4) {
     return 'margin accepts not more than four values for top, right, bottom, and left margins.';
   }
-  renderInfo.margin = new Margin(
-    retMargin[0],
-    retMargin[1],
-    retMargin[2],
-    retMargin[3]
-  );
+  renderInfo.margin = new Margin(margin[0], margin[1], margin[2], margin[3]);
   // console.log(renderInfo.margin);
 
   // customDataset related parameters
-  for (const datasetKey of yamlCustomDatasetKeys) {
-    const customDataset = new CustomDatasetInfo();
+  for (const datasetKey of customDatasetKeys) {
+    const customDataset = new CustomDataset();
     const yamlCustomDataset = yaml[datasetKey];
 
-    const keysOfCustomDatasetInfo = getAvailableKeysOfClass(customDataset);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlCustomDataset);
+    const customDatasetKeys = getKeys(customDataset);
+    const yamlKeys = getKeys(yamlCustomDataset);
     // console.log(keysOfCustomDatasetInfo);
-    // console.log(keysFoundInYAML);
-    for (const key of keysFoundInYAML) {
-      if (!keysOfCustomDatasetInfo.includes(key)) {
+    // console.log(yamlKeys);
+    for (const key of yamlKeys) {
+      if (!customDatasetKeys.includes(key)) {
         errorMessage = "'" + key + "' is not an available key";
         return errorMessage;
       }
@@ -708,53 +676,53 @@ export const getRenderInfoFromYaml = (
     );
 
     // xData
-    const retXData = getStringArray('xData', yamlCustomDataset?.xData);
-    if (typeof retXData === 'string') {
-      return retXData;
+    const xData = getStringArray('xData', yamlCustomDataset?.xData);
+    if (typeof xData === 'string') {
+      return xData;
     }
-    customDataset.xData = retXData;
+    customDataset.xData = xData;
     // console.log(customDataset.xData);
     const numXData = customDataset.xData.length;
 
     // yData
-    const retYData = getStringArray('yData', yamlCustomDataset?.yData);
-    if (typeof retYData === 'string') {
-      return retYData;
+    const yData = getStringArray('yData', yamlCustomDataset?.yData);
+    if (typeof yData === 'string') {
+      return yData;
     }
-    customDataset.yData = retYData;
+    customDataset.yData = yData;
     // console.log(customDataset.yData);
     if (customDataset.yData.length !== numXData) {
       const errorMessage = 'Number of elements in xData and yData not matched';
       return errorMessage;
     }
 
-    renderInfo.customDataset.push(customDataset);
+    renderInfo.customDatasets.push(customDataset);
   } // customDataset related parameters
   // console.log(renderInfo.customDataset);
 
   // line related parameters
-  for (const lineKey of yamlLineKeys) {
-    const line = new LineInfo();
+  for (const lineKey of lineKeys) {
+    const line = new LineChart();
     const yamlLine = yaml[lineKey];
 
-    const keysOfLineInfo = getAvailableKeysOfClass(line);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlLine);
+    const lineKeys = getKeys(line);
+    const yamlKeys = getKeys(yamlLine);
     // console.log(keysOfLineInfo);
-    // console.log(keysFoundInYAML);
-    for (const key of keysFoundInYAML) {
-      if (!keysOfLineInfo.includes(key)) {
+    // console.log(yamlKeys);
+    for (const key of yamlKeys) {
+      if (!lineKeys.includes(key)) {
         errorMessage = "'" + key + "' is not an available key";
         return errorMessage;
       }
     }
 
-    const retParseCommonChartInfo = parseCommonChartInfo(yamlLine, line);
-    if (typeof retParseCommonChartInfo === 'string') {
-      return retParseCommonChartInfo;
+    const parsedCommonChartInfo = parseCommonChartInfo(yamlLine, line);
+    if (typeof parsedCommonChartInfo === 'string') {
+      return parsedCommonChartInfo;
     }
 
     // lineColor
-    const retLineColor = getStringArrayFromInput(
+    const lineColor = getStringArrayFromInput(
       'lineColor',
       yamlLine?.lineColor,
       numDatasets,
@@ -762,56 +730,56 @@ export const getRenderInfoFromYaml = (
       validateColor,
       true
     );
-    if (typeof retLineColor === 'string') {
-      return retLineColor; // errorMessage
+    if (typeof lineColor === 'string') {
+      return lineColor; // errorMessage
     }
-    line.lineColor = retLineColor;
+    line.lineColor = lineColor;
     // console.log(line.lineColor);
 
     // lineWidth
-    const retLineWidth = getNumberArrayFromInput(
+    const lineWidth = getNumberArrayFromInput(
       'lineWidth',
       yamlLine?.lineWidth,
       numDatasets,
       1.5,
       true
     );
-    if (typeof retLineWidth === 'string') {
-      return retLineWidth; // errorMessage
+    if (typeof lineWidth === 'string') {
+      return lineWidth; // errorMessage
     }
-    line.lineWidth = retLineWidth;
+    line.lineWidth = lineWidth;
     // console.log(line.lineWidth);
 
     // showLine
-    const retShowLine = getBoolArrayFromInput(
+    const showLine = getBoolArrayFromInput(
       'showLine',
       yamlLine?.showLine,
       numDatasets,
       true,
       true
     );
-    if (typeof retShowLine === 'string') {
-      return retShowLine;
+    if (typeof showLine === 'string') {
+      return showLine;
     }
-    line.showLine = retShowLine;
+    line.showLine = showLine;
     // console.log(line.showLine);
 
     // showPoint
-    const retShowPoint = getBoolArrayFromInput(
+    const showPoint = getBoolArrayFromInput(
       'showPoint',
       yamlLine?.showPoint,
       numDatasets,
       true,
       true
     );
-    if (typeof retShowPoint === 'string') {
-      return retShowPoint;
+    if (typeof showPoint === 'string') {
+      return showPoint;
     }
-    line.showPoint = retShowPoint;
+    line.showPoint = showPoint;
     // console.log(line.showPoint);
 
     // pointColor
-    const retPointColor = getStringArrayFromInput(
+    const pointColor = getStringArrayFromInput(
       'pointColor',
       yamlLine?.pointColor,
       numDatasets,
@@ -819,14 +787,14 @@ export const getRenderInfoFromYaml = (
       validateColor,
       true
     );
-    if (typeof retPointColor === 'string') {
-      return retPointColor;
+    if (typeof pointColor === 'string') {
+      return pointColor;
     }
-    line.pointColor = retPointColor;
+    line.pointColor = pointColor;
     // console.log(line.pointColor);
 
     // pointBorderColor
-    const retPointBorderColor = getStringArrayFromInput(
+    const pointBorderColor = getStringArrayFromInput(
       'pointBorderColor',
       yamlLine?.pointBorderColor,
       numDatasets,
@@ -834,56 +802,56 @@ export const getRenderInfoFromYaml = (
       validateColor,
       true
     );
-    if (typeof retPointBorderColor === 'string') {
-      return retPointBorderColor;
+    if (typeof pointBorderColor === 'string') {
+      return pointBorderColor;
     }
-    line.pointBorderColor = retPointBorderColor;
+    line.pointBorderColor = pointBorderColor;
     // console.log(line.pointBorderColor);
 
     // pointBorderWidth
-    const retPointBorderWidth = getNumberArrayFromInput(
+    const pointBorderWidth = getNumberArrayFromInput(
       'pointBorderWidth',
       yamlLine?.pointBorderWidth,
       numDatasets,
       0.0,
       true
     );
-    if (typeof retPointBorderWidth === 'string') {
-      return retPointBorderWidth; // errorMessage
+    if (typeof pointBorderWidth === 'string') {
+      return pointBorderWidth; // errorMessage
     }
-    line.pointBorderWidth = retPointBorderWidth;
+    line.pointBorderWidth = pointBorderWidth;
     // console.log(line.pointBorderWidth);
 
     // pointSize
-    const retPointSize = getNumberArrayFromInput(
+    const pointSize = getNumberArrayFromInput(
       'pointSize',
       yamlLine?.pointSize,
       numDatasets,
       3.0,
       true
     );
-    if (typeof retPointSize === 'string') {
-      return retPointSize; // errorMessage
+    if (typeof pointSize === 'string') {
+      return pointSize; // errorMessage
     }
-    line.pointSize = retPointSize;
+    line.pointSize = pointSize;
     // console.log(line.pointSize);
 
     // fillGap
-    const retFillGap = getBoolArrayFromInput(
+    const FillGap = getBoolArrayFromInput(
       'fillGap',
       yamlLine?.fillGap,
       numDatasets,
       false,
       true
     );
-    if (typeof retFillGap === 'string') {
-      return retFillGap;
+    if (typeof FillGap === 'string') {
+      return FillGap;
     }
-    line.fillGap = retFillGap;
+    line.fillGap = FillGap;
     // console.log(line.fillGap);
 
     // yAxisLocation
-    const retYAxisLocation = getStringArrayFromInput(
+    const yAxisLocation = getStringArrayFromInput(
       'yAxisLocation',
       yamlLine?.yAxisLocation,
       numDatasets,
@@ -891,82 +859,82 @@ export const getRenderInfoFromYaml = (
       validateYAxisLocation,
       true
     );
-    if (typeof retYAxisLocation === 'string') {
-      return retYAxisLocation; // errorMessage
+    if (typeof yAxisLocation === 'string') {
+      return yAxisLocation; // errorMessage
     }
-    line.yAxisLocation = retYAxisLocation;
+    line.yAxisLocation = yAxisLocation;
     // console.log(line.yAxisLocation);
 
-    renderInfo.line.push(line);
+    renderInfo.lineCharts.push(line);
   } // line related parameters
   // console.log(renderInfo.line);
 
   // bar related parameters
-  for (const barKey of yamlBarKeys) {
-    const bar = new BarInfo();
-    const yamlBar = yaml[barKey];
+  for (const barKey of barKeys) {
+    const barChart = new BarChart();
+    const yamlBarChart = yaml[barKey];
 
-    const keysOfBarInfo = getAvailableKeysOfClass(bar);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlBar);
-    // console.log(keysOfBarInfo);
-    // console.log(keysFoundInYAML);
-    for (const key of keysFoundInYAML) {
-      if (!keysOfBarInfo.includes(key)) {
+    const barKeys = getKeys(barChart);
+    const yamlKeys = getKeys(yamlBarChart);
+    // console.log(barKeys);
+    // console.log(yamlKeys);
+    for (const key of yamlKeys) {
+      if (!barKeys.includes(key)) {
         errorMessage = "'" + key + "' is not an available key";
         return errorMessage;
       }
     }
 
-    const retParseCommonChartInfo = parseCommonChartInfo(yamlBar, bar);
-    if (typeof retParseCommonChartInfo === 'string') {
-      return retParseCommonChartInfo;
+    const parsedCommonChartInfo = parseCommonChartInfo(yamlBarChart, barChart);
+    if (typeof parsedCommonChartInfo === 'string') {
+      return parsedCommonChartInfo;
     }
 
     // barColor
-    const retBarColor = getStringArrayFromInput(
+    const barColor = getStringArrayFromInput(
       'barColor',
-      yamlBar?.barColor,
+      yamlBarChart?.barColor,
       numDatasets,
       '',
       validateColor,
       true
     );
-    if (typeof retBarColor === 'string') {
-      return retBarColor; // errorMessage
+    if (typeof barColor === 'string') {
+      return barColor; // errorMessage
     }
-    bar.barColor = retBarColor;
+    barChart.barColor = barColor;
     // console.log(bar.barColor);
 
     // yAxisLocation
-    const retYAxisLocation = getStringArrayFromInput(
+    const yAxisLocation = getStringArrayFromInput(
       'yAxisLocation',
-      yamlBar?.yAxisLocation,
+      yamlBarChart?.yAxisLocation,
       numDatasets,
       'left',
       validateYAxisLocation,
       true
     );
-    if (typeof retYAxisLocation === 'string') {
-      return retYAxisLocation; // errorMessage
+    if (typeof yAxisLocation === 'string') {
+      return yAxisLocation; // errorMessage
     }
-    bar.yAxisLocation = retYAxisLocation;
+    barChart.yAxisLocation = yAxisLocation;
     // console.log(bar.yAxisLocation);
 
-    renderInfo.bar.push(bar);
+    renderInfo.barCharts.push(barChart);
   } // bar related parameters
   // console.log(renderInfo.bar);
 
   // pie related parameters
-  for (const pieKey of yamlPieKeys) {
-    const pie = new PieInfo();
+  for (const pieKey of pieKeys) {
+    const pie = new PieChart();
     const yamlPie = yaml[pieKey];
 
-    const keysOfPieInfo = getAvailableKeysOfClass(pie);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlPie);
+    const pieKeys = getKeys(pie);
+    const yamlKeys = getKeys(yamlPie);
     // console.log(keysOfPieInfo);
-    // console.log(keysFoundInYAML);
-    for (const key of keysFoundInYAML) {
-      if (!keysOfPieInfo.includes(key)) {
+    // console.log(yamlKeys);
+    for (const key of yamlKeys) {
+      if (!pieKeys.includes(key)) {
         errorMessage = "'" + key + "' is not an available key";
         return errorMessage;
       }
@@ -977,16 +945,16 @@ export const getRenderInfoFromYaml = (
     // console.log(pie.title);
 
     // data
-    const retData = getStringArray('data', yamlPie?.data);
-    if (typeof retData === 'string') {
-      return retData;
+    const data = getStringArray('data', yamlPie?.data);
+    if (typeof data === 'string') {
+      return data;
     }
-    pie.data = retData;
+    pie.data = data;
     // console.log(pie.data);
     const numData = pie.data.length;
 
     // dataColor
-    const retDataColor = getStringArrayFromInput(
+    const dataColor = getStringArrayFromInput(
       'dataColor',
       yamlPie?.dataColor,
       numData,
@@ -994,14 +962,14 @@ export const getRenderInfoFromYaml = (
       validateColor,
       true
     );
-    if (typeof retDataColor === 'string') {
-      return retDataColor; // errorMessage
+    if (typeof dataColor === 'string') {
+      return dataColor; // errorMessage
     }
-    pie.dataColor = retDataColor;
+    pie.dataColor = dataColor;
     // console.log(pie.dataColor);
 
     // dataName
-    const retDataName = getStringArrayFromInput(
+    const dataName = getStringArrayFromInput(
       'dataName',
       yamlPie?.dataName,
       numData,
@@ -1009,14 +977,14 @@ export const getRenderInfoFromYaml = (
       null,
       true
     );
-    if (typeof retDataName === 'string') {
-      return retDataName; // errorMessage
+    if (typeof dataName === 'string') {
+      return dataName; // errorMessage
     }
-    pie.dataName = retDataName;
+    pie.dataName = dataName;
     // console.log(pie.dataName);
 
     // label
-    const retLabel = getStringArrayFromInput(
+    const label = getStringArrayFromInput(
       'label',
       yamlPie?.label,
       numData,
@@ -1024,10 +992,10 @@ export const getRenderInfoFromYaml = (
       null,
       true
     );
-    if (typeof retLabel === 'string') {
-      return retLabel; // errorMessage
+    if (typeof label === 'string') {
+      return label; // errorMessage
     }
-    pie.label = retLabel;
+    pie.label = label;
     // console.log(pie.label);
 
     // hideLabelLessThan
@@ -1037,7 +1005,7 @@ export const getRenderInfoFromYaml = (
     // console.log(pie.hideLabelLessThan);
 
     // extLabel
-    const retExtLabel = getStringArrayFromInput(
+    const extLabel = getStringArrayFromInput(
       'extLabel',
       yamlPie?.extLabel,
       numData,
@@ -1045,10 +1013,10 @@ export const getRenderInfoFromYaml = (
       null,
       true
     );
-    if (typeof retExtLabel === 'string') {
-      return retExtLabel; // errorMessage
+    if (typeof extLabel === 'string') {
+      return extLabel; // errorMessage
     }
-    pie.extLabel = retExtLabel;
+    pie.extLabel = extLabel;
     // console.log(pie.extLabel);
 
     // showExtLabelOnlyIfNoLabel
@@ -1102,21 +1070,21 @@ export const getRenderInfoFromYaml = (
       pie.legendBorderColor
     );
 
-    renderInfo.pie.push(pie);
+    renderInfo.pieCharts.push(pie);
   } // pie related parameters
   // console.log(renderInfo.pie);
 
   // summary related parameters
-  for (const summaryKey of yamlSummaryKeys) {
-    const summary = new SummaryInfo();
+  for (const summaryKey of summaryKeys) {
+    const summary = new Summary();
     const yamlSummary = yaml[summaryKey];
 
-    const keysOfSummaryInfo = getAvailableKeysOfClass(summary);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlSummary);
+    const summaryKeys = getKeys(summary);
+    const yamlKeys = getKeys(yamlSummary);
     // console.log(keysOfSummaryInfo);
-    // console.log(keysFoundInYAML);
-    for (const key of keysFoundInYAML) {
-      if (!keysOfSummaryInfo.includes(key)) {
+    // console.log(yamlKeys);
+    for (const key of yamlKeys) {
+      if (!summaryKeys.includes(key)) {
         errorMessage = "'" + key + "' is not an available key";
         return errorMessage;
       }
@@ -1131,20 +1099,20 @@ export const getRenderInfoFromYaml = (
     // style
     summary.style = getStringFromInput(yamlSummary?.style, summary.style);
 
-    renderInfo.summary.push(summary);
+    renderInfo.summaries.push(summary);
   } // summary related parameters
 
   // Month related parameters
-  for (const monthKey of yamlMonthKeys) {
+  for (const monthKey of monthKeys) {
     const month = new MonthInfo();
     const yamlMonth = yaml[monthKey];
 
-    const keysOfMonthInfo = getAvailableKeysOfClass(month);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlMonth);
+    const monthKeys = getKeys(month);
+    const yamlKeys = getKeys(yamlMonth);
     // console.log(keysOfSummaryInfo);
-    // console.log(keysFoundInYAML);
-    for (const key of keysFoundInYAML) {
-      if (!keysOfMonthInfo.includes(key)) {
+    // console.log(yamlKeys);
+    for (const key of yamlKeys) {
+      if (!monthKeys.includes(key)) {
         errorMessage = "'" + key + "' is not an available key";
         return errorMessage;
       }
@@ -1155,17 +1123,17 @@ export const getRenderInfoFromYaml = (
     // console.log(month.mode);
 
     // dataset
-    const retDataset = getNumberArray('dataset', yamlMonth?.dataset);
-    if (typeof retDataset === 'string') {
-      return retDataset;
+    const dataset = getNumberArray('dataset', yamlMonth?.dataset);
+    if (typeof dataset === 'string') {
+      return dataset;
     }
-    if (retDataset.length === 0) {
+    if (dataset.length === 0) {
       // insert y dataset given
       for (const q of queries) {
-        retDataset.push(q.getId());
+        dataset.push(q.id);
       }
     }
-    month.dataset = retDataset;
+    month.dataset = dataset;
     // console.log(month.dataset);
     const numDataset = month.dataset.length;
 
@@ -1183,11 +1151,11 @@ export const getRenderInfoFromYaml = (
     // console.log(month.showCircle);
 
     // threshold
-    const retThreshold = getNumberArray('threshold', yamlMonth?.threshold);
-    if (typeof retThreshold === 'string') {
-      return retThreshold;
+    const threshold = getNumberArray('threshold', yamlMonth?.threshold);
+    if (typeof threshold === 'string') {
+      return threshold;
     }
-    month.threshold = retThreshold;
+    month.threshold = threshold;
     if (month.threshold.length === 0) {
       for (let indDataset = 0; indDataset < numDataset; indDataset++) {
         month.threshold.push(0);
@@ -1203,11 +1171,11 @@ export const getRenderInfoFromYaml = (
     // console.log(month.threshold);
 
     // yMin
-    const retYMin = getNumberArray('yMin', yamlMonth?.yMin);
-    if (typeof retYMin === 'string') {
-      return retYMin;
+    const yMin = getNumberArray('yMin', yamlMonth?.yMin);
+    if (typeof yMin === 'string') {
+      return yMin;
     }
-    month.yMin = retYMin;
+    month.yMin = yMin;
     if (month.yMin.length === 0) {
       for (let indDataset = 0; indDataset < numDataset; indDataset++) {
         month.yMin.push(null);
@@ -1221,11 +1189,11 @@ export const getRenderInfoFromYaml = (
     // console.log(month.yMin);
 
     // yMax
-    const retYMax = getNumberArray('yMax', yamlMonth?.yMax);
-    if (typeof retYMax === 'string') {
-      return retYMax;
+    const yMax = getNumberArray('yMax', yamlMonth?.yMax);
+    if (typeof yMax === 'string') {
+      return yMax;
     }
-    month.yMax = retYMax;
+    month.yMax = yMax;
     if (month.yMax.length === 0) {
       for (let indDataset = 0; indDataset < numDataset; indDataset++) {
         month.yMax.push(null);
@@ -1331,11 +1299,11 @@ export const getRenderInfoFromYaml = (
     // console.log(month.showAnnotation);
 
     // annotation
-    const retAnnotation = getStringArray('annotation', yamlMonth?.annotation);
-    if (typeof retAnnotation === 'string') {
-      return retAnnotation;
+    const annotation = getStringArray('annotation', yamlMonth?.annotation);
+    if (typeof annotation === 'string') {
+      return annotation;
     }
-    month.annotation = retAnnotation;
+    month.annotation = annotation;
     if (month.annotation.length === 0) {
       for (let indDataset = 0; indDataset < numDataset; indDataset++) {
         month.annotation.push(null);
@@ -1359,36 +1327,36 @@ export const getRenderInfoFromYaml = (
   // console.log(renderInfo.month);
 
   // Heatmap related parameters
-  for (const heatmapKey of yamlHeatmapKeys) {
-    const heatmap = new HeatmapInfo();
+  for (const heatmapKey of heatmapKeys) {
+    const heatmap = new Heatmap();
     const yamlHeatmap = yaml[heatmapKey];
 
-    const keysOfHeatmapInfo = getAvailableKeysOfClass(heatmap);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlHeatmap);
+    const heatmapKeys = getKeys(heatmap);
+    const yamlKeys = getKeys(yamlHeatmap);
     // console.log(keysOfHeatmapInfo);
-    // console.log(keysFoundInYAML);
-    for (const key of keysFoundInYAML) {
-      if (!keysOfHeatmapInfo.includes(key)) {
+    // console.log(yamlKeys);
+    for (const key of yamlKeys) {
+      if (!heatmapKeys.includes(key)) {
         errorMessage = "'" + key + "' is not an available key";
         return errorMessage;
       }
     }
 
-    renderInfo.heatmap.push(heatmap);
+    renderInfo.heatmaps.push(heatmap);
   }
   // console.log(renderInfo.heatmap);
 
   // Bullet related parameters
-  for (const bulletKey of yamlBulletKeys) {
-    const bullet = new BulletInfo();
+  for (const bulletKey of bulletKeys) {
+    const bullet = new BulletGraph();
     const yamlBullet = yaml[bulletKey];
 
-    const keysOfBulletInfo = getAvailableKeysOfClass(bullet);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlBullet);
+    const bulletKeys = getKeys(bullet);
+    const yamlKeys = getKeys(yamlBullet);
     // console.log(keysOfSummaryInfo);
-    // console.log(keysFoundInYAML);
-    for (const key of keysFoundInYAML) {
-      if (!keysOfBulletInfo.includes(key)) {
+    // console.log(yamlKeys);
+    for (const key of yamlKeys) {
+      if (!bulletKeys.includes(key)) {
         errorMessage = "'" + key + "' is not an available key";
         return errorMessage;
       }
@@ -1410,11 +1378,9 @@ export const getRenderInfoFromYaml = (
     // console.log(bullet.orientation);
 
     // range
-    const retRange = getNumberArray('range', yamlBullet?.range);
-    if (typeof retRange === 'string') {
-      return retRange;
-    }
-    const range = retRange as Array<number>;
+    const range = getNumberArray('range', yamlBullet?.range);
+    if (typeof range === 'string') return range;
+
     // Check the value is monotonically increasing
     // Check the value is not negative
     if (range.length === 1) {
@@ -1445,7 +1411,7 @@ export const getRenderInfoFromYaml = (
     // console.log(renderInfo.bullet.range);
 
     // range color
-    const retRangeColor = getStringArrayFromInput(
+    const rangeColor = getStringArrayFromInput(
       'rangeColor',
       yamlBullet?.rangeColor,
       numRange,
@@ -1453,10 +1419,10 @@ export const getRenderInfoFromYaml = (
       validateColor,
       true
     );
-    if (typeof retRangeColor === 'string') {
-      return retRangeColor; // errorMessage
+    if (typeof rangeColor === 'string') {
+      return rangeColor; // errorMessage
     }
-    bullet.rangeColor = retRangeColor;
+    bullet.rangeColor = rangeColor;
     // console.log(bullet.rangeColor);
 
     // actual value, can possess template variable
@@ -1496,7 +1462,7 @@ export const getRenderInfoFromYaml = (
     );
     // console.log(bullet.markValue);
 
-    renderInfo.bullet.push(bullet);
+    renderInfo.bulletGraphs.push(bullet);
   } // Bullet related parameters
   // console.log(renderInfo.bullet);
 

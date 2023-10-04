@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { RenderInfo } from './models/data';
+import { RenderInfo } from './models/render-info';
 import {
   renderBarChart,
   renderBulletGraph,
@@ -8,7 +8,7 @@ import {
   renderMonth,
   renderPieChart,
   renderSummary,
-} from './ui';
+} from './ui-components';
 
 export const render = (canvas: HTMLElement, renderInfo: RenderInfo): string => {
   // console.log("render");
@@ -35,47 +35,33 @@ export const render = (canvas: HTMLElement, renderInfo: RenderInfo): string => {
     }
   }
 
-  for (const lineInfo of renderInfo.line) {
-    const ret = renderLineChart(canvas, renderInfo, lineInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
+  for (const component of renderInfo.lineCharts) {
+    const ret = renderLineChart(canvas, renderInfo, component);
+    if (typeof ret === 'string') return ret;
   }
-  for (const barInfo of renderInfo.bar) {
-    const ret = renderBarChart(canvas, renderInfo, barInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
+  for (const component of renderInfo.barCharts) {
+    const ret = renderBarChart(canvas, renderInfo, component);
+    if (typeof ret === 'string') return ret;
   }
-  for (const pieInfo of renderInfo.pie) {
-    const ret = renderPieChart(canvas, renderInfo, pieInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
+  for (const component of renderInfo.pieCharts) {
+    const ret = renderPieChart(canvas, renderInfo, component);
+    if (typeof ret === 'string') return ret;
   }
-  for (const summaryInfo of renderInfo.summary) {
-    const ret = renderSummary(canvas, renderInfo, summaryInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
+  for (const component of renderInfo.summaries) {
+    const ret = renderSummary(canvas, renderInfo, component);
+    if (typeof ret === 'string') return ret;
   }
-  for (const bulletInfo of renderInfo.bullet) {
-    const ret = renderBulletGraph(canvas, renderInfo, bulletInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
+  for (const component of renderInfo.bulletGraphs) {
+    const ret = renderBulletGraph(canvas, renderInfo, component);
+    if (typeof ret === 'string') return ret;
   }
-  for (const monthInfo of renderInfo.month) {
-    const ret = renderMonth(canvas, renderInfo, monthInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
+  for (const component of renderInfo.month) {
+    const ret = renderMonth(canvas, renderInfo, component);
+    if (typeof ret === 'string') return ret;
   }
-  for (const heatmapInfo of renderInfo.heatmap) {
-    const ret = renderHeatmap(canvas, renderInfo, heatmapInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
+  for (const component of renderInfo.heatmaps) {
+    const ret = renderHeatmap(canvas, renderInfo, component);
+    if (typeof ret === 'string') return ret;
   }
 };
 

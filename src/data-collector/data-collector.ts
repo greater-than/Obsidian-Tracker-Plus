@@ -1,7 +1,8 @@
 import { Moment } from 'moment';
 import { CachedMetadata, TFile } from 'obsidian';
-import { SearchType, ValueType } from 'src/models/enums';
-import { Query, RenderInfo } from '../models/data';
+import { SearchType, ValueType } from '../models/enums';
+import { Query } from '../models/query';
+import { RenderInfo } from '../models/render-info';
 import { DataMap, XValueMap } from '../models/types';
 import { CountUtils, DateTimeUtils, NumberUtils, ObjectUtils } from '../utils';
 import {
@@ -55,8 +56,8 @@ export const getDateFromFrontmatter = (
 
   const frontMatter = fileCache.frontmatter;
   if (frontMatter) {
-    if (ObjectUtils.getDeepValue(frontMatter, query.getTarget())) {
-      let strDate = ObjectUtils.getDeepValue(frontMatter, query.getTarget());
+    if (ObjectUtils.getDeepValue(frontMatter, query.target)) {
+      let strDate = ObjectUtils.getDeepValue(frontMatter, query.target);
 
       // We only support single value for now
       if (typeof strDate === 'string') {
@@ -90,19 +91,19 @@ export const getDateFromTag = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const date = window.moment('');
 
-  let tagName = query.getTarget();
-  if (query.getParentTarget()) {
-    tagName = query.getParentTarget(); // use parent tag name for multiple values
+  let tagName = query.target;
+  if (query.parentTarget) {
+    tagName = query.parentTarget; // use parent tag name for multiple values
   }
   // console.log(tagName);
 
-  const strRegex =
+  const pattern =
     '(^|\\s)#' +
     tagName +
     '(\\/[\\w-]+)*(:(?<value>[\\d\\.\\/-]*)[a-zA-Z]*)?([\\.!,\\?;~-]*)?(\\s|$)';
-  // console.log(strRegex);
+  // console.log(pattern);
 
-  return extractDateUsingRegexWithValue(content, strRegex, renderInfo);
+  return extractDateUsingRegexWithValue(content, pattern, renderInfo);
 };
 
 // Not support multiple targets
@@ -119,10 +120,10 @@ export const getDateFromText = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const date = window.moment('');
 
-  const strRegex = query.getTarget();
+  const pattern = query.target;
   // console.log(strTextRegex);
 
-  return extractDateUsingRegexWithValue(content, strRegex, renderInfo);
+  return extractDateUsingRegexWithValue(content, pattern, renderInfo);
 };
 
 // Not support multiple targets
@@ -139,30 +140,28 @@ export const getDateFromDvField = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const date = window.moment('');
 
-  let dvTarget = query.getTarget();
-  if (query.getParentTarget()) {
-    dvTarget = query.getParentTarget(); // use parent tag name for multiple values
-  }
+  let target = query.parentTarget ?? query.target;
+
   // Dataview ask user to add dashes for spaces as search target
   // So a dash may stands for a real dash or a space
-  dvTarget = dvTarget.replace('-', '[\\s\\-]');
+  target = target.replace('-', '[\\s\\-]');
 
   // Test this in Regex101
   // remember '\s' includes new line
   // (^| |\t)\*{0,2}dvTarget\*{0,2}(::[ |\t]*(?<value>[\d\.\/\-\w,@; \t:]*))(\r?\n|\r|$)
-  const strRegex =
+  const pattern =
     '(^| |\\t)\\*{0,2}' +
-    dvTarget +
+    target +
     '\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-\\w,@; \\t:]*))(\\r\\?\\n|\\r|$)';
-  // console.log(strRegex);
+  // console.log(pattern);
 
-  return extractDateUsingRegexWithValue(content, strRegex, renderInfo);
+  return extractDateUsingRegexWithValue(content, pattern, renderInfo);
 };
 
 // Not support multiple targets
 // In form 'regex with value', name group 'value' from users
 export const getDateFromWiki = (
-  fileCache: CachedMetadata,
+  metadata: CachedMetadata,
   query: Query,
   renderInfo: RenderInfo
 ): Moment => {
@@ -171,41 +170,29 @@ export const getDateFromWiki = (
 
   const date = window.moment('');
 
-  const links = fileCache.links;
+  const links = metadata.links;
   if (!links) return date;
 
-  const searchTarget = query.getTarget();
-  const searchType = query.getType();
+  const searchTarget = query.target;
+  const searchType = query.type;
 
   for (const link of links) {
     if (!link) continue;
 
     let wikiText = '';
-    if (searchType === SearchType.Wiki) {
-      if (link.displayText) {
-        wikiText = link.displayText;
-      } else {
-        wikiText = link.link;
-      }
-    } else if (searchType === SearchType.WikiLink) {
+    if (searchType === SearchType.WikiLink) {
       // wiki.link point to a file name
       // a colon is not allowed be in file name
       wikiText = link.link;
     } else if (searchType === SearchType.WikiDisplay) {
-      if (link.displayText) {
-        wikiText = link.displayText;
-      }
+      if (link.displayText) wikiText = link.displayText;
     } else {
-      if (link.displayText) {
-        wikiText = link.displayText;
-      } else {
-        wikiText = link.link;
-      }
+      wikiText = link.displayText ? link.displayText : link.link;
     }
     wikiText = wikiText.trim();
 
-    const strRegex = '^' + searchTarget + '$';
-    return extractDateUsingRegexWithValue(wikiText, strRegex, renderInfo);
+    const pattern = `^${searchTarget}$`;
+    return extractDateUsingRegexWithValue(wikiText, pattern, renderInfo);
   }
 
   return date;
@@ -225,7 +212,7 @@ export const getDateFromFileMeta = (
   if (file && file instanceof TFile) {
     // console.log(file.stat);
 
-    const target = query.getTarget();
+    const target = query.target;
     if (target === 'cDate') {
       const ctime = file.stat.ctime; // unix time
       date = DateTimeUtils.getDateFromUnixTime(ctime, renderInfo.dateFormat);
@@ -254,22 +241,28 @@ export const getDateFromTask = (
   // Why is this here?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const date = window.moment('');
-  const searchType = query.getType();
-  // console.log(searchType);
+  const { target, type } = query;
 
-  let strRegex = query.getTarget();
-  if (searchType === SearchType.Task) {
-    strRegex = '\\[[\\sx]\\]\\s' + strRegex;
-  } else if (searchType === SearchType.TaskDone) {
-    strRegex = '\\[x\\]\\s' + strRegex;
-  } else if (searchType === SearchType.TaskNotDone) {
-    strRegex = '\\[\\s\\]\\s' + strRegex;
-  } else {
-    strRegex = '\\[[\\sx]\\]\\s' + strRegex;
+  const pattern = getSearchTypePattern(type);
+
+  return extractDateUsingRegexWithValue(
+    content,
+    `${pattern}${target}`,
+    renderInfo
+  );
+};
+
+export const getSearchTypePattern = (searchType: SearchType): string => {
+  switch (searchType) {
+    case SearchType.Task:
+      return '\\[[\\sx]\\]\\';
+    case SearchType.TaskDone:
+      return '\\[x\\]\\s';
+    case SearchType.TaskNotDone:
+      return '\\[\\s\\]\\s';
+    default:
+      return '\\[[\\sx]\\]\\s';
   }
-  // console.log(strTextRegex);
-
-  return extractDateUsingRegexWithValue(content, strRegex, renderInfo);
 };
 
 // No value, count occurrences only
@@ -294,28 +287,26 @@ export const collectDataFromFrontmatterTag = (
     if (Array.isArray(frontMatter.tags)) {
       frontMatterTags = frontMatterTags.concat(frontMatter.tags);
     } else if (typeof frontMatter.tags === 'string') {
-      const splitted = frontMatter.tags.split(query.getSeparator(true));
-      for (const splittedPart of splitted) {
-        const part = splittedPart.trim();
-        if (part !== '') {
-          frontMatterTags.push(part);
-        }
+      const splitTags = frontMatter.tags.split(query.getSeparator(true));
+      for (const tag of splitTags) {
+        const part = tag.trim();
+        if (part !== '') frontMatterTags.push(part);
       }
     }
     // console.log(frontMatterTags);
-    // console.log(query.getTarget());
+    // console.log(query.target);
 
     for (const tag of frontMatterTags) {
-      if (tag === query.getTarget()) {
+      if (tag === query.target) {
         // simple tag
-        tagMeasure = tagMeasure + renderInfo.constValue[query.getId()];
+        tagMeasure = tagMeasure + renderInfo.constValue[query.id];
         tagExist = true;
-        query.addNumTargets();
-      } else if (tag.startsWith(query.getTarget() + '/')) {
+        query.incrementTargets();
+      } else if (tag.startsWith(query.target + '/')) {
         // nested tag
-        tagMeasure = tagMeasure + renderInfo.constValue[query.getId()];
+        tagMeasure = tagMeasure + renderInfo.constValue[query.id];
         tagExist = true;
-        query.addNumTargets();
+        query.incrementTargets();
       } else {
         continue;
       }
@@ -327,7 +318,7 @@ export const collectDataFromFrontmatterTag = (
       if (tagExist) {
         value = tagMeasure;
       }
-      const xValue = xValueMap.get(renderInfo.xDataset[query.getId()]);
+      const xValue = xValueMap.get(renderInfo.xDataset[query.id]);
       addToDataMap(dataMap, xValue, query, value);
       return true;
     }
@@ -349,51 +340,46 @@ export const collectDataFromFrontmatterKey = (
   const frontMatter = fileCache.frontmatter;
   if (frontMatter) {
     // console.log(frontMatter);
-    // console.log(query.getTarget());
-    const deepValue = ObjectUtils.getDeepValue(frontMatter, query.getTarget());
+    // console.log(query.target);
+    const deepValue = ObjectUtils.getDeepValue(frontMatter, query.target);
     // console.log(deepValue);
     if (deepValue) {
-      const retParse = NumberUtils.parseFloatFromAny(
+      const parsed = NumberUtils.parseFloatFromAny(
         deepValue,
         renderInfo.textValueMap
       );
-      // console.log(retParse);
-      if (retParse.value === null) {
+      // console.log(parsed);
+      if (parsed.value === null) {
         // Try parsing as a boolean: true means 1, false means 0.
         if (deepValue === 'true' || deepValue === 'false') {
-          retParse.type = ValueType.Number;
-          retParse.value = deepValue === 'true' ? 1 : 0;
+          parsed.type = ValueType.Number;
+          parsed.value = deepValue === 'true' ? 1 : 0;
         }
       }
-      if (retParse.value !== null) {
-        if (retParse.type === ValueType.Time) {
+      if (parsed.value !== null) {
+        if (parsed.type === ValueType.Time) {
           query.valueType = ValueType.Time;
         }
-        query.addNumTargets();
-        const xValue = xValueMap.get(renderInfo.xDataset[query.getId()]);
-        addToDataMap(dataMap, xValue, query, retParse.value);
+        query.incrementTargets();
+        const xValue = xValueMap.get(renderInfo.xDataset[query.id]);
+        addToDataMap(dataMap, xValue, query, parsed.value);
         return true;
       }
     } else if (
-      query.getParentTarget() &&
-      ObjectUtils.getDeepValue(frontMatter, query.getParentTarget())
+      query.parentTarget &&
+      ObjectUtils.getDeepValue(frontMatter, query.parentTarget)
     ) {
       // console.log("multiple values");
-      // console.log(query.getTarget());
-      // console.log(query.getParentTarget());
+      // console.log(query.target);
+      // console.log(query.parentTarget);
       // console.log(query.getSubId());
       // console.log(
-      //     frontMatter[query.getParentTarget()]
+      //     frontMatter[query.parentTarget]
       // );
-      const toParse = ObjectUtils.getDeepValue(
-        frontMatter,
-        query.getParentTarget()
-      );
+      const toParse = ObjectUtils.getDeepValue(frontMatter, query.parentTarget);
       let splitted = null;
       if (Array.isArray(toParse)) {
-        splitted = toParse.map((p) => {
-          return p.toString();
-        });
+        splitted = toParse.map((p) => p.toString());
       } else if (typeof toParse === 'string') {
         splitted = toParse.split(query.getSeparator());
       }
@@ -404,18 +390,18 @@ export const collectDataFromFrontmatterKey = (
         query.getAccessor() >= 0
       ) {
         // TODO: it's not efficient to retrieve one value at a time, enhance this
-        const splittedPart = splitted[query.getAccessor()].trim();
-        const retParse = NumberUtils.parseFloatFromAny(
-          splittedPart,
+        const accessor0 = splitted[query.getAccessor()].trim();
+        const parsed = NumberUtils.parseFloatFromAny(
+          accessor0,
           renderInfo.textValueMap
         );
-        if (retParse.value !== null) {
-          if (retParse.type === ValueType.Time) {
+        if (parsed.value !== null) {
+          if (parsed.type === ValueType.Time) {
             query.valueType = ValueType.Time;
           }
-          query.addNumTargets();
-          const xValue = xValueMap.get(renderInfo.xDataset[query.getId()]);
-          addToDataMap(dataMap, xValue, query, retParse.value);
+          query.incrementTargets();
+          const xValue = xValueMap.get(renderInfo.xDataset[query.id]);
+          addToDataMap(dataMap, xValue, query, parsed.value);
           return true;
         }
       }
@@ -436,46 +422,31 @@ export const collectDataFromWiki = (
   const links = fileCache.links;
   if (!links) return false;
 
-  const searchTarget = query.getTarget();
-  const searchType = query.getType();
+  const { target: pattern, type } = query;
 
   let textToSearch = '';
-  const strRegex = searchTarget;
 
   // Prepare textToSearch
   for (const link of links) {
     if (!link) continue;
 
     let wikiText = '';
-    if (searchType === SearchType.Wiki) {
-      if (link.displayText) {
-        wikiText = link.displayText;
-      } else {
-        wikiText = link.link;
-      }
-    } else if (searchType === SearchType.WikiLink) {
+    if (type === SearchType.WikiLink) {
       // wiki.link point to a file name
       // a colon is not allowed be in file name
       wikiText = link.link;
-    } else if (searchType === SearchType.WikiDisplay) {
-      if (link.displayText) {
-        wikiText = link.displayText;
-      }
+    } else if (type === SearchType.WikiDisplay) {
+      if (link.displayText) wikiText = link.displayText;
     } else {
-      if (link.displayText) {
-        wikiText = link.displayText;
-      } else {
-        wikiText = link.link;
-      }
+      wikiText = link.displayText ? link.displayText : link.link;
     }
     wikiText = wikiText.trim();
-
     textToSearch += wikiText + '\n';
   }
 
   return extractDataUsingRegexWithMultipleValues(
     textToSearch,
-    strRegex,
+    pattern,
     query,
     dataMap,
     xValueMap,
@@ -494,22 +465,22 @@ export const collectDataFromInlineTag = (
   // console.log(content);
   // Test this in Regex101
   // (^|\s)#tagName(\/[\w-]+)*(:(?<value>[\d\.\/-]*)[a-zA-Z]*)?([\\.!,\\?;~-]*)?(\s|$)
-  let tagName = query.getTarget();
-  if (query.getParentTarget()) {
-    tagName = query.getParentTarget(); // use parent tag name for multiple values
+  let tagName = query.target;
+  if (query.parentTarget) {
+    tagName = query.parentTarget; // use parent tag name for multiple values
   }
   if (tagName.length > 1 && tagName.startsWith('#')) {
     tagName = tagName.substring(1);
   }
-  const strRegex =
+  const pattern =
     '(^|\\s)#' +
     tagName +
     '(\\/[\\w-]+)*(:(?<value>[\\d\\.\\/-]*)[a-zA-Z]*)?([\\.!,\\?;~-]*)?(\\s|$)';
-  // console.log(strRegex);
+  // console.log(pattern);
 
   return extractDataUsingRegexWithMultipleValues(
     content,
-    strRegex,
+    pattern,
     query,
     dataMap,
     xValueMap,
@@ -527,12 +498,12 @@ export const collectDataFromText = (
 ): boolean => {
   // console.log("collectDataFromText");
 
-  const strRegex = query.getTarget();
-  // console.log(strRegex);
+  const { target: pattern } = query;
+  // console.log(pattern);
 
   return extractDataUsingRegexWithMultipleValues(
     content,
-    strRegex,
+    pattern,
     query,
     dataMap,
     xValueMap,
@@ -553,24 +524,24 @@ export const collectDataFromFileMeta = (
   if (file && file instanceof TFile) {
     // console.log(file.stat);
 
-    const target = query.getTarget();
-    const xValue = xValueMap.get(renderInfo.xDataset[query.getId()]);
+    const target = query.target;
+    const xValue = xValueMap.get(renderInfo.xDataset[query.id]);
 
     if (target === 'cDate') {
       const ctime = file.stat.ctime; // unix time
       query.valueType = ValueType.Date;
-      query.addNumTargets();
+      query.incrementTargets();
       addToDataMap(dataMap, xValue, query, ctime);
       return true;
     } else if (target === 'mDate') {
       const mtime = file.stat.mtime; // unix time
       query.valueType = ValueType.Date;
-      query.addNumTargets();
+      query.incrementTargets();
       addToDataMap(dataMap, xValue, query, mtime);
       return true;
     } else if (target === 'size') {
       const size = file.stat.size; // number in
-      query.addNumTargets();
+      query.incrementTargets();
       addToDataMap(dataMap, xValue, query, size);
       return true;
     } else if (target === 'numWords') {
@@ -579,35 +550,32 @@ export const collectDataFromFileMeta = (
       return true;
     } else if (target === 'numChars') {
       const numChars = CountUtils.getCharacterCount(content);
-      query.addNumTargets();
+      query.incrementTargets();
       addToDataMap(dataMap, xValue, query, numChars);
       return true;
     } else if (target === 'numSentences') {
       const numSentences = CountUtils.getSentenceCount(content);
-      query.addNumTargets();
+      query.incrementTargets();
       addToDataMap(dataMap, xValue, query, numSentences);
       return true;
     } else if (target === 'name') {
       let targetMeasure = 0.0;
       let targetExist = false;
-      const retParse = NumberUtils.parseFloatFromAny(
+      const parsed = NumberUtils.parseFloatFromAny(
         file.basename,
         renderInfo.textValueMap
       );
-      if (retParse.value !== null) {
-        if (retParse.type === ValueType.Time) {
-          targetMeasure = retParse.value;
+      if (parsed.value !== null) {
+        if (parsed.type === ValueType.Time) {
+          targetMeasure = parsed.value;
           targetExist = true;
           query.valueType = ValueType.Time;
-          query.addNumTargets();
+          query.incrementTargets();
         } else {
-          if (
-            !renderInfo.ignoreZeroValue[query.getId()] ||
-            retParse.value !== 0
-          ) {
-            targetMeasure += retParse.value;
+          if (!renderInfo.ignoreZeroValue[query.id] || parsed.value !== 0) {
+            targetMeasure += parsed.value;
             targetExist = true;
-            query.addNumTargets();
+            query.incrementTargets();
           }
         }
       }
@@ -634,9 +602,9 @@ export const collectDataFromDvField = (
   dataMap: DataMap,
   xValueMap: XValueMap
 ): boolean => {
-  let dvTarget = query.getTarget();
-  if (query.getParentTarget()) {
-    dvTarget = query.getParentTarget(); // use parent tag name for multiple values
+  let dvTarget = query.target;
+  if (query.parentTarget) {
+    dvTarget = query.parentTarget; // use parent tag name for multiple values
   }
   // Dataview ask user to add dashes for spaces as search target
   // So a dash may stands for a real dash or a space
@@ -645,7 +613,7 @@ export const collectDataFromDvField = (
   // Test this in Regex101
   // remember '\s' includes new line
   // (^| |\t)\*{0,2}dvTarget\*{0,2}(::[ |\t]*(?<value>[\d\.\/\-\w,@; \t:]*))(\r?\n|\r|$)
-  const strRegex =
+  const pattern =
     '(^| |\\t)\\*{0,2}' +
     dvTarget +
     '\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-,@; \\t:' +
@@ -653,7 +621,7 @@ export const collectDataFromDvField = (
     ']*))(\\r\\?\\n|\\r|$)';
   const outline = extractDataUsingRegexWithMultipleValues(
     content,
-    strRegex,
+    pattern,
     query,
     dataMap,
     xValueMap,
@@ -677,9 +645,9 @@ export const collectDataFromInlineDvField = (
   dataMap: DataMap,
   xValueMap: XValueMap
 ): boolean => {
-  let dvTarget = query.getTarget();
-  if (query.getParentTarget()) {
-    dvTarget = query.getParentTarget(); // use parent tag name for multiple values
+  let dvTarget = query.target;
+  if (query.parentTarget) {
+    dvTarget = query.parentTarget; // use parent tag name for multiple values
   }
   // Dataview ask user to add dashes for spaces as search target
   // So a dash may stands for a real dash or a space
@@ -688,17 +656,17 @@ export const collectDataFromInlineDvField = (
   // Test this in Regex101
   // remember '\s' includes new line
   // ^.*?(\[|\()\*{0,2}dvTarget\*{0,2}(::[ |\t]*(?<value>[\d\.\/\-\w,@; \t:]*))(\]|\)).*?
-  const strRegex =
+  const pattern =
     '^.*?(\\[|\\()\\*{0,2}' +
     dvTarget +
     '\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-,@; \\t:' +
     WordCharacters +
     ']*))(\\]|\\)).*?$';
-  // console.log(strRegex);
+  // console.log(pattern);
 
   return extractDataUsingRegexWithMultipleValues(
     content,
-    strRegex,
+    pattern,
     query,
     dataMap,
     xValueMap,
@@ -715,15 +683,15 @@ export const collectDataFromTask = (
   xValueMap: XValueMap
 ): boolean => {
   // console.log("collectDataFromTask");
-  const searchType = query.getType();
+  const queryType = query.type;
   // console.log(searchType);
 
-  let strRegex = query.getTarget();
-  if (searchType === SearchType.Task) {
+  let strRegex = query.target;
+  if (queryType === SearchType.Task) {
     strRegex = '\\[[\\sx]\\]\\s' + strRegex;
-  } else if (searchType === SearchType.TaskDone) {
+  } else if (queryType === SearchType.TaskDone) {
     strRegex = '\\[x\\]\\s' + strRegex;
-  } else if (searchType === SearchType.TaskNotDone) {
+  } else if (queryType === SearchType.TaskNotDone) {
     strRegex = '\\[\\s\\]\\s' + strRegex;
   } else {
     // all

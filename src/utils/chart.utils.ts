@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { Size } from '../models/data';
+import { Size } from '../models/size';
 
 /**
  * @summary Calculates the dimensions of a rendered text block

@@ -1,5 +1,7 @@
 import * as d3 from 'd3';
-import { BulletInfo, Dataset, RenderInfo } from '../../models/data';
+import { BulletGraph } from '../../models/bullet-graph';
+import { Dataset } from '../../models/dataset';
+import { RenderInfo } from '../../models/render-info';
 import { ChartElements } from '../../models/types';
 import Resolver from '../../resolver/resolver';
 import { ChartUtils, DomUtils } from '../../utils';
@@ -8,17 +10,17 @@ import { ChartUtils, DomUtils } from '../../utils';
  * Create Areas
  * @param canvas
  * @param renderInfo
- * @param bulletInfo
+ * @param component
  * @returns
  */
 export const createAreas = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  bulletInfo: BulletInfo
+  component: BulletGraph
 ): ChartElements => {
   const elements: ChartElements = {};
   // whole area for plotting, includes margins
-  if (!renderInfo || !bulletInfo) return;
+  if (!renderInfo || !component) return;
 
   const svg = d3
     .select(canvas)
@@ -100,30 +102,30 @@ export const setScale = (
  * Render Title
  * @param elements
  * @param renderInfo
- * @param bulletInfo
+ * @param component
  * @returns
  */
 export const renderTitle = (
   elements: ChartElements,
   renderInfo: RenderInfo,
-  bulletInfo: BulletInfo
+  component: BulletGraph
 ): void => {
   // console.log("renderTitle");
   // under graphArea
-  if (!renderInfo || !bulletInfo) return;
+  if (!renderInfo || !component) return;
 
   const spacing = 6; // spacing between title and dataArea
 
-  if (bulletInfo.title) {
+  if (component.title) {
     const titleSize = ChartUtils.measureTextSize(
-      bulletInfo.title,
+      component.title,
       'tracker-title-small'
     );
 
-    if (bulletInfo.orientation === 'horizontal') {
+    if (component.orientation === 'horizontal') {
       const title = elements.graphArea
         .append('text')
-        .text(bulletInfo.title) // pivot at center
+        .text(component.title) // pivot at center
         .attr('id', 'title')
         .attr('x', titleSize.width / 2)
         .attr('y', renderInfo.dataAreaSize.height / 2)
@@ -137,7 +139,7 @@ export const renderTitle = (
 
       // Move sibling areas
       DomUtils.moveArea(elements.dataArea, titleSize.width + spacing, 0);
-    } else if (bulletInfo.orientation === 'vertical') {
+    } else if (component.orientation === 'vertical') {
       // if label width > dataArea width
       let xMiddle = renderInfo.dataAreaSize.width / 2;
       if (titleSize.width > renderInfo.dataAreaSize.width) {
@@ -164,7 +166,7 @@ export const renderTitle = (
 
       const title = elements.graphArea
         .append('text')
-        .text(bulletInfo.title) // pivot at center
+        .text(component.title) // pivot at center
         .attr('id', 'title')
         .attr('x', xMiddle + axisWidth)
         .attr('y', titleSize.height / 2)
@@ -181,26 +183,26 @@ export const renderTitle = (
     }
   }
 
-  if (bulletInfo.valueUnit) {
+  if (component.valueUnit) {
     const unitSize = ChartUtils.measureTextSize(
-      bulletInfo.valueUnit,
+      component.valueUnit,
       'tracker-tick-label'
     );
 
-    if (bulletInfo.orientation === 'horizontal') {
+    if (component.orientation === 'horizontal') {
       const unit = elements.dataArea
         .append('text')
-        .text(bulletInfo.valueUnit)
+        .text(component.valueUnit)
         .attr('id', 'unit')
         .attr('x', -1 * (unitSize.width + spacing))
         .attr('y', renderInfo.dataAreaSize.height + spacing)
         .attr('height', unitSize.height) // for later use
         .attr('class', 'tracker-tick-label'); // pivot at corder
       elements['unit'] = unit;
-    } else if (bulletInfo.orientation === 'vertical') {
+    } else if (component.orientation === 'vertical') {
       const unit = elements.dataArea
         .append('text')
-        .text(bulletInfo.valueUnit)
+        .text(component.valueUnit)
         .attr('id', 'unit')
         .attr('x', renderInfo.dataAreaSize.width / 2 - unitSize.width / 2)
         .attr('y', -(unitSize.height / 2 + spacing))
@@ -222,28 +224,28 @@ export const renderTitle = (
  * Render ticks, tick labels
  * @param elements
  * @param renderInfo
- * @param bulletInfo
+ * @param component
  * @param _dataset
  * @returns
  */
 export const renderAxis = (
   elements: ChartElements,
   renderInfo: RenderInfo,
-  bulletInfo: BulletInfo,
+  component: BulletGraph,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ): void => {
   // console.log("renderAxis");
   // console.log(elements);
   // console.log(dataset);
-  if (!renderInfo || !bulletInfo) return;
+  if (!renderInfo || !component) return;
 
-  const range = bulletInfo.range;
+  const range = component.range;
   const lastRange = range[range.length - 1];
   const domain = [0, lastRange];
 
   const tickLength = 6;
-  const valueUnit = bulletInfo.valueUnit;
+  const valueUnit = component.valueUnit;
   const tickFormatFn = (value: d3.NumberValue): string => {
     if (valueUnit && valueUnit.endsWith('%')) {
       return d3.tickFormat(0, lastRange, 7)(value) + ' %';
@@ -256,7 +258,7 @@ export const renderAxis = (
     'tracker-tick-label'
   );
 
-  if (bulletInfo.orientation === 'horizontal') {
+  if (component.orientation === 'horizontal') {
     const scale = d3.scaleLinear();
     scale.domain(domain).range([0, renderInfo.dataAreaSize.width]);
     elements['scale'] = scale;
@@ -288,7 +290,7 @@ export const renderAxis = (
       +maxTickLabelSize.width,
       tickLength + maxTickLabelSize.height
     );
-  } else if (bulletInfo.orientation === 'vertical') {
+  } else if (component.orientation === 'vertical') {
     const scale = d3.scaleLinear();
     scale.domain(domain).range([renderInfo.dataAreaSize.height, 0]);
     elements['scale'] = scale;
@@ -330,26 +332,26 @@ export const renderAxis = (
  *
  * @param elements Render quantitative range, poor/average/good/...
  * @param renderInfo
- * @param bulletInfo
+ * @param component
  * @param _dataset
  * @returns
  */
 export const renderBackPanel = (
   elements: ChartElements,
   renderInfo: RenderInfo,
-  bulletInfo: BulletInfo,
+  component: BulletGraph,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ): void => {
   // console.log("renderBackPanel");
   // console.log(dataset);
-  if (!renderInfo || !bulletInfo) return;
+  if (!renderInfo || !component) return;
 
   const scale = elements.scale;
 
   // Prepare data
-  const range = bulletInfo.range;
-  const rangeColor = bulletInfo.rangeColor;
+  const range = component.range;
+  const rangeColor = component.rangeColor;
   const data = [];
   let lastBound = 0;
   for (let ind = 0; ind < range.length; ind++) {
@@ -361,7 +363,7 @@ export const renderBackPanel = (
     lastBound = range[ind];
   }
 
-  if (bulletInfo.orientation === 'horizontal') {
+  if (component.orientation === 'horizontal') {
     elements.dataArea
       .selectAll('backPanel')
       .data(data)
@@ -380,7 +382,7 @@ export const renderBackPanel = (
       .attr('height', renderInfo.dataAreaSize.height)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
       .style('fill', (d: any) => d.color);
-  } else if (bulletInfo.orientation === 'vertical') {
+  } else if (component.orientation === 'vertical') {
     elements.dataArea
       .selectAll('backPanel')
       .data(data)
@@ -406,34 +408,33 @@ export const renderBackPanel = (
  * Render bar for actual value
  * @param elements
  * @param renderInfo
- * @param bulletInfo
+ * @param component
  * @param _dataset
  * @returns
  */
 export const renderBar = (
   elements: ChartElements,
   renderInfo: RenderInfo,
-  bulletInfo: BulletInfo,
+  component: BulletGraph,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ): string => {
   // console.log("renderBar");
   // console.log(dataset);
-  if (!renderInfo || !bulletInfo) return;
+  if (!renderInfo || !component) return;
 
-  const retActualValue = Resolver.resolveValue(bulletInfo.value, renderInfo);
+  const resolvedValue = Resolver.resolveValue(component.value, renderInfo);
   // console.log(retActualValue);
-  if (typeof retActualValue === 'string') return retActualValue;
+  if (typeof resolvedValue === 'string') return resolvedValue;
 
-  const actualValue = retActualValue;
-  if (Number.isNaN(actualValue))
-    return 'Invalid input value: ' + retActualValue;
+  const actualValue = resolvedValue;
+  if (Number.isNaN(actualValue)) return 'Invalid input value: ' + resolvedValue;
 
-  const valueColor = bulletInfo.valueColor;
+  const valueColor = component.valueColor;
 
   const scale = elements.scale;
 
-  if (bulletInfo.orientation === 'horizontal') {
+  if (component.orientation === 'horizontal') {
     const barWidth = renderInfo.dataAreaSize.height / 3;
     elements.dataArea
       .append('rect')
@@ -442,7 +443,7 @@ export const renderBar = (
       .attr('width', Math.floor(scale(actualValue)))
       .attr('height', barWidth)
       .style('fill', valueColor);
-  } else if (bulletInfo.orientation === 'vertical') {
+  } else if (component.orientation === 'vertical') {
     const barWidth = renderInfo.dataAreaSize.width / 3;
     elements.dataArea
       .append('rect')
@@ -461,30 +462,30 @@ export const renderBar = (
  * ender mark line for target value
  * @param elements
  * @param renderInfo
- * @param bulletInfo
+ * @param component
  * @param _dataset
  * @returns
  */
 export const renderMark = (
   elements: ChartElements,
   renderInfo: RenderInfo,
-  bulletInfo: BulletInfo,
+  component: BulletGraph,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ): void => {
   // console.log("renderMark");
   // console.log(dataset);
-  if (!renderInfo || !bulletInfo) return;
+  if (!renderInfo || !component) return;
 
-  const showMarker = bulletInfo.showMarker;
+  const showMarker = component.showMarker;
   if (!showMarker) return;
 
-  const markerValue = bulletInfo.markerValue;
-  const markerColor = bulletInfo.markerColor;
+  const markerValue = component.markerValue;
+  const markerColor = component.markerColor;
 
   const scale = elements.scale;
 
-  if (bulletInfo.orientation === 'horizontal') {
+  if (component.orientation === 'horizontal') {
     const markerLength = (renderInfo.dataAreaSize.height * 2) / 3;
     elements.dataArea
       .append('rect')
@@ -493,7 +494,7 @@ export const renderMark = (
       .attr('width', 3)
       .attr('height', markerLength)
       .style('fill', markerColor);
-  } else if (bulletInfo.orientation === 'vertical') {
+  } else if (component.orientation === 'vertical') {
     const markerLength = (renderInfo.dataAreaSize.width * 2) / 3;
     elements.dataArea
       .append('rect')

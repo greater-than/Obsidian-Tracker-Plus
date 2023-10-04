@@ -1,26 +1,27 @@
 import { Moment } from 'moment';
-import { ValueType } from 'src/models/enums';
-import { Query, RenderInfo } from '../models/data';
-import { DataMap, QueryValuePair, XValueMap } from '../models/types';
+import { ValueType } from '../models/enums';
+import { Query } from '../models/query';
+import { RenderInfo } from '../models/render-info';
+import { DataMap, XValueMap } from '../models/types';
 import { DateTimeUtils, NumberUtils } from '../utils';
 
 /**
- * Helper function
- * - strRegex must have name group 'value'
+ * Return a Moment object from the provided text
+ * - pattern must have name group 'value'
  * - Named group 'value' could be provided from users or plugin
  * @param {string} text
- * @param {string} strRegex
+ * @param {string} pattern RegEx pattern
  * @param {RenderInfo} renderInfo
  * @returns {Moment}
  */
 export const extractDateUsingRegexWithValue = (
   text: string,
-  strRegex: string,
+  pattern: string,
   renderInfo: RenderInfo
 ): Moment => {
   let date = window.moment('');
 
-  const regex = new RegExp(strRegex, 'gm');
+  const regex = new RegExp(pattern, 'gm');
   let match;
   while ((match = regex.exec(text))) {
     // console.log(match);
@@ -74,7 +75,7 @@ export const extractDataUsingRegexWithMultipleValues = (
   let extracted = false;
   while ((match = regex.exec(text))) {
     // console.log(match);
-    if (!renderInfo.ignoreAttachedValue[query.getId()]) {
+    if (!renderInfo.ignoreAttachedValue[query.id]) {
       if (
         typeof match.groups !== 'undefined' &&
         typeof match.groups.value !== 'undefined'
@@ -82,76 +83,73 @@ export const extractDataUsingRegexWithMultipleValues = (
         const values = match.groups.value.trim();
         // console.log(values);
         // console.log(query.getSeparator());
-        const splitted = values.split(query.getSeparator());
-        // console.log(splitted);
-        if (!splitted) continue;
-        if (splitted.length === 1) {
+        const splitValues = values.split(query.getSeparator());
+        // console.log(splitValues);
+        if (!splitValues) continue;
+        if (splitValues.length === 1) {
           // console.log("single-value");
-          const toParse = splitted[0].trim();
+          const toParse = splitValues[0].trim();
           // console.log(toParse);
-          const retParse = NumberUtils.parseFloatFromAny(
+          const parsed = NumberUtils.parseFloatFromAny(
             toParse,
             renderInfo.textValueMap
           );
-          if (retParse.value !== null) {
-            if (retParse.type === ValueType.Time) {
-              measure = retParse.value;
+          if (parsed.value !== null) {
+            if (parsed.type === ValueType.Time) {
+              measure = parsed.value;
               extracted = true;
               query.valueType = ValueType.Time;
-              query.addNumTargets();
+              query.incrementTargets();
             } else {
-              if (
-                !renderInfo.ignoreZeroValue[query.getId()] ||
-                retParse.value !== 0
-              ) {
-                measure += retParse.value;
+              if (!renderInfo.ignoreZeroValue[query.id] || parsed.value !== 0) {
+                measure += parsed.value;
                 extracted = true;
-                query.addNumTargets();
+                query.incrementTargets();
               }
             }
           }
         } else if (
-          splitted.length > query.getAccessor() &&
+          splitValues.length > query.getAccessor() &&
           query.getAccessor() >= 0
         ) {
           // console.log("multiple-values");
-          const toParse = splitted[query.getAccessor()].trim();
-          const retParse = NumberUtils.parseFloatFromAny(
+          const toParse = splitValues[query.getAccessor()].trim();
+          const parsed = NumberUtils.parseFloatFromAny(
             toParse,
             renderInfo.textValueMap
           );
-          //console.log(retParse);
-          if (retParse.value !== null) {
-            if (retParse.type === ValueType.Time) {
-              measure = retParse.value;
+          //console.log(parsed);
+          if (parsed.value !== null) {
+            if (parsed.type === ValueType.Time) {
+              measure = parsed.value;
               extracted = true;
               query.valueType = ValueType.Time;
-              query.addNumTargets();
+              query.incrementTargets();
             } else {
-              measure += retParse.value;
+              measure += parsed.value;
               extracted = true;
-              query.addNumTargets();
+              query.incrementTargets();
             }
           }
         }
       } else {
         // no named groups, count occurrences
         // console.log("count occurrences");
-        measure += renderInfo.constValue[query.getId()];
+        measure += renderInfo.constValue[query.id];
         extracted = true;
-        query.addNumTargets();
+        query.incrementTargets();
       }
     } else {
       // force to count occurrences
       // console.log("forced count occurrences");
-      measure += renderInfo.constValue[query.getId()];
+      measure += renderInfo.constValue[query.id];
       extracted = true;
-      query.addNumTargets();
+      query.incrementTargets();
     }
   }
 
   if (extracted) {
-    const xValue = xValueMap.get(renderInfo.xDataset[query.getId()]);
+    const xValue = xValueMap.get(renderInfo.xDataset[query.id]);
     addToDataMap(dataMap, xValue, query, measure);
     return true;
   }
@@ -159,18 +157,21 @@ export const extractDataUsingRegexWithMultipleValues = (
   return false;
 };
 
+// TODO Move this to a .utils file
+/**
+ * Appends a date and query/value pair to the provided dataMap
+ * @param {dataMap} dataMap
+ * @param {string} date
+ * @param {Query} query
+ * @param {number | null} value
+ */
 export const addToDataMap = (
   dataMap: DataMap,
   date: string,
   query: Query,
   value: number | null
-) => {
-  if (!dataMap.has(date)) {
-    const queryValuePairs = new Array<QueryValuePair>();
-    queryValuePairs.push({ query: query, value: value });
-    dataMap.set(date, queryValuePairs);
-  } else {
-    const targetValuePairs = dataMap.get(date);
-    targetValuePairs.push({ query: query, value: value });
-  }
+): void => {
+  dataMap.has(date)
+    ? dataMap.get(date).push({ query, value })
+    : dataMap.set(date, [{ query, value }]);
 };

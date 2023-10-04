@@ -11,15 +11,13 @@ import {
   TFolder,
 } from 'obsidian';
 import DataCollector from './data-collector/data-collector';
-import * as helper from './data-collector/helper';
-import {
-  CollectingProcessInfo,
-  Datasets,
-  RenderInfo,
-  TableData,
-} from './models/data';
-import { GraphType, SearchType, ValueType } from './models/enums';
-import { DataMap, QueryValuePair, XValueMap } from './models/types';
+import { addToDataMap } from './data-collector/helper';
+import { Datasets } from './models/dataset';
+import { ComponentType, SearchType, ValueType } from './models/enums';
+import { ProcessInfo } from './models/process-info';
+import { RenderInfo } from './models/render-info';
+import { TableData } from './models/table-data';
+import { DataMap, IQueryValuePair, XValueMap } from './models/types';
 import { getRenderInfoFromYaml } from './parser/yaml-parser';
 import Renderer from './renderer';
 import {
@@ -62,19 +60,19 @@ export default class Tracker extends Plugin {
     this.addCommand({
       id: 'add-line-chart-tracker',
       name: 'Add Line Chart Tracker',
-      callback: () => this.addCodeBlock(GraphType.Line),
+      callback: () => this.addCodeBlock(ComponentType.LineChart),
     });
 
     this.addCommand({
       id: 'add-bar-chart-tracker',
       name: 'Add Bar Chart Tracker',
-      callback: () => this.addCodeBlock(GraphType.Bar),
+      callback: () => this.addCodeBlock(ComponentType.BarChart),
     });
 
     this.addCommand({
       id: 'add-summary-tracker',
       name: 'Add Summary Tracker',
-      callback: () => this.addCodeBlock(GraphType.Summary),
+      callback: () => this.addCodeBlock(ComponentType.Summary),
     });
   }
 
@@ -215,12 +213,12 @@ export default class Tracker extends Plugin {
 
                 // Try extract multiplier
                 // if (link.position)
-                const splitted = line.split(link.original);
-                // console.log(splitted);
-                if (splitted.length === 2) {
-                  const toParse = splitted[1].trim();
-                  const strRegex = fileMultiplierAfterLink;
-                  const regex = new RegExp(strRegex, 'gm');
+                const splitLines = line.split(link.original);
+                // console.log(splitLines);
+                if (splitLines.length === 2) {
+                  const toParse = splitLines[1].trim();
+                  const pattern = fileMultiplierAfterLink;
+                  const regex = new RegExp(pattern, 'gm');
                   let match;
                   while ((match = regex.exec(toParse))) {
                     // console.log(match);
@@ -229,12 +227,12 @@ export default class Tracker extends Plugin {
                       typeof match.groups.value !== 'undefined'
                     ) {
                       // must have group name 'value'
-                      const retParse = NumberUtils.parseFloatFromAny(
+                      const parsed = NumberUtils.parseFloatFromAny(
                         match.groups.value.trim(),
                         renderInfo.textValueMap
                       );
-                      if (retParse.value !== null) {
-                        linkedFileMultiplier = retParse.value;
+                      if (parsed.value !== null) {
+                        linkedFileMultiplier = parsed.value;
                         break;
                       }
                     }
@@ -271,11 +269,10 @@ export default class Tracker extends Plugin {
     yamlText = yamlText.replace(/\t/gm, spaces);
 
     // Get render info
-    const retRenderInfo = getRenderInfoFromYaml(yamlText, this);
-    if (typeof retRenderInfo === 'string') {
-      return this.renderErrorMessage(retRenderInfo, canvas, el);
+    const renderInfo = getRenderInfoFromYaml(yamlText, this);
+    if (typeof renderInfo === 'string') {
+      return this.renderErrorMessage(renderInfo, canvas, el);
     }
-    const renderInfo = retRenderInfo as RenderInfo;
     // console.log(renderInfo);
 
     // Get files
@@ -301,7 +298,7 @@ export default class Tracker extends Plugin {
 
     // Collecting data to dataMap first
     const dataMap: DataMap = new Map(); // {strDate: [query: value, ...]}
-    const processInfo = new CollectingProcessInfo();
+    const processInfo = new ProcessInfo();
     processInfo.fileTotal = files.length;
 
     // Collect data from files, each file has one data point for each query
@@ -310,11 +307,11 @@ export default class Tracker extends Plugin {
       // Get fileCache and content
       let fileCache: CachedMetadata = null;
       const needFileCache = renderInfo.queries.some((q) => {
-        const type = q.getType();
+        const type = q.type;
 
         // Why is this here?
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const target = q.getTarget();
+        const target = q.target;
 
         if (
           type === SearchType.Frontmatter ||
@@ -333,8 +330,8 @@ export default class Tracker extends Plugin {
 
       let content: string = null;
       const needContent = renderInfo.queries.some((q) => {
-        const type = q.getType();
-        const target = q.getTarget();
+        const type = q.type;
+        const target = q.target;
         if (
           type === SearchType.Tag ||
           type === SearchType.Text ||
@@ -374,7 +371,7 @@ export default class Tracker extends Plugin {
           } else {
             const xDatasetQuery = renderInfo.queries[xDatasetId];
             // console.log(xDatasetQuery);
-            switch (xDatasetQuery.getType()) {
+            switch (xDatasetQuery.type) {
               case SearchType.Frontmatter:
                 xDate = DataCollector.getDateFromFrontmatter(
                   fileCache,
@@ -472,7 +469,7 @@ export default class Tracker extends Plugin {
 
       // Loop over queries
       const yDatasetQueries = renderInfo.queries.filter((q) => {
-        return q.getType() !== SearchType.Table && !q.usedAsXDataset;
+        return q.type !== SearchType.Table && !q.usedAsXDataset;
       });
       // console.log(yDatasetQueries);
 
@@ -483,7 +480,7 @@ export default class Tracker extends Plugin {
         // console.log(query);
 
         // console.log("Search frontmatter tags");
-        if (fileCache && query.getType() === SearchType.Tag) {
+        if (fileCache && query.type === SearchType.Tag) {
           // Add frontmatter tags, allow simple tag only
           const gotAnyValue = DataCollector.collectDataFromFrontmatterTag(
             fileCache,
@@ -498,8 +495,8 @@ export default class Tracker extends Plugin {
         // console.log("Search frontmatter keys");
         if (
           fileCache &&
-          query.getType() === SearchType.Frontmatter &&
-          query.getTarget() !== 'tags'
+          query.type === SearchType.Frontmatter &&
+          query.target !== 'tags'
         ) {
           const gotAnyValue = DataCollector.collectDataFromFrontmatterKey(
             fileCache,
@@ -514,9 +511,9 @@ export default class Tracker extends Plugin {
         // console.log("Search wiki links");
         if (
           fileCache &&
-          (query.getType() === SearchType.Wiki ||
-            query.getType() === SearchType.WikiLink ||
-            query.getType() === SearchType.WikiDisplay)
+          (query.type === SearchType.Wiki ||
+            query.type === SearchType.WikiLink ||
+            query.type === SearchType.WikiDisplay)
         ) {
           const gotAnyValue = DataCollector.collectDataFromWiki(
             fileCache,
@@ -529,7 +526,7 @@ export default class Tracker extends Plugin {
         }
 
         // console.log("Search inline tags");
-        if (content && query.getType() === SearchType.Tag) {
+        if (content && query.type === SearchType.Tag) {
           const gotAnyValue = DataCollector.collectDataFromInlineTag(
             content,
             query,
@@ -541,7 +538,7 @@ export default class Tracker extends Plugin {
         } // Search inline tags
 
         // console.log("Search Text");
-        if (content && query.getType() === SearchType.Text) {
+        if (content && query.type === SearchType.Text) {
           const gotAnyValue = DataCollector.collectDataFromText(
             content,
             query,
@@ -553,7 +550,7 @@ export default class Tracker extends Plugin {
         } // Search text
 
         // console.log("Search FileMeta");
-        if (query.getType() === SearchType.FileMeta) {
+        if (query.type === SearchType.FileMeta) {
           const gotAnyValue = DataCollector.collectDataFromFileMeta(
             file,
             content,
@@ -566,7 +563,7 @@ export default class Tracker extends Plugin {
         } // Search FileMeta
 
         // console.log("Search dvField");
-        if (content && query.getType() === SearchType.dvField) {
+        if (content && query.type === SearchType.dvField) {
           const gotAnyValue = DataCollector.collectDataFromDvField(
             content,
             query,
@@ -580,9 +577,9 @@ export default class Tracker extends Plugin {
         // console.log("Search Task");
         if (
           content &&
-          (query.getType() === SearchType.Task ||
-            query.getType() === SearchType.TaskDone ||
-            query.getType() === SearchType.TaskNotDone)
+          (query.type === SearchType.Task ||
+            query.type === SearchType.TaskDone ||
+            query.type === SearchType.TaskNotDone)
         ) {
           const gotAnyValue = DataCollector.collectDataFromTask(
             content,
@@ -678,7 +675,7 @@ export default class Tracker extends Plugin {
       const dataset = datasets.createDataset(query, renderInfo);
       // Add number of targets to the dataset
       // Number of targets has been accumulated while collecting data
-      dataset.addNumTargets(query.getNumTargets());
+      dataset.addNumTargets(query.numTargets);
       for (
         let curDate = renderInfo.startDate.clone();
         curDate <= renderInfo.endDate;
@@ -692,7 +689,7 @@ export default class Tracker extends Plugin {
         ) {
           const queryValuePairs = dataMap
             .get(DateTimeUtils.dateToStr(curDate, renderInfo.dateFormat))
-            .filter((pair: QueryValuePair) => {
+            .filter((pair: IQueryValuePair) => {
               return pair.query.equalTo(query);
             });
           if (queryValuePairs.length > 0) {
@@ -710,9 +707,7 @@ export default class Tracker extends Plugin {
             }
             // console.log(hasValue);
             // console.log(value);
-            if (value !== null) {
-              dataset.setValue(curDate, value);
-            }
+            if (value !== null) dataset.setValue(curDate, value);
           }
         }
       }
@@ -720,9 +715,9 @@ export default class Tracker extends Plugin {
     renderInfo.datasets = datasets;
     // console.log(renderInfo.datasets);
 
-    const retRender = Renderer.render(canvas, renderInfo);
-    if (typeof retRender === 'string') {
-      return this.renderErrorMessage(retRender, canvas, el);
+    const rendered = Renderer.render(canvas, renderInfo);
+    if (typeof rendered === 'string') {
+      return this.renderErrorMessage(rendered, canvas, el);
     }
 
     el.appendChild(canvas);
@@ -732,19 +727,19 @@ export default class Tracker extends Plugin {
   async collectDataFromTable(
     dataMap: DataMap,
     renderInfo: RenderInfo,
-    processInfo: CollectingProcessInfo
+    processInfo: ProcessInfo
   ): Promise<void> {
     // console.log("collectDataFromTable");
 
     const tableQueries = renderInfo.queries.filter(
-      (q) => q.getType() === SearchType.Table
+      (q) => q.type === SearchType.Table
     );
     // console.log(tableQueries);
     // Separate queries by tables and xDatasets/yDatasets
     const tables: Array<TableData> = [];
     let tableFileNotFound = false;
     for (const query of tableQueries) {
-      const filePath = query.getParentTarget();
+      const filePath = query.parentTarget;
       const file = this.app.vault.getAbstractFileByPath(
         normalizePath(filePath + '.md')
       );
@@ -760,18 +755,13 @@ export default class Tracker extends Plugin {
         (t) => t.filePath === filePath && t.tableIndex === tableIndex
       );
       if (table) {
-        if (isX) {
-          table.xDataset = query;
-        } else {
-          table.yDatasets.push(query);
-        }
+        if (isX) table.xDataset = query;
+        else table.yDatasets.push(query);
       } else {
         const tableData = new TableData(filePath, tableIndex);
-        if (isX) {
-          tableData.xDataset = query;
-        } else {
-          tableData.yDatasets.push(query);
-        }
+        if (isX) tableData.xDataset = query;
+        else tableData.yDatasets.push(query);
+
         tables.push(tableData);
       }
     }
@@ -790,7 +780,7 @@ export default class Tracker extends Plugin {
         continue;
       }
       const yDatasetQueries = tableData.yDatasets;
-      let filePath = xDatasetQuery.getParentTarget();
+      let filePath = xDatasetQuery.parentTarget;
       const tableIndex = xDatasetQuery.getAccessor();
 
       // Get table text
@@ -924,23 +914,23 @@ export default class Tracker extends Plugin {
           const dataRowSplitted = dataRow.split('|');
           if (columnOfInterest < dataRowSplitted.length) {
             const data = dataRowSplitted[columnOfInterest].trim();
-            const splitted = data.split(yDatasetQuery.getSeparator());
-            // console.log(splitted);
-            if (!splitted) continue;
-            if (splitted.length === 1) {
-              const retParse = NumberUtils.parseFloatFromAny(
-                splitted[0],
+            const splitData = data.split(yDatasetQuery.getSeparator());
+            // console.log(splitData);
+            if (!splitData) continue;
+            if (splitData.length === 1) {
+              const parsed = NumberUtils.parseFloatFromAny(
+                splitData[0],
                 renderInfo.textValueMap
               );
-              // console.log(retParse);
-              if (retParse.value !== null) {
-                if (retParse.type === ValueType.Time) {
-                  yDatasetQuery._valueType = ValueType.Time;
+              // console.log(parsed);
+              if (parsed.value !== null) {
+                if (parsed.type === ValueType.Time) {
+                  yDatasetQuery.valueType = ValueType.Time;
                 }
-                const value = retParse.value;
+                const value = parsed.value;
                 if (indLine < xValues.length && xValues[indLine]) {
                   processInfo.gotAnyValidYValue ||= true;
-                  helper.addToDataMap(
+                  addToDataMap(
                     dataMap,
                     DateTimeUtils.dateToStr(
                       xValues[indLine],
@@ -952,26 +942,25 @@ export default class Tracker extends Plugin {
                 }
               }
             } else if (
-              splitted.length > yDatasetQuery.getAccessor(2) &&
+              splitData.length > yDatasetQuery.getAccessor(2) &&
               yDatasetQuery.getAccessor(2) >= 0
             ) {
               let value = null;
-              const splittedPart =
-                splitted[yDatasetQuery.getAccessor(2)].trim();
-              // console.log(splittedPart);
-              const retParse = NumberUtils.parseFloatFromAny(
-                splittedPart,
+              const accessor2 = splitData[yDatasetQuery.getAccessor(2)].trim();
+              // console.log(accessor2);
+              const parsed = NumberUtils.parseFloatFromAny(
+                accessor2,
                 renderInfo.textValueMap
               );
-              // console.log(retParse);
-              if (retParse.value !== null) {
-                if (retParse.type === ValueType.Time) {
-                  yDatasetQuery._valueType = ValueType.Time;
+              // console.log(parsed);
+              if (parsed.value !== null) {
+                if (parsed.type === ValueType.Time) {
+                  yDatasetQuery.valueType = ValueType.Time;
                 }
-                value = retParse.value;
+                value = parsed.value;
                 if (indLine < xValues.length && xValues[indLine]) {
                   processInfo.gotAnyValidYValue ||= true;
-                  helper.addToDataMap(
+                  addToDataMap(
                     dataMap,
                     DateTimeUtils.dateToStr(
                       xValues[indLine],
@@ -995,7 +984,7 @@ export default class Tracker extends Plugin {
     return this.app.workspace.getActiveViewOfType(MarkdownView).editor;
   }
 
-  addCodeBlock(outputType: GraphType): void {
+  addCodeBlock(outputType: ComponentType): void {
     const currentView = this.app.workspace.activeLeaf.view;
 
     if (!(currentView instanceof MarkdownView)) {
@@ -1004,7 +993,7 @@ export default class Tracker extends Plugin {
 
     let codeblockToInsert = '';
     switch (outputType) {
-      case GraphType.Line:
+      case ComponentType.LineChart:
         codeblockToInsert = `\`\`\` tracker
 searchType: tag
 searchTarget: tagName
@@ -1017,7 +1006,7 @@ line:
     yAxisLabel: Value
 \`\`\``;
         break;
-      case GraphType.Bar:
+      case ComponentType.BarChart:
         codeblockToInsert = `\`\`\` tracker
 searchType: tag
 searchTarget: tagName
@@ -1030,7 +1019,7 @@ bar:
     yAxisLabel: Value
 \`\`\``;
         break;
-      case GraphType.Summary:
+      case ComponentType.Summary:
         codeblockToInsert = `\`\`\` tracker
 searchType: tag
 searchTarget: tagName

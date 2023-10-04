@@ -1,14 +1,13 @@
-import { ValueType } from 'src/models/enums';
+import { ValueType } from '../models/enums';
 import { TextValueMap } from '../models/types';
 import { timeFormat } from './date-time.utils';
-
-// Parsing
 
 export const parseFloatFromAny = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   toParse: any,
   textValueMap: TextValueMap = null
-): { type: ValueType.Number | ValueType.Time; value: number } => {
+): { type: ValueType; value: number } => {
+  // TODO Remove multiple instances of re-assignment of toParse below because 'any' is not immutable
   // console.log("parseFloatFromAny");
   // console.log(toParse);
   let value = null;
@@ -33,20 +32,17 @@ export const parseFloatFromAny = (
       }
     } else {
       if (textValueMap) {
-        const keys = Object.keys(textValueMap) as Array<keyof string>;
+        const keys = Object.keys(textValueMap);
         for (const key of keys) {
-          if (typeof key === 'string') {
-            const regex = new RegExp(key, 'gm');
+          const regex = new RegExp(key, 'gm');
+          // console.log(toParse);
+          if (regex.test(toParse) && Number.isNumber(textValueMap[key])) {
+            const strReplacedValue = textValueMap[key].toString();
+            toParse = toParse.replace(regex, strReplacedValue);
             // console.log(toParse);
-            if (regex.test(toParse) && Number.isNumber(textValueMap[key])) {
-              const strReplacedValue = textValueMap[key].toString();
-              toParse = toParse.replace(regex, strReplacedValue);
-              // console.log(toParse);
-              break;
-            }
+            break;
           }
         }
-
         value = parseFloat(toParse);
         if (Number.isNaN(value)) value = null;
       } else {

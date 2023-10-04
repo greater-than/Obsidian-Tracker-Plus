@@ -12,16 +12,16 @@ export enum SearchType {
   TaskDone,
   TaskNotDone,
 }
-export enum GraphType {
-  Line,
-  Bar,
-  Pie,
+export enum ComponentType {
+  LineChart,
+  BarChart,
+  PieChart,
   Radar,
   Summary,
   Table,
   Month,
   Heatmap,
-  Bullet,
+  BulletGraph,
   Unknown,
 }
 

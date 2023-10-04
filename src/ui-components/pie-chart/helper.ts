@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
-import { PieInfo, RenderInfo } from '../../models/data';
+import { PieChart } from '../../models/pie-chart';
+import { RenderInfo } from '../../models/render-info';
 import { ChartElements } from '../../models/types';
 import Resolver from '../../resolver/resolver';
 import { ChartUtils, DomUtils } from '../../utils';
@@ -35,7 +36,7 @@ export const createAreas = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _pieInfo: PieInfo
+  _chart: PieChart
 ): ChartElements => {
   // clean areas
   d3.select(canvas).select('#svg').remove();
@@ -91,19 +92,22 @@ export const renderTitle = (
   _canvas: HTMLElement,
   elements: ChartElements,
   renderInfo: RenderInfo,
-  pieInfo: PieInfo
+  component: PieChart
 ) => {
   // console.log("renderTitle");
   // under graphArea
-  if (!renderInfo || !pieInfo) return;
+  if (!renderInfo || !component) return;
 
-  if (!pieInfo.title) return;
-  const titleSize = ChartUtils.measureTextSize(pieInfo.title, 'tracker-title');
+  if (!component.title) return;
+  const titleSize = ChartUtils.measureTextSize(
+    component.title,
+    'tracker-title'
+  );
 
   // Append title
   const title = elements.graphArea
     .append('text')
-    .text(pieInfo.title) // pivot at center
+    .text(component.title) // pivot at center
     .attr('id', 'title')
     .attr(
       'transform',
@@ -131,7 +135,7 @@ export const renderLegend = (
   _canvas: HTMLElement,
   elements: ChartElements,
   renderInfo: RenderInfo,
-  pieInfo: PieInfo
+  component: PieChart
 ): void => {
   // console.log("renderLegend");
   // console.log(piInfo.legendPosition);
@@ -153,7 +157,7 @@ export const renderLegend = (
   }
 
   // Get names and their dimension
-  const names = pieInfo.dataName;
+  const names = component.dataName;
   const nameSizes = names.map((n) => {
     return ChartUtils.measureTextSize(n, 'tracker-legend-label');
   });
@@ -177,10 +181,10 @@ export const renderLegend = (
   // Get legend width and height
   let legendWidth = 0;
   let legendHeight = 0;
-  if (pieInfo.legendOrientation === 'vertical') {
+  if (component.legendOrientation === 'vertical') {
     legendWidth = xSpacing * 3 + markerWidth + maxNameWidth;
     legendHeight = (numNames + 1) * ySpacing;
-  } else if (pieInfo.legendOrientation === 'horizontal') {
+  } else if (component.legendOrientation === 'horizontal') {
     legendWidth =
       (2 * xSpacing + markerWidth) * numNames +
       xSpacing +
@@ -196,7 +200,7 @@ export const renderLegend = (
   // Calculate legendX and legendY
   let legendX = 0; // relative to graphArea
   let legendY = 0;
-  if (pieInfo.legendPosition === 'top') {
+  if (component.legendPosition === 'top') {
     // below title
     legendX = renderInfo.dataAreaSize.width / 2 - legendWidth / 2;
     legendY = titleHeight;
@@ -204,13 +208,13 @@ export const renderLegend = (
     DomUtils.expandArea(svg, 0, legendHeight + ySpacing);
     // Move dataArea down
     DomUtils.moveArea(dataArea, 0, legendHeight + ySpacing);
-  } else if (pieInfo.legendPosition === 'bottom') {
+  } else if (component.legendPosition === 'bottom') {
     // bellow x-axis label
     legendX = renderInfo.dataAreaSize.width / 2 - legendWidth / 2;
     legendY = titleHeight + renderInfo.dataAreaSize.height + ySpacing;
     // Expand svg
     DomUtils.expandArea(svg, 0, legendHeight + ySpacing);
-  } else if (pieInfo.legendPosition === 'left') {
+  } else if (component.legendPosition === 'left') {
     legendX = 0;
     legendY =
       titleHeight + renderInfo.dataAreaSize.height / 2 - legendHeight / 2;
@@ -218,7 +222,7 @@ export const renderLegend = (
     DomUtils.expandArea(svg, legendWidth + xSpacing, 0);
     // Move dataArea right
     DomUtils.moveArea(dataArea, legendWidth + xSpacing, 0);
-  } else if (pieInfo.legendPosition === 'right') {
+  } else if (component.legendPosition === 'right') {
     legendX = renderInfo.dataAreaSize.width + xSpacing;
     legendY =
       titleHeight + renderInfo.dataAreaSize.height / 2 - legendHeight / 2;
@@ -238,11 +242,11 @@ export const renderLegend = (
     .attr('class', 'tracker-legend')
     .attr('width', legendWidth)
     .attr('height', legendHeight);
-  if (pieInfo.legendBgColor) {
-    legendBg.style('fill', pieInfo.legendBgColor);
+  if (component.legendBgColor) {
+    legendBg.style('fill', component.legendBgColor);
   }
-  if (pieInfo.legendBorderColor) {
-    legendBg.style('stroke', pieInfo.legendBorderColor);
+  if (component.legendBorderColor) {
+    legendBg.style('stroke', component.legendBorderColor);
   }
 
   const markerRadius = 5;
@@ -251,7 +255,7 @@ export const renderLegend = (
   const firstLabelX = firstMarkerX + xSpacing + markerWidth; // xSpacing + 2 * xSpacing
   const firstLabelY = firstMarkerY;
 
-  if (pieInfo.legendOrientation === 'vertical') {
+  if (component.legendOrientation === 'vertical') {
     // points
     legend
       .selectAll('markers')
@@ -262,7 +266,7 @@ export const renderLegend = (
       .attr('cy', (_name: string, i: number) => firstMarkerY + i * ySpacing)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .attr('r', (_name: string, _i: number) => markerRadius)
-      .style('fill', (_name: string, i: number) => pieInfo.dataColor[i]);
+      .style('fill', (_name: string, i: number) => component.dataColor[i]);
 
     // names
     const nameLabels = legend
@@ -279,9 +283,9 @@ export const renderLegend = (
 
     nameLabels.style(
       'fill',
-      (_name: string, i: number) => pieInfo.dataColor[i]
+      (_name: string, i: number) => component.dataColor[i]
     );
-  } else if (pieInfo.legendOrientation === 'horizontal') {
+  } else if (component.legendOrientation === 'horizontal') {
     let currRenderPosX = 0;
 
     // TODO Why is this here?
@@ -307,7 +311,7 @@ export const renderLegend = (
       .attr('cy', firstMarkerY)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .attr('r', (_name: string, _i: number) => markerRadius)
-      .style('fill', (_name: string, i: number) => pieInfo.dataColor[i]);
+      .style('fill', (_name: string, i: number) => component.dataColor[i]);
 
     // names
     currRenderPosX = 0;
@@ -333,7 +337,7 @@ export const renderLegend = (
 
     nameLabels.style(
       'fill',
-      (_name: string, i: number) => pieInfo.dataColor[i]
+      (_name: string, i: number) => component.dataColor[i]
     );
   }
 };
@@ -342,7 +346,7 @@ export const renderPie = (
   _canvas: HTMLElement,
   elements: ChartElements,
   renderInfo: RenderInfo,
-  pieInfo: PieInfo
+  component: PieChart
 ): string => {
   // console.log("renderPie");
   // console.log(renderInfo);
@@ -350,17 +354,17 @@ export const renderPie = (
 
   const radius = renderInfo.dataAreaSize.width * 0.5;
   const outerRadius = radius * 0.7;
-  const innerRadius = outerRadius * pieInfo.ratioInnerRadius;
+  const innerRadius = outerRadius * component.ratioInnerRadius;
 
   // values
   const values: Array<number> = [];
-  for (const strExpr of pieInfo.data) {
-    const retValue = Resolver.resolveValue(strExpr, renderInfo);
-    if (typeof retValue === 'string') {
-      errorMessage = retValue;
+  for (const strExpr of component.data) {
+    const value = Resolver.resolveValue(strExpr, renderInfo);
+    if (typeof value === 'string') {
+      errorMessage = value;
       break;
-    } else if (typeof retValue === 'number') {
-      values.push(retValue);
+    } else if (typeof value === 'number') {
+      values.push(value);
     }
   }
   if (errorMessage !== '') {
@@ -369,21 +373,21 @@ export const renderPie = (
   // console.log(values);
   // labels
   const labels: Array<string> = [];
-  for (const strExpr of pieInfo.label) {
-    const retLabel = Resolver.resolveTemplate(strExpr, renderInfo);
+  for (const strExpr of component.label) {
+    const label = Resolver.resolveTemplate(strExpr, renderInfo);
     // console.log(retLabel);
-    if (retLabel.startsWith('Error')) {
-      errorMessage = retLabel;
+    if (label.startsWith('Error')) {
+      errorMessage = label;
       break;
     }
-    labels.push(retLabel);
+    labels.push(label);
   }
   if (errorMessage !== '') {
     return errorMessage;
   }
   // console.log(labels);
   // hideLabelLessThan
-  const hideLabelLessThan = pieInfo.hideLabelLessThan;
+  const hideLabelLessThan = component.hideLabelLessThan;
 
   // label sizes
   const labelSizes = labels.map((n) =>
@@ -392,13 +396,13 @@ export const renderPie = (
 
   // extLabel
   const extLabels: Array<string> = [];
-  for (const strExpr of pieInfo.extLabel) {
-    const retExtLabel = Resolver.resolveTemplate(strExpr, renderInfo);
-    if (retExtLabel.startsWith('Error')) {
-      errorMessage = retExtLabel;
+  for (const strExpr of component.extLabel) {
+    const extLabel = Resolver.resolveTemplate(strExpr, renderInfo);
+    if (extLabel.startsWith('Error')) {
+      errorMessage = extLabel;
       break;
     }
-    extLabels.push(retExtLabel);
+    extLabels.push(extLabel);
   }
   if (errorMessage !== '') {
     return errorMessage;
@@ -409,10 +413,10 @@ export const renderPie = (
     return ChartUtils.measureTextSize(n, 'tracker-pie-label');
   });
   // console.log(extLabelSizes);
-  const showExtLabelOnlyIfNoLabel = pieInfo.showExtLabelOnlyIfNoLabel;
+  const showExtLabelOnlyIfNoLabel = component.showExtLabelOnlyIfNoLabel;
 
   // scale
-  const colorScale = d3.scaleOrdinal().range(pieInfo.dataColor);
+  const colorScale = d3.scaleOrdinal().range(component.dataColor);
 
   const sectorsGroup = elements.dataArea.append('g');
   sectorsGroup.attr('transform', () => {
