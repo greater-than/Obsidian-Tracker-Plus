@@ -1,4 +1,3 @@
-import { Moment } from 'moment';
 import { CachedMetadata, TFile } from 'obsidian';
 import {
   DataMap,
@@ -10,6 +9,7 @@ import {
   XValueMap,
 } from './data';
 import * as helper from './utils/helper';
+import Moment = moment.Moment;
 
 // ref: https://www.rapidtables.com/code/text/unicode-characters.html
 const CurrencyCodes =

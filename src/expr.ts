@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
 import jsep from 'jsep';
-import { Moment } from 'moment';
 import { sprintf } from 'sprintf-js';
 import { Dataset, RenderInfo } from './data';
 import * as helper from './utils/helper';
+import Moment = moment.Moment;
 
 // Function accept datasetId as first argument
 type FnDatasetToValue = (

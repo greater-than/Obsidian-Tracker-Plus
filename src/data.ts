@@ -1,4 +1,4 @@
-import { Moment } from 'moment';
+import Moment = moment.Moment;
 
 export enum SearchType {
   Tag,
