@@ -22,6 +22,7 @@
     "filemeta",
     "frontmatter",
     "getFirstLinkpathDest",
+    "heatmaps",
     "jsep",
     "Laharah",
     "notdone",
@@ -30,6 +31,7 @@
     "onwarn",
     "pyrochlore",
     "sinsquare",
-    "sprintf"
+    "sprintf",
+    "torantine"
   ]
 }
