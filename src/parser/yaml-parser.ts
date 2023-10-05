@@ -43,7 +43,7 @@ export const getRenderInfoFromYaml = (
     yaml = parseYaml(yamlText);
   } catch (err) {
     errorMessage = 'Error parsing YAML';
-    console.log(err);
+    console.error(err);
     return errorMessage;
   }
   if (!yaml) {
