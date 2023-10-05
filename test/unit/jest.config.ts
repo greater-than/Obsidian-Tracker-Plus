@@ -13,9 +13,18 @@ export default async (): Promise<Config> => ({
     'src/**/*.(t|j)s',
     '!**/*index.(t|j)s',
     '!**/*types.(t|j)s',
+    '!**/*enums.(t|j)s',
   ],
   coveragePathIgnorePatterns: ['./node_modules'],
   coverageDirectory: './.coverage',
+  coverageThreshold: {
+    global: {
+      branches: 1.5,
+      functions: 3.75,
+      lines: 2.5,
+      statements: 3,
+    },
+  },
   testEnvironment: 'node',
   globalSetup: './test/unit/global-setup.ts',
   globalTeardown: './test/unit/global-teardown.ts',
