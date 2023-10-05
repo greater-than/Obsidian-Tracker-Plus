@@ -1,7 +1,7 @@
 import 'colors';
 import * as dotenv from 'dotenv';
 import * as tsNode from 'ts-node';
-import { cacheEnv, divider } from '../test-utils';
+import { cacheEnv, divider } from '../_utils';
 
 tsNode.register();
 dotenv.config();
