@@ -1,14 +1,13 @@
-import { Moment } from 'moment';
 import {
   App,
   CachedMetadata,
   Editor,
   MarkdownPostProcessorContext,
   MarkdownView,
-  normalizePath,
   Plugin,
   TFile,
   TFolder,
+  normalizePath,
 } from 'obsidian';
 import DataCollector from './data-collector/data-collector';
 import { addToDataMap } from './data-collector/helper';
@@ -22,8 +21,8 @@ import { getRenderInfoFromYaml } from './parser/yaml-parser';
 import Renderer from './renderer';
 import {
   DEFAULT_SETTINGS,
-  TrackerSettings,
   TrackerSettingTab,
+  TrackerSettings,
 } from './settings';
 import { DateTimeUtils, NumberUtils, StringUtils } from './utils';
 // import { getDailyNoteSettings } from "obsidian-daily-notes-interface";
@@ -31,7 +30,7 @@ import { DateTimeUtils, NumberUtils, StringUtils } from './utils';
 declare global {
   interface Window {
     app: App;
-    moment: () => Moment;
+    moment: () => moment.Moment;
   }
 }
 

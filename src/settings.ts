@@ -27,7 +27,7 @@ export class TrackerSettingTab extends PluginSettingTab {
       )
       .addText((text) =>
         text
-          .setPlaceholder('Folder Path')
+          .setPlaceholder('Folder path')
           .setValue(this.plugin.settings.folder)
           .onChange(async (value) => {
             this.plugin.settings.folder = value;

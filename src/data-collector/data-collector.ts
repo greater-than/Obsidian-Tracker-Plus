@@ -1,4 +1,3 @@
-import { Moment } from 'moment';
 import { CachedMetadata, TFile } from 'obsidian';
 import { SearchType, ValueType } from '../models/enums';
 import { Query } from '../models/query';
@@ -10,6 +9,7 @@ import {
   extractDataUsingRegexWithMultipleValues,
   extractDateUsingRegexWithValue,
 } from './helper';
+import Moment = moment.Moment;
 
 // ref: https://www.rapidtables.com/code/text/unicode-characters.html
 const CurrencyCodes =
