@@ -4,14 +4,8 @@ import { Heatmap } from '../../models/heatmap';
 import { RenderInfo } from '../../models/render-info';
 import { ChartElements } from '../../models/types';
 import { DateTimeUtils, DomUtils } from '../../utils';
+import { DayInfo } from './types';
 
-interface DayInfo {
-  date: string;
-  value: number;
-  scaledValue: number;
-  row: number;
-  col: number;
-}
 export const createAreas = (
   elements: ChartElements,
   canvas: HTMLElement,
