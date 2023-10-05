@@ -1,4 +1,5 @@
-import { Duration, Moment } from 'moment';
+import Moment = moment.Moment;
+import Duration = moment.Duration;
 
 export const timeFormat = ((): string[] => {
   // HH: 2-digits hours (24 hour time) from 0 to 23, H:, 2-digits hours (24 hour time) from 0 to 23 without leading 0
@@ -19,7 +20,7 @@ export const timeFormat = ((): string[] => {
         if (fmtSec !== '') {
           fmt += `:${fmtSec}`;
         }
-        if (fmtHour.contains('h')) {
+        if (fmtHour === 'h') {
           fmt += ' a';
         }
         timeFormat.push(fmt);
@@ -33,40 +34,37 @@ export const timeFormat = ((): string[] => {
 /**
  *
  * @param {string} inputString
- * @param {string} prefix
- * @param {string} suffix
+ * @param {string} prefixToStrip
+ * @param {string} suffixToStrip
  * @returns
  */
 export const getDateStringFromInputString = (
   inputString: string,
-  prefix: string,
-  suffix: string
+  prefixToStrip: string,
+  suffixToStrip: string
 ) => {
-  if (!prefix && !suffix) return inputString;
+  if (!prefixToStrip && !suffixToStrip) return inputString;
 
   let dateString = inputString;
   if (dateString.startsWith('^')) dateString = dateString.slice(1);
-  // console.log(dateString);
-  if (prefix) {
-    const strRegex = '^(' + prefix + ')';
-    // console.log(strRegex);
+  if (prefixToStrip) {
+    const strRegex = '^(' + prefixToStrip + ')';
     const regex = new RegExp(strRegex, 'gm');
     if (regex.test(dateString)) dateString = dateString.replace(regex, '');
   }
-  // console.log(dateString);
-  if (suffix) {
-    const strRegex = '(' + suffix + ')$';
-    // console.log(strRegex);
+  if (suffixToStrip) {
+    const strRegex = '(' + suffixToStrip + ')$';
     const regex = new RegExp(strRegex, 'gm');
     if (regex.test(dateString)) dateString = dateString.replace(regex, '');
   }
-  // console.log(dateString);
   return dateString;
 };
 
-export const strToDate = (strDate: string, dateFormat: string): Moment => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let format: any = dateFormat;
+export const stringToDate = (
+  strDate: string,
+  dateFormat: moment.MomentFormatSpecification
+): Moment => {
+  let format = dateFormat;
 
   if (
     strDate.length > 4 &&
@@ -76,14 +74,12 @@ export const strToDate = (strDate: string, dateFormat: string): Moment => {
     strDate = strDate.substring(2, strDate.length - 2);
   }
 
-  if (dateFormat.toLowerCase() === 'iso-8601') format = window.moment.ISO_8601;
+  if ((dateFormat as string).toLowerCase() === 'iso-8601')
+    format = window.moment.ISO_8601;
 
-  let date = window.moment(strDate, format, true);
+  const date = window.moment(strDate, format, true);
 
-  // strip time
-  date = date.startOf('day');
-
-  return date;
+  return date.startOf('day'); // strip time
 };
 
 export const extractValueFromDurationString = (
@@ -93,9 +89,7 @@ export const extractValueFromDurationString = (
 ): [number, string] => {
   if (!strDuration || !units || units.length === 0) return [null, strDuration];
 
-  let value = null;
   const strRegex = '^(?<value>[0-9]+)(' + units.join('|') + ')$';
-  // console.log(strRegex);
   const regex = new RegExp(strRegex, 'gm');
   const match = regex.exec(strDuration);
   if (
@@ -103,22 +97,16 @@ export const extractValueFromDurationString = (
     typeof match.groups !== 'undefined' &&
     typeof match.groups.value !== 'undefined'
   ) {
-    // console.log(match);
-    value = parseFloat(match.groups.value);
+    const value = parseFloat(match.groups.value);
     if (Number.isNumber(value) && !Number.isNaN(value)) {
-      if (removePattern) {
-        strDuration = strDuration.replace(regex, '');
-      }
-      // console.log(value);
-      // console.log(strDuration);
+      if (removePattern) strDuration = strDuration.replace(regex, '');
       return [value, strDuration];
     }
   }
-
   return [null, strDuration];
 };
 
-export const parseDurationString = (durationString: string): Duration => {
+export const parseDuration = (durationString: string): Duration => {
   //duration string format:
   //year (years, y, Y),
   //month (months, M), // m will conflict with minute!!!
@@ -129,7 +117,6 @@ export const parseDurationString = (durationString: string): Duration => {
   //second (seconds, s, S)
   if (!durationString) return null;
 
-  const duration: Duration = window.moment.duration(0);
   let hasValue = false;
 
   let negativeValue = false;
@@ -141,6 +128,8 @@ export const parseDurationString = (durationString: string): Duration => {
     negativeValue = true;
     durationString = durationString.substring(1);
   }
+
+  const duration = window.moment.duration(0);
 
   let yearValue = null;
   [yearValue, durationString] = extractValueFromDurationString(durationString, [
@@ -227,16 +216,15 @@ export const parseDurationString = (durationString: string): Duration => {
     hasValue = true;
   }
 
-  if (!hasValue) return null;
-  return duration;
+  return hasValue ? duration : null;
 };
 
 export const getDateByDurationToToday = (
-  relDateString: string,
+  startDate: string,
   dateFormat: string
 ): Moment => {
   let date = null;
-  const duration = parseDurationString(relDateString);
+  const duration = parseDuration(startDate);
   if (duration && window.moment.isDuration(duration)) {
     date = getDateToday(dateFormat);
     date = date.add(duration);
@@ -245,7 +233,7 @@ export const getDateByDurationToToday = (
   return date;
 };
 
-export const dateToStr = (date: Moment, dateFormat: string): string => {
+export const dateToString = (date: Moment, dateFormat: string): string => {
   if (typeof date === 'undefined' || date === null) return null;
   if (dateFormat.toLowerCase() === 'iso-8601') return date.format();
   return date.format(dateFormat);
@@ -256,12 +244,12 @@ export const getDateFromUnixTime = (
   dateFormat: string
 ): Moment => {
   const date = window.moment(unixTime);
-  const strDate = dateToStr(date, dateFormat);
-  return strToDate(strDate, dateFormat);
+  const strDate = dateToString(date, dateFormat);
+  return stringToDate(strDate, dateFormat);
 };
 
 export const getDateToday = (dateFormat: string): Moment => {
   const today = window.moment();
-  const strToday = dateToStr(today, dateFormat);
-  return strToDate(strToday, dateFormat);
+  const strToday = dateToString(today, dateFormat);
+  return stringToDate(strToday, dateFormat);
 };

@@ -1,11 +1,11 @@
 import * as d3 from 'd3';
-import { Moment } from 'moment';
 import { ValueType } from '../../models/enums';
 import { MonthInfo } from '../../models/month';
 import { RenderInfo } from '../../models/render-info';
 import { ChartElements } from '../../models/types';
 import { ChartUtils, DateTimeUtils, DomUtils } from '../../utils';
 import { DayInfo } from './types';
+import Moment = moment.Moment;
 
 let logToConsole = false;
 const RATIO_CELL_TO_TEXT = 2.8;
@@ -47,11 +47,11 @@ export const toNextDataset = (
   let dataset = null;
   if (component.selectedDataset === null) {
     for (const datasetId of datasetIds) {
-      dataset = renderInfo.datasets.getDatasetById(datasetId);
-      if (dataset && !dataset.getQuery().usedAsXDataset) break;
+      dataset = renderInfo.datasets.getDataset(datasetId);
+      if (dataset && !dataset.query.usedAsXDataset) break;
     }
     if (dataset) {
-      component.selectedDataset = dataset.getId();
+      component.selectedDataset = dataset.id;
       return true; // true if selected dataset changed
     }
   } else {
@@ -63,11 +63,11 @@ export const toNextDataset = (
       if (curIndex === component.dataset.length - 1) {
         // search from start
         for (const datasetId of datasetIds) {
-          dataset = renderInfo.datasets.getDatasetById(datasetId);
-          if (dataset && !dataset.getQuery().usedAsXDataset) break;
+          dataset = renderInfo.datasets.getDataset(datasetId);
+          if (dataset && !dataset.query.usedAsXDataset) break;
         }
         if (dataset) {
-          component.selectedDataset = dataset.getId();
+          component.selectedDataset = dataset.id;
           return true; // true if selected dataset changed
         } else {
           return false;
@@ -75,9 +75,10 @@ export const toNextDataset = (
       } else {
         curIndex++;
         const datasetId = datasetIds[curIndex];
-        dataset = renderInfo.datasets.getDatasetById(datasetId);
+
+        dataset = renderInfo.datasets.getDataset(datasetId);
         component.selectedDataset = datasetId;
-        if (dataset && !dataset.getQuery().usedAsXDataset) {
+        if (dataset && !dataset.query.usedAsXDataset) {
           return true;
         } else {
           toNextDataset(renderInfo, component);
@@ -177,9 +178,9 @@ export const renderMonthHeader = (
 
   const curDatasetId = component.selectedDataset;
   if (curDatasetId === null) return;
-  const dataset = renderInfo.datasets.getDatasetById(curDatasetId);
+  const dataset = renderInfo.datasets.getDataset(curDatasetId);
   if (!dataset) return;
-  const datasetName = dataset.getName();
+  const datasetName = dataset.name;
 
   // TODO What are these for?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -498,7 +499,7 @@ export function renderMonthDays(
 
   const curDatasetId = component.selectedDataset;
   if (curDatasetId === null) return;
-  const dataset = renderInfo.datasets.getDatasetById(curDatasetId);
+  const dataset = renderInfo.datasets.getDataset(curDatasetId);
   if (!dataset) return;
   // console.log(dataset);
   let curDatasetIndex = component.dataset.findIndex((id) => {
@@ -525,11 +526,11 @@ export function renderMonthDays(
   const streakHeight = 3;
 
   // Get min and max
-  let yMin = d3.min(dataset.getValues());
+  let yMin = d3.min(dataset.values);
   if (component.yMin[curDatasetIndex] !== null) {
     yMin = component.yMin[curDatasetIndex];
   }
-  let yMax = d3.max(dataset.getValues());
+  let yMax = d3.max(dataset.values);
   if (component.yMax[curDatasetIndex] !== null) {
     yMax = component.yMax[curDatasetIndex];
   }
@@ -552,8 +553,8 @@ export function renderMonthDays(
   if (component.startWeekOn.toLowerCase() === 'mon') {
     endDate = endDate.add(1, 'days');
   }
-  const dataStartDate = dataset.getStartDate();
-  const dataEndDate = dataset.getEndDate();
+  const dataStartDate = dataset.startDate;
+  const dataEndDate = dataset.endDate;
   // console.log(monthStartDate.format("YYYY-MM-DD"));
   // console.log(startDate.format("YYYY-MM-DD"));
   // annotations
@@ -574,8 +575,8 @@ export function renderMonthDays(
   ) {
     // not sure why we need to do this to stabilize the date
     // sometimes, curValue is wrong without doing this
-    curDate = DateTimeUtils.strToDate(
-      DateTimeUtils.dateToStr(curDate, renderInfo.dateFormat),
+    curDate = DateTimeUtils.stringToDate(
+      DateTimeUtils.dateToString(curDate, renderInfo.dateFormat),
       renderInfo.dateFormat
     );
     if (curDate.format('YYYY-MM-DD') === '2021-09-13') {
@@ -612,7 +613,7 @@ export function renderMonthDays(
     const curValue = dataset.getValue(curDate);
     if (logToConsole) {
       console.log(dataset);
-      console.log(DateTimeUtils.dateToStr(curDate, renderInfo.dateFormat));
+      console.log(DateTimeUtils.dateToString(curDate, renderInfo.dateFormat));
       console.log(curValue);
     }
 
@@ -686,7 +687,7 @@ export function renderMonthDays(
           });
           if (datasetIndex >= 0) {
             const v = renderInfo.datasets
-              .getDatasetById(datasetId)
+              .getDataset(datasetId)
               .getValue(curDate);
             const t = component.threshold[datasetIndex];
             if (v !== null && v > t) {
@@ -698,7 +699,7 @@ export function renderMonthDays(
     }
 
     daysInMonthView.push({
-      date: DateTimeUtils.dateToStr(curDate, renderInfo.dateFormat),
+      date: DateTimeUtils.dateToString(curDate, renderInfo.dateFormat),
       value: curValue,
       scaledValue: scaledValue,
       dayInMonth: curDate.date(),
@@ -894,7 +895,10 @@ export function renderMonthDays(
   }
 
   // today rings
-  const today = DateTimeUtils.dateToStr(window.moment(), renderInfo.dateFormat);
+  const today = DateTimeUtils.dateToString(
+    window.moment(),
+    renderInfo.dateFormat
+  );
   if (mode === 'circle' && component.showTodayRing) {
     const todayRings = elements.dataArea
       .selectAll('todayRing')

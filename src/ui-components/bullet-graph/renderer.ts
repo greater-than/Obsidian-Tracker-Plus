@@ -21,7 +21,7 @@ export const renderBulletGraph = (
   if (!renderInfo || !component) return;
 
   const datasetId = parseFloat(component.dataset);
-  const dataset = renderInfo.datasets.getDatasetById(datasetId);
+  const dataset = renderInfo.datasets.getDataset(datasetId);
 
   // Set initial dataArea size
   if (component.orientation === 'horizontal') {

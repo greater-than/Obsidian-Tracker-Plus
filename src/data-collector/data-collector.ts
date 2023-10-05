@@ -37,7 +37,10 @@ export const getDateFromFilename = (
   );
   // console.log(dateString);
 
-  const fileDate = DateTimeUtils.strToDate(dateString, renderInfo.dateFormat);
+  const fileDate = DateTimeUtils.stringToDate(
+    dateString,
+    renderInfo.dateFormat
+  );
   // console.log(fileDate);
 
   return fileDate;
@@ -67,7 +70,7 @@ export const getDateFromFrontmatter = (
           renderInfo.dateFormatSuffix
         );
 
-        date = DateTimeUtils.strToDate(strDate, renderInfo.dateFormat);
+        date = DateTimeUtils.stringToDate(strDate, renderInfo.dateFormat);
         // console.log(date);
       }
     }
@@ -165,7 +168,7 @@ export const getDateFromWiki = (
   query: Query,
   renderInfo: RenderInfo
 ): Moment => {
-  //console.log("getDateFromWiki");
+  // console.log("getDateFromWiki");
   // Get date from '[[regex with value]]'
 
   const date = window.moment('');
@@ -339,16 +342,12 @@ export const collectDataFromFrontmatterKey = (
 
   const frontMatter = fileCache.frontmatter;
   if (frontMatter) {
-    // console.log(frontMatter);
-    // console.log(query.target);
     const deepValue = ObjectUtils.getDeepValue(frontMatter, query.target);
-    // console.log(deepValue);
     if (deepValue) {
       const parsed = NumberUtils.parseFloatFromAny(
         deepValue,
         renderInfo.textValueMap
       );
-      // console.log(parsed);
       if (parsed.value === null) {
         // Try parsing as a boolean: true means 1, false means 0.
         if (deepValue === 'true' || deepValue === 'false') {
@@ -549,9 +548,8 @@ export const collectDataFromFileMeta = (
       addToDataMap(dataMap, xValue, query, numWords);
       return true;
     } else if (target === 'numChars') {
-      const numChars = CountUtils.getCharacterCount(content);
       query.incrementTargets();
-      addToDataMap(dataMap, xValue, query, numChars);
+      addToDataMap(dataMap, xValue, query, content.length);
       return true;
     } else if (target === 'numSentences') {
       const numSentences = CountUtils.getSentenceCount(content);

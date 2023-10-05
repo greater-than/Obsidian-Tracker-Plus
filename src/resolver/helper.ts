@@ -1,16 +1,16 @@
 import * as d3 from 'd3';
 import jsep from 'jsep';
-import { Moment } from 'moment';
 import { Dataset } from '../models/dataset';
 import { RenderInfo } from '../models/render-info';
 import { BinaryOperator, UnaryOperator, ValidExpression } from './enums';
 import {
-  BinaryOperationMap,
-  DatasetToDatasetMap,
-  DatasetToValueMap,
-  ExprResolved,
-  MapUnaryOperationMap,
+  IBinaryOperationMap,
+  IDatasetToDatasetMap,
+  IDatasetToValueMap,
+  IExprResolved,
+  IMapUnaryOperationMap,
 } from './types';
+import Moment = moment.Moment;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const checkDivisor = (divisor: any): boolean => {
@@ -19,7 +19,7 @@ export const checkDivisor = (divisor: any): boolean => {
     if (divisor === 0) return false;
   } else if (divisor instanceof Dataset) {
     if (
-      divisor.getValues().some((v) => {
+      divisor.values.some((v) => {
         return v === 0;
       })
     ) {
@@ -48,18 +48,18 @@ export const validateBinaryOperands = (left: any, right: any): string => {
   validateBinaryOperand(right);
 };
 
-export const DatasetToValue: DatasetToValueMap = {
+export const DatasetToValue: IDatasetToValueMap = {
   // min value of a dataset
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   min: (dataset, _renderInfo): number => {
     // return number
-    return d3.min(dataset.getValues());
+    return d3.min(dataset.values);
   },
   // the latest date with min value
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   minDate: (dataset, _renderInfo): Moment | string => {
     // return Moment
-    const min = d3.min(dataset.getValues());
+    const min = d3.min(dataset.values);
     if (Number.isNumber(min)) {
       const arrayDataset = Array.from(dataset);
       for (const dataPoint of arrayDataset.reverse()) {
@@ -74,13 +74,13 @@ export const DatasetToValue: DatasetToValueMap = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   max: (dataset, _renderInfo): number => {
     // return number
-    return d3.max(dataset.getValues());
+    return d3.max(dataset.values);
   },
   // the latest date with max value
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   maxDate: (dataset, _renderInfo): Moment | string => {
     // return Moment
-    const max = d3.max(dataset.getValues());
+    const max = d3.max(dataset.values);
     if (Number.isNumber(max)) {
       const arrayDataset = Array.from(dataset);
       for (const dataPoint of arrayDataset.reverse()) {
@@ -96,7 +96,7 @@ export const DatasetToValue: DatasetToValueMap = {
   startDate: (dataset, renderInfo): Moment => {
     // return Moment
     if (dataset) {
-      const startDate = dataset.getStartDate();
+      const startDate = dataset.startDate;
       if (startDate && startDate.isValid()) {
         return startDate;
       }
@@ -108,7 +108,7 @@ export const DatasetToValue: DatasetToValueMap = {
   endDate: (dataset, renderInfo): Moment => {
     // return Moment
     if (dataset) {
-      const endDate = dataset.getEndDate();
+      const endDate = dataset.endDate;
       if (endDate && endDate.isValid()) {
         return endDate;
       }
@@ -119,7 +119,7 @@ export const DatasetToValue: DatasetToValueMap = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   sum: (dataset, _renderInfo): number => {
     // return number
-    return d3.sum(dataset.getValues());
+    return d3.sum(dataset.values);
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   count: (_dataset, _renderInfo): string => {
@@ -129,7 +129,7 @@ export const DatasetToValue: DatasetToValueMap = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   numTargets: (dataset, _renderInfo): number => {
     // return number
-    return dataset.getNumTargets();
+    return dataset.numTargets;
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   days: (_dataset, _renderInfo): string => {
@@ -138,12 +138,12 @@ export const DatasetToValue: DatasetToValueMap = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   numDays: (dataset, _renderInfo): number => {
     // return number
-    return dataset.getLength();
+    return dataset.values.length;
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   numDaysHavingData: (dataset, _renderInfo): number => {
     // return number
-    return dataset.getLengthNotNull();
+    return dataset.nonNullValueCount;
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   maxStreak: (dataset, _renderInfo): number => {
@@ -437,25 +437,25 @@ export const DatasetToValue: DatasetToValueMap = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   average: (dataset, _renderInfo): number | string => {
     // return number
-    const countNotNull = dataset.getLengthNotNull();
+    const countNotNull = dataset.nonNullValueCount;
     if (!checkDivisor(countNotNull)) {
       return 'Error: Division by zero in expression';
     }
-    const sum = d3.sum(dataset.getValues());
+    const sum = d3.sum(dataset.values);
     return sum / countNotNull;
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  median: (dataset, _renderInfo): number => d3.median(dataset.getValues()),
+  median: (dataset, _renderInfo): number => d3.median(dataset.values),
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  variance: (dataset, _renderInfo): number => d3.variance(dataset.getValues()),
+  variance: (dataset, _renderInfo): number => d3.variance(dataset.values),
 };
 
-export const UnaryOperation: MapUnaryOperationMap = {
+export const UnaryOperation: IMapUnaryOperationMap = {
   [UnaryOperator.NEGATIVE]: (u): number | Dataset | string => {
     if (typeof u === 'number') return -1 * u;
     if (u instanceof Dataset) {
       const tmpDataset = u.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) array[index] = -1 * value;
       });
       tmpDataset.recalculateMinMax();
@@ -470,13 +470,13 @@ export const UnaryOperation: MapUnaryOperationMap = {
   },
 };
 
-export const BinaryOperation: BinaryOperationMap = {
+export const BinaryOperation: IBinaryOperationMap = {
   [BinaryOperator.ADD]: (l, r): number | Dataset | string => {
     if (typeof l === 'number' && typeof r === 'number') return l + r;
     if (typeof l === 'number' && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = r.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = l + value;
         } else {
@@ -488,7 +488,7 @@ export const BinaryOperation: BinaryOperationMap = {
     } else if (l instanceof Dataset && typeof r === 'number') {
       // return Dataset
       const tmpDataset = l.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value + r;
         } else {
@@ -500,9 +500,9 @@ export const BinaryOperation: BinaryOperationMap = {
     } else if (l instanceof Dataset && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = l.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
-          array[index] = value + r.getValues()[index];
+          array[index] = value + r.values[index];
         } else {
           array[index] = null;
         }
@@ -519,7 +519,7 @@ export const BinaryOperation: BinaryOperationMap = {
     } else if (typeof l === 'number' && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = r.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = l - value;
         } else {
@@ -531,7 +531,7 @@ export const BinaryOperation: BinaryOperationMap = {
     } else if (l instanceof Dataset && typeof r === 'number') {
       // return Dataset
       const tmpDataset = l.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value - r;
         } else {
@@ -542,9 +542,9 @@ export const BinaryOperation: BinaryOperationMap = {
     } else if (l instanceof Dataset && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = l.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
-          array[index] = value - r.getValues()[index];
+          array[index] = value - r.values[index];
         } else {
           array[index] = null;
         }
@@ -559,7 +559,7 @@ export const BinaryOperation: BinaryOperationMap = {
     if (typeof l === 'number' && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = r.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = l * value;
         } else {
@@ -571,7 +571,7 @@ export const BinaryOperation: BinaryOperationMap = {
     } else if (l instanceof Dataset && typeof r === 'number') {
       // return Dataset
       const tmpDataset = l.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value * r;
         } else {
@@ -583,9 +583,9 @@ export const BinaryOperation: BinaryOperationMap = {
     } else if (l instanceof Dataset && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = l.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
-          array[index] = value * r.getValues()[index];
+          array[index] = value * r.values[index];
         } else {
           array[index] = null;
         }
@@ -602,7 +602,7 @@ export const BinaryOperation: BinaryOperationMap = {
     if (typeof l === 'number' && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = r.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = l / value;
         } else {
@@ -614,7 +614,7 @@ export const BinaryOperation: BinaryOperationMap = {
     } else if (l instanceof Dataset && typeof r === 'number') {
       // return Dataset
       const tmpDataset = l.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value / r;
         } else {
@@ -626,9 +626,9 @@ export const BinaryOperation: BinaryOperationMap = {
     } else if (l instanceof Dataset && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = l.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
-          array[index] = value / r.getValues()[index];
+          array[index] = value / r.values[index];
         } else {
           array[index] = null;
         }
@@ -645,7 +645,7 @@ export const BinaryOperation: BinaryOperationMap = {
     if (typeof l === 'number' && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = r.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = l % value;
         } else {
@@ -657,7 +657,7 @@ export const BinaryOperation: BinaryOperationMap = {
     } else if (l instanceof Dataset && typeof r === 'number') {
       // return Dataset
       const tmpDataset = l.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value % r;
         } else {
@@ -669,9 +669,9 @@ export const BinaryOperation: BinaryOperationMap = {
     } else if (l instanceof Dataset && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = l.cloneToTmpDataset();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
-          array[index] = value % r.getValues()[index];
+          array[index] = value % r.values[index];
         } else {
           array[index] = null;
         }
@@ -683,18 +683,18 @@ export const BinaryOperation: BinaryOperationMap = {
   },
 };
 
-export const DatasetToDataset: DatasetToDatasetMap = {
+export const DatasetToDataset: IDatasetToDatasetMap = {
   // min value of a dataset
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   normalize: (dataset, _args, _renderInfo): Dataset | string => {
     // console.log("normalize");
     // console.log(dataset);
-    const yMin = dataset.getYMin();
-    const yMax = dataset.getYMax();
+    const yMin = dataset.yMin;
+    const yMax = dataset.yMax;
     // console.log(`yMin/yMax: ${yMin}/${yMax}`);
     if (yMin !== null && yMax !== null && yMax > yMin) {
       const normalized = dataset.cloneToTmpDataset();
-      normalized.getValues().forEach((value, index, array) => {
+      normalized.values.forEach((value, index, array) => {
         array[index] = (value - yMin) / (yMax - yMin);
       });
       normalized.recalculateMinMax();
@@ -712,7 +712,7 @@ export const DatasetToDataset: DatasetToDatasetMap = {
       // console.log(missingValue);
       const newDataset = dataset.cloneToTmpDataset();
       if (Number.isNumber(missingValue) && !Number.isNaN(missingValue)) {
-        newDataset.getValues().forEach((value, index, array) => {
+        newDataset.values.forEach((value, index, array) => {
           if (value === null) {
             array[index] = missingValue as number;
           }
@@ -725,10 +725,10 @@ export const DatasetToDataset: DatasetToDatasetMap = {
   },
 };
 
-export const getDatasetById = (
+export const getDataset = (
   datasetId: number,
   renderInfo: RenderInfo
-): Dataset => renderInfo.datasets.getDatasetById(datasetId);
+): Dataset => renderInfo.datasets.getDataset(datasetId);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const evaluateArray = (arr: any, renderInfo: RenderInfo): any =>
@@ -789,7 +789,7 @@ export const evaluate = (
           if (typeof arg !== 'number') {
             return "Error: function 'dataset' only accepts id in number";
           }
-          const dataset = getDatasetById(arg, renderInfo);
+          const dataset = getDataset(arg, renderInfo);
           if (!dataset) {
             return `Error: no dataset found for id '${arg}'`;
           }
@@ -803,7 +803,7 @@ export const evaluate = (
           // Use first non-X dataset
           let dataset = null;
           for (const ds of renderInfo.datasets) {
-            if (!dataset && !ds.getQuery().usedAsXDataset) {
+            if (!dataset && !ds.query.usedAsXDataset) {
               dataset = ds;
               // if breaks here, the index of Datasets not reset???
             }
@@ -861,9 +861,9 @@ export const evaluate = (
 export const resolve = (
   text: string,
   renderInfo: RenderInfo
-): Array<ExprResolved> | string => {
+): Array<IExprResolved> | string => {
   // console.log(text);
-  const exprMap: Array<ExprResolved> = [];
+  const exprMap: Array<IExprResolved> = [];
 
   // {{(?<expr>[\w+\-*\/0-9\s()\[\]%.]+)(::(?<format>[\w+\-*\/0-9\s()\[\]%.:]+))?}}
   const pattern =

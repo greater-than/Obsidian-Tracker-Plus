@@ -1,9 +1,9 @@
-import { Moment } from 'moment';
 import { sprintf } from 'sprintf-js';
 import { RenderInfo } from '../models/render-info';
 import { DateTimeUtils } from '../utils';
 import { resolve } from './helper';
-import { ExprResolved } from './types';
+import { IExprResolved } from './types';
+import Moment = moment.Moment;
 
 /**
  * @summary Resolve the template expression in string and return a resolved string
@@ -18,7 +18,7 @@ export const resolveTemplate = (
   const resolved = resolve(template, renderInfo);
   if (typeof resolved === 'string') return resolved; // error message
 
-  const expressions = resolved as Array<ExprResolved>;
+  const expressions = resolved as Array<IExprResolved>;
 
   for (const expr of expressions) {
     const source = expr.source;
@@ -32,8 +32,8 @@ export const resolveTemplate = (
         : (formatted = value.toFixed(1));
     } else if (window.moment.isMoment(value)) {
       formatted = format
-        ? DateTimeUtils.dateToStr(value, format)
-        : DateTimeUtils.dateToStr(value, renderInfo.dateFormat);
+        ? DateTimeUtils.dateToString(value, format)
+        : DateTimeUtils.dateToString(value, renderInfo.dateFormat);
     }
 
     if (formatted) template = template.split(source).join(formatted);
@@ -64,7 +64,7 @@ export const resolveValue = (
   if (typeof resolved === 'string') {
     return resolved; // error message
   }
-  const exprMap = resolved as Array<ExprResolved>;
+  const exprMap = resolved as Array<IExprResolved>;
 
   if (exprMap.length > 0) {
     return exprMap[0].value; // only first value will be return

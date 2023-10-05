@@ -62,6 +62,7 @@ export const createAreas = (
 
   return elements;
 };
+
 export const renderHeatmapHeader = (
   _canvas: HTMLElement,
   _elements: ChartElements,
@@ -88,23 +89,23 @@ export const renderHeatmapDays = (
   const dotRadius = (cellSize / 2) * 0.6;
 
   // Get min and max, null values will be treated as zero here
-  let yMin = d3.min(dataset.getValues());
+  let yMin = d3.min(dataset.values);
   if (component.yMin !== null) {
     yMin = component.yMin;
   }
-  let yMax = d3.max(dataset.getValues());
+  let yMax = d3.max(dataset.values);
   if (component.yMax !== null) {
     yMax = component.yMax;
   }
   // console.log(`yMin:${yMin}, yMax:${yMax}`);
   // Prepare data for graph
   const daysInHeatmapView: Array<DayInfo> = [];
-  const dataStartDate = dataset.getStartDate().clone();
+  const dataStartDate = dataset.startDate.clone();
   let startDate = dataStartDate.clone().subtract(dataStartDate.day(), 'days');
   if (component.startWeekOn.toLowerCase() === 'mon') {
     startDate = startDate.add(1, 'days');
   }
-  const dataEndDate = dataset.getEndDate().clone();
+  const dataEndDate = dataset.endDate.clone();
   let endDate = dataEndDate.clone().add(7 - dataEndDate.day() - 1, 'days');
   if (component.startWeekOn.toLowerCase() === 'mon') {
     endDate = endDate.add(1, 'days');
@@ -138,7 +139,7 @@ export const renderHeatmapDays = (
     }
 
     daysInHeatmapView.push({
-      date: DateTimeUtils.dateToStr(curDate, renderInfo.dateFormat),
+      date: DateTimeUtils.dateToString(curDate, renderInfo.dateFormat),
       value: curValue,
       scaledValue: scaledValue,
       row: indRow,

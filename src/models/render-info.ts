@@ -1,4 +1,3 @@
-import { Moment } from 'moment';
 import { AspectRatio } from './aspect-ratio';
 import { BarChart } from './bar-chart';
 import { BulletGraph } from './bullet-graph';
@@ -13,6 +12,7 @@ import { Query } from './query';
 import { Size } from './size';
 import { Summary } from './summary';
 import { TextValueMap } from './types';
+import Moment = moment.Moment;
 
 export class RenderInfo {
   // Input
@@ -47,12 +47,11 @@ export class RenderInfo {
   aspectRatio: AspectRatio;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  output: any[];
   lineCharts: LineChart[];
   barCharts: BarChart[];
   pieCharts: PieChart[];
   summaries: Summary[];
-  month: MonthInfo[];
+  months: MonthInfo[];
   heatmaps: Heatmap[];
   bulletGraphs: BulletGraph[];
   customDatasets: CustomDataset[];
@@ -90,12 +89,11 @@ export class RenderInfo {
     this.fixedScale = 1;
     this.fitPanelWidth = false;
 
-    this.output = [];
     this.lineCharts = [];
     this.barCharts = [];
     this.pieCharts = [];
     this.summaries = [];
-    this.month = [];
+    this.months = [];
     this.heatmaps = [];
     this.bulletGraphs = [];
     this.customDatasets = [];
@@ -103,7 +101,7 @@ export class RenderInfo {
     this.datasets = null;
   }
 
-  public getQueryById(id: number) {
+  public getQuery(id: number) {
     for (const query of this.queries) {
       if (query.id === id) {
         return query;

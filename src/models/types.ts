@@ -41,6 +41,7 @@ export type ChartElements = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 };
+
 export type XValueMap = Map<number, string>;
 
 export type DataMap = Map<string, Array<IQueryValuePair>>;

@@ -23,12 +23,11 @@ export const renderHeatmap = (
 
   // TODO Why is this here?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const lastDataMonthDate = renderInfo.datasets.getDates().last();
+  const lastDataMonthDate = renderInfo.datasets.dates.last();
 
   const datasetId = parseFloat(component.dataset);
-  const dataset = renderInfo.datasets.getDatasetById(datasetId);
+  const dataset = renderInfo.datasets.getDataset(datasetId);
 
   renderHeatmapHeader(canvas, elements, renderInfo, component, dataset);
-
   renderHeatmapDays(canvas, elements, renderInfo, component, dataset);
 };

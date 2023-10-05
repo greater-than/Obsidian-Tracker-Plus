@@ -61,7 +61,7 @@ export const getXTickLabelFormat = (
 ): ((date: Date) => string) => {
   if (inTickLabelFormat) {
     const fnTickLabelFormat = (date: Date): string => {
-      return DateTimeUtils.dateToStr(window.moment(date), inTickLabelFormat);
+      return DateTimeUtils.dateToString(window.moment(date), inTickLabelFormat);
     };
     return fnTickLabelFormat;
   } else {
@@ -203,23 +203,23 @@ export const renderXAxis = (
   if (!renderInfo || !component) return;
 
   const datasets = renderInfo.datasets;
-  const xDomain = d3.extent(datasets.getDates());
+  const xDomain = d3.extent(datasets.dates);
   const xScale = d3
     .scaleTime()
     .domain(xDomain)
     .range([0, renderInfo.dataAreaSize.width]);
   elements['xScale'] = xScale;
 
-  const tickIntervalInDuration = DateTimeUtils.parseDurationString(
+  const tickIntervalInDuration = DateTimeUtils.parseDuration(
     component.xAxisTickInterval
   );
 
   const [tickValues, tickInterval] = getXTickValues(
-    datasets.getDates(),
+    datasets.dates,
     tickIntervalInDuration
   );
   const tickFormat = getXTickLabelFormat(
-    datasets.getDates(),
+    datasets.dates,
     component.xAxisTickLabelFormat
   );
 
@@ -309,14 +309,14 @@ export const renderYAxis = (
   let tmpValueIsTime = null;
   let valueIsTime = false;
   for (const datasetId of datasetIds) {
-    const dataset = datasets.getDatasetById(datasetId);
-    if (dataset.getQuery().usedAsXDataset) continue;
+    const dataset = datasets.getDataset(datasetId);
+    if (dataset.query.usedAsXDataset) continue;
 
-    if (yMinOfDatasets === null || dataset.getYMin() < yMinOfDatasets) {
-      yMinOfDatasets = dataset.getYMin();
+    if (yMinOfDatasets === null || dataset.yMin < yMinOfDatasets) {
+      yMinOfDatasets = dataset.yMin;
     }
-    if (yMaxOfDatasets === null || dataset.getYMax() > yMaxOfDatasets) {
-      yMaxOfDatasets = dataset.getYMax();
+    if (yMaxOfDatasets === null || dataset.yMax > yMaxOfDatasets) {
+      yMaxOfDatasets = dataset.yMax;
     }
 
     // Need all datasets have same settings for time value
@@ -439,7 +439,7 @@ export const renderYAxis = (
   // get interval from string
   let tickInterval = null;
   if (valueIsTime) {
-    tickInterval = DateTimeUtils.parseDurationString(yAxisTickInterval);
+    tickInterval = DateTimeUtils.parseDuration(yAxisTickInterval);
   } else {
     tickInterval = parseFloat(yAxisTickInterval);
     if (!Number.isNumber(tickInterval) || Number.isNaN(tickInterval)) {
@@ -587,7 +587,7 @@ export const renderLine = (
     yScale = elements.rightYScale;
   }
 
-  if (component.showLine[dataset.getId()]) {
+  if (component.showLine[dataset.id]) {
     const lineGen = d3
       .line<DataPoint>()
       .defined((p: DataPoint) => p.value !== null)
@@ -597,9 +597,9 @@ export const renderLine = (
     const line = elements.dataArea
       .append('path')
       .attr('class', 'tracker-line')
-      .style('stroke-width', component.lineWidth[dataset.getId()]);
+      .style('stroke-width', component.lineWidth[dataset.id]);
 
-    if (component.fillGap[dataset.getId()]) {
+    if (component.fillGap[dataset.id]) {
       line
         .datum(Array.from(dataset).filter((p) => p.value !== null))
         .attr('d', lineGen);
@@ -607,8 +607,8 @@ export const renderLine = (
       line.datum(dataset).attr('d', lineGen);
     }
 
-    if (component.lineColor[dataset.getId()]) {
-      line.style('stroke', component.lineColor[dataset.getId()]);
+    if (component.lineColor[dataset.id]) {
+      line.style('stroke', component.lineColor[dataset.id]);
     }
   }
 };
@@ -632,13 +632,13 @@ export const renderPoints = (
     yScale = elements.rightYScale;
   }
 
-  if (component.showPoint[dataset.getId()]) {
+  if (component.showPoint[dataset.id]) {
     const dots = elements.dataArea
       .selectAll('dot')
       .data(Array.from(dataset).filter((p: DataPoint) => p.value !== null))
       .enter()
       .append('circle')
-      .attr('r', component.pointSize[dataset.getId()])
+      .attr('r', component.pointSize[dataset.id])
       .attr('cx', (p: DataPoint) => elements.xScale(p.date))
       .attr('cy', (p: DataPoint) => yScale(p.value))
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -653,15 +653,15 @@ export const renderPoints = (
       })
       .attr('valueType', ValueType[dataset.valueType])
       .attr('class', 'tracker-dot');
-    if (component.pointColor[dataset.getId()]) {
-      dots.style('fill', component.pointColor[dataset.getId()]);
+    if (component.pointColor[dataset.id]) {
+      dots.style('fill', component.pointColor[dataset.id]);
 
       if (
-        component.pointBorderColor[dataset.getId()] &&
-        component.pointBorderWidth[dataset.getId()] > 0
+        component.pointBorderColor[dataset.id] &&
+        component.pointBorderWidth[dataset.id] > 0
       ) {
-        dots.style('stroke', component.pointBorderColor[dataset.getId()]);
-        dots.style('stroke-width', component.pointBorderWidth[dataset.getId()]);
+        dots.style('stroke', component.pointBorderColor[dataset.id]);
+        dots.style('stroke-width', component.pointBorderWidth[dataset.id]);
       }
     }
 
@@ -787,7 +787,7 @@ export const renderBar = (
   if (!renderInfo || !component) return;
 
   const barGap = 1;
-  const barSetWidth = renderInfo.dataAreaSize.width / dataset.getLength();
+  const barSetWidth = renderInfo.dataAreaSize.width / dataset.values.length;
   let barWidth = barSetWidth;
   if (barSetWidth - barGap > 0) {
     barWidth = barSetWidth - barGap;
@@ -835,7 +835,7 @@ export const renderBar = (
           return barWidth * portionVisible;
         }
         return barWidth;
-      } else if (i === dataset.getLength() - 1) {
+      } else if (i === dataset.values.length - 1) {
         const portionVisible = 1 - (currBarSet + 1 - totalNumOfBarSets / 2);
         if (portionVisible < 0) {
           return 0;
@@ -853,8 +853,8 @@ export const renderBar = (
     })
     .attr('class', 'tracker-bar');
 
-  if (component.barColor[dataset.getId()]) {
-    bars.style('fill', component.barColor[dataset.getId()]);
+  if (component.barColor[dataset.id]) {
+    bars.style('fill', component.barColor[dataset.id]);
   }
 };
 
@@ -895,7 +895,7 @@ export const renderLegend = (
   const xDatasetIds = datasets.getXDatasetIds();
   // console.log(xDatasetIds);
   // Get names and their dimension
-  const names = datasets.getNames(); // xDataset name included
+  const names = datasets.names; // xDataset name included
   const nameSizes = names.map((n) => {
     return ChartUtils.measureTextSize(n, 'tracker-legend-label');
   });

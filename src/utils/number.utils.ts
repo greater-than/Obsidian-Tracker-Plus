@@ -9,7 +9,6 @@ export const parseFloatFromAny = (
 ): { type: ValueType; value: number } => {
   // TODO Remove multiple instances of re-assignment of toParse below because 'any' is not immutable
   // console.log("parseFloatFromAny");
-  // console.log(toParse);
   let value = null;
   let type = ValueType.Number;
   if (typeof toParse === 'string') {

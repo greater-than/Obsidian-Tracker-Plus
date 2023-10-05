@@ -31,7 +31,7 @@ export const renderMonth = (
 
   let numAvailableDataset = 0;
   for (const dataset of renderInfo.datasets) {
-    if (!dataset.getQuery().usedAsXDataset) {
+    if (!dataset.query.usedAsXDataset) {
       numAvailableDataset++;
     }
   }
@@ -62,7 +62,7 @@ export const renderMonth = (
       }
     }
   } else {
-    monthDate = renderInfo.datasets.getDates().last();
+    monthDate = renderInfo.datasets.dates.last();
   }
   if (!monthDate) return;
 

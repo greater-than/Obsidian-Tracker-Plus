@@ -1,9 +1,9 @@
-import { Moment } from 'moment';
 import { ValueType } from '../models/enums';
 import { Query } from '../models/query';
 import { RenderInfo } from '../models/render-info';
 import { DataMap, XValueMap } from '../models/types';
 import { DateTimeUtils, NumberUtils } from '../utils';
+import Moment = moment.Moment;
 
 /**
  * Return a Moment object from the provided text
@@ -38,7 +38,7 @@ export const extractDateUsingRegexWithValue = (
         renderInfo.dateFormatSuffix
       );
 
-      date = DateTimeUtils.strToDate(strDate, renderInfo.dateFormat);
+      date = DateTimeUtils.stringToDate(strDate, renderInfo.dateFormat);
       if (date.isValid()) {
         return date;
       }
@@ -118,7 +118,7 @@ export const extractDataUsingRegexWithMultipleValues = (
             toParse,
             renderInfo.textValueMap
           );
-          //console.log(parsed);
+          // console.log(parsed);
           if (parsed.value !== null) {
             if (parsed.type === ValueType.Time) {
               measure = parsed.value;

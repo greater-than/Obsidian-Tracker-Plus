@@ -16,21 +16,21 @@ export const render = (canvas: HTMLElement, renderInfo: RenderInfo): string => {
 
   // Data preprocessing
   for (const dataset of renderInfo.datasets) {
-    if (dataset.getQuery().usedAsXDataset) continue;
+    if (dataset.query.usedAsXDataset) continue;
     // valueShift
-    const shiftAmount = renderInfo.valueShift[dataset.getId()];
+    const shiftAmount = renderInfo.valueShift[dataset.id];
     if (shiftAmount !== null && shiftAmount !== 0) {
-      dataset.shift(
+      dataset.shiftValues(
         shiftAmount,
-        renderInfo.shiftOnlyValueLargerThan[dataset.getId()]
+        renderInfo.shiftOnlyValueLargerThan[dataset.id]
       );
     }
     // penalty
-    if (renderInfo.penalty[dataset.getId()] !== null) {
-      dataset.setPenalty(renderInfo.penalty[dataset.getId()]);
+    if (renderInfo.penalty[dataset.id] !== null) {
+      dataset.setPenalty(renderInfo.penalty[dataset.id]);
     }
     // accum
-    if (renderInfo.accum[dataset.getId()]) {
+    if (renderInfo.accum[dataset.id]) {
       dataset.accumulateValues();
     }
   }
@@ -55,7 +55,7 @@ export const render = (canvas: HTMLElement, renderInfo: RenderInfo): string => {
     const ret = renderBulletGraph(canvas, renderInfo, component);
     if (typeof ret === 'string') return ret;
   }
-  for (const component of renderInfo.month) {
+  for (const component of renderInfo.months) {
     const ret = renderMonth(canvas, renderInfo, component);
     if (typeof ret === 'string') return ret;
   }

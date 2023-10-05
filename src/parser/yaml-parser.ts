@@ -200,13 +200,11 @@ export const getRenderInfoFromYaml = (
     -1,
     true
   );
-  if (typeof datasets === 'string') {
-    return datasets; // errorMessage
-  }
+  if (typeof datasets === 'string') return datasets; // errorMessage
+
   const xDataset = datasets.map((d: number) =>
     d < 0 || d >= numDatasets ? -1 : d
-  );
-  // assign this to renderInfo later
+  ); // assign this to renderInfo later
 
   // Create queries
   const queries: Array<Query> = [];
@@ -216,14 +214,12 @@ export const getRenderInfoFromYaml = (
     if (xDataset.includes(ind)) query.usedAsXDataset = true;
     queries.push(query);
   }
-  // console.log(queries);
 
   // Create graph info
   const renderInfo = new RenderInfo(queries);
   const renderInfoKeys = getKeys(renderInfo);
   const allowedKeys = ['searchType', 'searchTarget', 'separator'];
   const allKeys = [...allowedKeys];
-  // console.log(keysOfRenderInfo);
   const lineKeys = [];
   const barKeys = [];
   const pieKeys = [];
@@ -283,7 +279,6 @@ export const getRenderInfoFromYaml = (
       allKeys.push(key);
     }
   }
-  // console.log(additionalAllowedKeys);
   try {
     validateYamlKeys(yamlKeys, renderInfoKeys, allKeys);
   } catch (error) {
@@ -396,7 +391,10 @@ export const getRenderInfoFromYaml = (
     if (startDate) {
       isStartDateValid = true;
     } else {
-      startDate = DateTimeUtils.strToDate(strStartDate, renderInfo.dateFormat);
+      startDate = DateTimeUtils.stringToDate(
+        strStartDate,
+        renderInfo.dateFormat
+      );
       if (startDate.isValid()) {
         isStartDateValid = true;
       }
@@ -434,7 +432,7 @@ export const getRenderInfoFromYaml = (
     if (endDate) {
       isEndDateValid = true;
     } else {
-      endDate = DateTimeUtils.strToDate(strEndDate, renderInfo.dateFormat);
+      endDate = DateTimeUtils.stringToDate(strEndDate, renderInfo.dateFormat);
       if (endDate.isValid()) {
         isEndDateValid = true;
       }
@@ -496,7 +494,6 @@ export const getRenderInfoFromYaml = (
     const errorMessage = 'Not enough dataset names or duplicated names';
     return errorMessage;
   }
-  // console.log(renderInfo.datasetName);
 
   // constValue
   const constValue = getNumberArrayFromInput(
@@ -1322,7 +1319,7 @@ export const getRenderInfoFromYaml = (
     }
     // console.log(month.showAnnotationOfAllTargets);
 
-    renderInfo.month.push(month);
+    renderInfo.months.push(month);
   } // Month related parameters
   // console.log(renderInfo.month);
 
