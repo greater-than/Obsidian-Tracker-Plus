@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
-import { Moment } from 'moment';
 import { ChartElements, MonthInfo, RenderInfo, ValueType } from './data';
 import * as helper from './utils/helper';
+import Moment = moment.Moment;
 
 let logToConsole = false;
 const ratioCellToText = 2.8;

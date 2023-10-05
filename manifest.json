@@ -1,7 +1,7 @@
 {
   "id": "tracker-gt",
   "name": "TrackerGT",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "minAppVersion": "0.9.12",
   "description": "Track and visualize data from your notes",
   "author": "greater-than",
