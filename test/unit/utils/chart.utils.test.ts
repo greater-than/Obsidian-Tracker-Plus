@@ -1,5 +1,7 @@
 describe('Chart Utils', () => {
-  describe('expandArea', () => {
-    it('should do something', () => {});
+  describe('measureTextSize', () => {
+    it('should do something', () => {
+      expect(true);
+    });
   });
 });

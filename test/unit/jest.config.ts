@@ -20,9 +20,9 @@ export default async (): Promise<Config> => ({
   coverageThreshold: {
     global: {
       branches: 1.5,
-      functions: 3.75,
-      lines: 2.5,
-      statements: 3,
+      functions: 4,
+      lines: 3,
+      statements: 3.25,
     },
   },
   testEnvironment: 'node',

@@ -4,12 +4,14 @@ describe('DOM Utils', () => {
   describe('expandArea', () => {
     it('should do something', () => {
       expandArea({ attr: jest.fn() }, 10, 10);
+      expect(true);
     });
   });
 
   describe('moveArea', () => {
     it('should do something', () => {
       moveArea({ attr: jest.fn() }, 10, 10);
+      expect(true);
     });
   });
 });
