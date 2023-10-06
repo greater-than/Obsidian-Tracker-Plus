@@ -1,9 +1,17 @@
-import { CachedMetadata, TFile } from 'obsidian';
+import { CachedMetadata, TFile, Vault, normalizePath } from 'obsidian';
 import { SearchType, ValueType } from '../models/enums';
+import { ProcessInfo } from '../models/process-info';
 import { Query } from '../models/query';
 import { RenderInfo } from '../models/render-info';
+import { TableData } from '../models/table-data';
 import { DataMap, XValueMap } from '../models/types';
-import { CountUtils, DateTimeUtils, NumberUtils, ObjectUtils } from '../utils';
+import {
+  CountUtils,
+  DateTimeUtils,
+  NumberUtils,
+  ObjectUtils,
+  StringUtils,
+} from '../utils';
 import {
   addToDataMap,
   extractDataUsingRegexWithMultipleValues,
@@ -45,6 +53,7 @@ export const getDateFromFilename = (
 
   return fileDate;
 };
+
 // Not support multiple targets
 // In form 'key: value', target used to identify 'frontmatter key'
 export const getDateFromFrontmatter = (
@@ -707,6 +716,239 @@ export const collectDataFromTask = (
   );
 };
 
+/**
+ * Appends data to the dataMap provided
+ * @param {Vault} vault A reference to the current vault
+ * @param {DataMap} dataMap
+ * @param {RenderInfo} renderInfo
+ * @param {ProcessInfo} processInfo
+ * @returns
+ */
+export const collectDataFromTable = async (
+  vault: Vault,
+  dataMap: DataMap,
+  renderInfo: RenderInfo,
+  processInfo: ProcessInfo
+): Promise<void> => {
+  const tableQueries = renderInfo.queries.filter(
+    (q) => q.type === SearchType.Table
+  );
+
+  // Separate queries by tables and xDatasets/yDatasets
+  const tables: Array<TableData> = [];
+  let tableFileNotFound = false;
+  for (const query of tableQueries) {
+    const filePath = query.parentTarget;
+    const file = vault.getAbstractFileByPath(normalizePath(filePath + '.md'));
+    if (!file || !(file instanceof TFile)) {
+      tableFileNotFound = true;
+      break;
+    }
+
+    const tableIndex = query.getAccessor();
+    const isX = query.usedAsXDataset;
+
+    const table = tables.find(
+      (t) => t.filePath === filePath && t.tableIndex === tableIndex
+    );
+    if (table) {
+      if (isX) table.xDataset = query;
+      else table.yDatasets.push(query);
+    } else {
+      const tableData = new TableData(filePath, tableIndex);
+      if (isX) tableData.xDataset = query;
+      else tableData.yDatasets.push(query);
+
+      tables.push(tableData);
+    }
+  }
+
+  if (tableFileNotFound) {
+    processInfo.errorMessage = 'File containing tables not found';
+    return;
+  }
+
+  for (const tableData of tables) {
+    //extract xDataset from query
+    const xDatasetQuery = tableData.xDataset;
+    if (!xDatasetQuery) {
+      // missing xDataset
+      continue;
+    }
+    const yDatasetQueries = tableData.yDatasets;
+    let filePath = xDatasetQuery.parentTarget;
+    const tableIndex = xDatasetQuery.getAccessor();
+
+    // Get table text
+    let textTable = '';
+    filePath = filePath + '.md';
+    const file = vault.getAbstractFileByPath(normalizePath(filePath));
+    if (file && file instanceof TFile) {
+      processInfo.fileAvailable++;
+      const content = await vault.adapter.read(file.path);
+
+      // Test this in Regex101
+      // This is a not-so-strict table selector
+      // ((\r?\n){2}|^)([^\r\n]*\|[^\r\n]*(\r?\n)?)+(?=(\r?\n){2}|$)
+      const strMdTableRegex =
+        '((\\r?\\n){2}|^)([^\\r\\n]*\\|[^\\r\\n]*(\\r?\\n)?)+(?=(\\r?\\n){2}|$)';
+      // console.log(strMDTableRegex);
+      const mdTableRegex = new RegExp(strMdTableRegex, 'gm');
+      let match;
+      let indTable = 0;
+
+      while ((match = mdTableRegex.exec(content))) {
+        if (indTable === tableIndex) {
+          textTable = match[0];
+          break;
+        }
+        indTable++;
+      }
+    } else {
+      // file does not exist
+      continue;
+    }
+
+    let tableRows = textTable.split(/\r?\n/);
+    tableRows = tableRows.filter((line) => line !== '');
+    let numColumns = 0;
+    let numDataRows = 0;
+
+    // Make sure it is a valid table first
+    if (tableRows.length >= 2) {
+      // Must have header and separator line
+      let headerRow = tableRows.shift().trim();
+      headerRow = StringUtils.parseMarkdownTableRow(headerRow);
+      const columns = headerRow.split('|');
+      numColumns = columns.length;
+
+      let sepLine = tableRows.shift().trim();
+      sepLine = StringUtils.parseMarkdownTableRow(sepLine);
+      const rows = sepLine.split('|');
+      for (const col of rows) if (!col.includes('-')) break; // Not a valid separator
+
+      numDataRows = tableRows.length;
+    }
+
+    if (numDataRows == 0) continue;
+
+    // get x data
+    const columnXDataset = xDatasetQuery.getAccessor(1);
+    if (columnXDataset >= numColumns) continue;
+    const xValues = [];
+
+    for (const row of tableRows) {
+      const dataRow = StringUtils.parseMarkdownTableRow(row.trim());
+      const cells = dataRow.split('|');
+      if (columnXDataset < cells.length) {
+        const data = cells[columnXDataset].trim();
+        const date = DateTimeUtils.stringToDate(data, renderInfo.dateFormat);
+
+        if (date.isValid()) {
+          xValues.push(date);
+          if (
+            !processInfo.minDate.isValid() &&
+            !processInfo.maxDate.isValid()
+          ) {
+            processInfo.minDate = date.clone();
+            processInfo.maxDate = date.clone();
+          } else {
+            if (date < processInfo.minDate) processInfo.minDate = date.clone();
+            if (date > processInfo.maxDate) processInfo.maxDate = date.clone();
+          }
+        } else {
+          xValues.push(null);
+        }
+      } else {
+        xValues.push(null);
+      }
+    }
+
+    if (xValues.every((v) => v === null)) {
+      processInfo.errorMessage = 'No valid date as X value found in table';
+      return;
+    } else {
+      processInfo.gotAnyValidXValue ||= true;
+    }
+
+    // get y data
+    for (const yDatasetQuery of yDatasetQueries) {
+      const columnOfInterest = yDatasetQuery.getAccessor(1);
+      // console.log(`columnOfInterest: ${columnOfInterest}, numColumns: ${numColumns}`);
+      if (columnOfInterest >= numColumns) continue;
+
+      let indLine = 0;
+      for (const row of tableRows) {
+        const dataRow = StringUtils.parseMarkdownTableRow(row.trim());
+        const dataRowSplitted = dataRow.split('|');
+        if (columnOfInterest < dataRowSplitted.length) {
+          const data = dataRowSplitted[columnOfInterest].trim();
+          const splitData = data.split(yDatasetQuery.getSeparator());
+          // console.log(splitData);
+          if (!splitData) continue;
+          if (splitData.length === 1) {
+            const parsed = NumberUtils.parseFloatFromAny(
+              splitData[0],
+              renderInfo.textValueMap
+            );
+            // console.log(parsed);
+            if (parsed.value !== null) {
+              if (parsed.type === ValueType.Time) {
+                yDatasetQuery.valueType = ValueType.Time;
+              }
+              const value = parsed.value;
+              if (indLine < xValues.length && xValues[indLine]) {
+                processInfo.gotAnyValidYValue ||= true;
+                addToDataMap(
+                  dataMap,
+                  DateTimeUtils.dateToString(
+                    xValues[indLine],
+                    renderInfo.dateFormat
+                  ),
+                  yDatasetQuery,
+                  value
+                );
+              }
+            }
+          } else if (
+            splitData.length > yDatasetQuery.getAccessor(2) &&
+            yDatasetQuery.getAccessor(2) >= 0
+          ) {
+            let value = null;
+            const accessor2 = splitData[yDatasetQuery.getAccessor(2)].trim();
+            // console.log(accessor2);
+            const parsed = NumberUtils.parseFloatFromAny(
+              accessor2,
+              renderInfo.textValueMap
+            );
+            // console.log(parsed);
+            if (parsed.value !== null) {
+              if (parsed.type === ValueType.Time) {
+                yDatasetQuery.valueType = ValueType.Time;
+              }
+              value = parsed.value;
+              if (indLine < xValues.length && xValues[indLine]) {
+                processInfo.gotAnyValidYValue ||= true;
+                addToDataMap(
+                  dataMap,
+                  DateTimeUtils.dateToString(
+                    xValues[indLine],
+                    renderInfo.dateFormat
+                  ),
+                  yDatasetQuery,
+                  value
+                );
+              }
+            }
+          }
+        }
+
+        indLine++;
+      } // Loop over tableRows
+    }
+  }
+};
+
 const DataCollector = {
   getDateFromFilename,
   getDateFromFrontmatter,
@@ -725,6 +967,7 @@ const DataCollector = {
   collectDataFromDvField,
   collectDataFromInlineDvField,
   collectDataFromTask,
+  collectDataFromTable,
 };
 
 export default DataCollector;
