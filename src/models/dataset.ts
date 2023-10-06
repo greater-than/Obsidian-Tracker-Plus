@@ -86,7 +86,7 @@ export class Dataset implements IterableIterator<DataPoint> {
     return this.values.filter((value) => value !== null).length;
   }
 
-  public addNumTargets(num: number) {
+  public incrementTargetCount(num: number) {
     this._numTargets += num;
   }
 
