@@ -16,6 +16,6 @@ export const mockQuery: Query = {
   usedAsXDataset: false,
   valueType: ValueType.Number,
   numTargets: 0,
-  separator: '',
-  parentTarget: '',
+  separator: '<separator>',
+  parentTarget: '<parentTarget>',
 };
