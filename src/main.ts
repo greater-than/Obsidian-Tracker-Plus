@@ -4,18 +4,19 @@ import {
   Editor,
   MarkdownPostProcessorContext,
   MarkdownView,
+  MetadataCache,
   normalizePath,
   Plugin,
   TFile,
   TFolder,
+  Vault,
+  Workspace,
 } from 'obsidian';
 import DataCollector from './data-collector/data-collector';
-import { addToDataMap } from './data-collector/helper';
 import { Datasets } from './models/dataset';
-import { ComponentType, SearchType, ValueType } from './models/enums';
+import { ComponentType, SearchType } from './models/enums';
 import { ProcessInfo } from './models/process-info';
 import { RenderInfo } from './models/render-info';
-import { TableData } from './models/table-data';
 import { DataMap, IQueryValuePair, XValueMap } from './models/types';
 import { getRenderInfoFromYaml } from './parser/yaml-parser';
 import Renderer from './renderer';
@@ -23,7 +24,7 @@ import { DEFAULT_SETTINGS, TrackerSettingTab } from './settings';
 import { TrackerSettings } from './types';
 import Moment = moment.Moment;
 
-import { DateTimeUtils, NumberUtils, StringUtils } from './utils';
+import { DateTimeUtils, NumberUtils } from './utils';
 // import { getDailyNoteSettings } from "obsidian-daily-notes-interface";
 
 declare global {
@@ -42,9 +43,12 @@ declare module 'obsidian' {
 
 export default class Tracker extends Plugin {
   settings: TrackerSettings;
+  workspace: Workspace = this.app.workspace;
+  vault: Vault = this.app.vault;
+  metadataCache: MetadataCache = this.app.metadataCache;
 
   get editor(): Editor {
-    return this.app.workspace.getActiveViewOfType(MarkdownView).editor;
+    return this.workspace.getActiveViewOfType(MarkdownView).editor;
   }
 
   async onload(): Promise<void> {
@@ -134,7 +138,7 @@ export default class Tracker extends Plugin {
     // Include files in folder
     // console.log(useSpecifiedFilesOnly);
     if (!useSpecifiedFilesOnly) {
-      const folder = this.app.vault.getAbstractFileByPath(
+      const folder = this.vault.getAbstractFileByPath(
         normalizePath(folderToSearch)
       );
       if (folder && folder instanceof TFolder) {
@@ -155,7 +159,7 @@ export default class Tracker extends Plugin {
       path = normalizePath(path);
       // console.log(path);
 
-      const file = this.app.vault.getAbstractFileByPath(path);
+      const file = this.vault.getAbstractFileByPath(path);
       // console.log(file);
       if (file && file instanceof TFile) {
         files.push(file);
@@ -182,13 +186,11 @@ export default class Tracker extends Plugin {
       if (!filePath.endsWith('.md')) {
         filePath += '.md';
       }
-      const file = this.app.vault.getAbstractFileByPath(
-        normalizePath(filePath)
-      );
+      const file = this.vault.getAbstractFileByPath(normalizePath(filePath));
       if (file && file instanceof TFile) {
         // Get linked files
-        const fileCache = this.app.metadataCache.getFileCache(file);
-        const fileContent = await this.app.vault.adapter.read(file.path);
+        const fileCache = this.metadataCache.getFileCache(file);
+        const fileContent = await this.vault.adapter.read(file.path);
         const lines = fileContent.split(/\r\n|[\n\v\f\r\x85\u2028\u2029]/);
         // console.log(lines);
 
@@ -196,7 +198,7 @@ export default class Tracker extends Plugin {
 
         for (const link of fileCache.links) {
           if (!link) continue;
-          const linkedFile = this.app.metadataCache.getFirstLinkpathDest(
+          const linkedFile = this.metadataCache.getFirstLinkpathDest(
             link.link,
             filePath
           );
@@ -262,7 +264,7 @@ export default class Tracker extends Plugin {
     let yamlText = source.trim();
 
     // Replace all tabs by spaces
-    const tabSize = this.app.vault.getConfig('tabSize');
+    const tabSize = this.vault.getConfig('tabSize');
     const spaces = Array(tabSize).fill(' ').join('');
     yamlText = yamlText.replace(/\t/gm, spaces);
 
@@ -323,7 +325,7 @@ export default class Tracker extends Plugin {
         return false;
       });
       if (needFileCache) {
-        fileCache = this.app.metadataCache.getFileCache(file);
+        fileCache = this.metadataCache.getFileCache(file);
       }
 
       let content: string = null;
@@ -351,7 +353,7 @@ export default class Tracker extends Plugin {
         return false;
       });
       if (needContent) {
-        content = await this.app.vault.adapter.read(file.path);
+        content = await this.vault.adapter.read(file.path);
       }
 
       // Get xValue and add it into xValueMap for later use
@@ -590,7 +592,12 @@ export default class Tracker extends Plugin {
     // console.log(dataMap);
 
     // Collect data from a file, one file contains full dataset
-    await this.collectDataFromTable(dataMap, renderInfo, processInfo);
+    await DataCollector.collectDataFromTable(
+      this.vault,
+      dataMap,
+      renderInfo,
+      processInfo
+    );
     if (processInfo.errorMessage) {
       return this.renderErrorMessage(processInfo.errorMessage, canvas, element);
     }
@@ -668,7 +675,7 @@ export default class Tracker extends Plugin {
       const dataset = datasets.createDataset(query, renderInfo);
       // Add number of targets to the dataset
       // Number of targets has been accumulated while collecting data
-      dataset.addNumTargets(query.numTargets);
+      dataset.incrementTargetCount(query.numTargets);
       for (
         let curDate = renderInfo.startDate.clone();
         curDate <= renderInfo.endDate;
@@ -718,250 +725,8 @@ export default class Tracker extends Plugin {
     element.appendChild(canvas);
   }
 
-  // TODO: remove this.app and move to collecting.ts
-  async collectDataFromTable(
-    dataMap: DataMap,
-    renderInfo: RenderInfo,
-    processInfo: ProcessInfo
-  ): Promise<void> {
-    // console.log("collectDataFromTable");
-
-    const tableQueries = renderInfo.queries.filter(
-      (q) => q.type === SearchType.Table
-    );
-    // console.log(tableQueries);
-    // Separate queries by tables and xDatasets/yDatasets
-    const tables: Array<TableData> = [];
-    let tableFileNotFound = false;
-    for (const query of tableQueries) {
-      const filePath = query.parentTarget;
-      const file = this.app.vault.getAbstractFileByPath(
-        normalizePath(filePath + '.md')
-      );
-      if (!file || !(file instanceof TFile)) {
-        tableFileNotFound = true;
-        break;
-      }
-
-      const tableIndex = query.getAccessor();
-      const isX = query.usedAsXDataset;
-
-      const table = tables.find(
-        (t) => t.filePath === filePath && t.tableIndex === tableIndex
-      );
-      if (table) {
-        if (isX) table.xDataset = query;
-        else table.yDatasets.push(query);
-      } else {
-        const tableData = new TableData(filePath, tableIndex);
-        if (isX) tableData.xDataset = query;
-        else tableData.yDatasets.push(query);
-
-        tables.push(tableData);
-      }
-    }
-    // console.log(tables);
-
-    if (tableFileNotFound) {
-      processInfo.errorMessage = 'File containing tables not found';
-      return;
-    }
-
-    for (const tableData of tables) {
-      //extract xDataset from query
-      const xDatasetQuery = tableData.xDataset;
-      if (!xDatasetQuery) {
-        // missing xDataset
-        continue;
-      }
-      const yDatasetQueries = tableData.yDatasets;
-      let filePath = xDatasetQuery.parentTarget;
-      const tableIndex = xDatasetQuery.getAccessor();
-
-      // Get table text
-      let textTable = '';
-      filePath = filePath + '.md';
-      const file = this.app.vault.getAbstractFileByPath(
-        normalizePath(filePath)
-      );
-      if (file && file instanceof TFile) {
-        processInfo.fileAvailable++;
-        const content = await this.app.vault.adapter.read(file.path);
-        // console.log(content);
-
-        // Test this in Regex101
-        // This is a not-so-strict table selector
-        // ((\r?\n){2}|^)([^\r\n]*\|[^\r\n]*(\r?\n)?)+(?=(\r?\n){2}|$)
-        const strMdTableRegex =
-          '((\\r?\\n){2}|^)([^\\r\\n]*\\|[^\\r\\n]*(\\r?\\n)?)+(?=(\\r?\\n){2}|$)';
-        // console.log(strMDTableRegex);
-        const mdTableRegex = new RegExp(strMdTableRegex, 'gm');
-        let match;
-        let indTable = 0;
-
-        while ((match = mdTableRegex.exec(content))) {
-          // console.log(match);
-          if (indTable === tableIndex) {
-            textTable = match[0];
-            break;
-          }
-          indTable++;
-        }
-      } else {
-        // file not exists
-        continue;
-      }
-
-      let tableRows = textTable.split(/\r?\n/);
-      tableRows = tableRows.filter((line) => line !== '');
-      let numColumns = 0;
-      let numDataRows = 0;
-
-      // Make sure it is a valid table first
-      if (tableRows.length >= 2) {
-        // Must have header and separator line
-        let headerRow = tableRows.shift().trim();
-        headerRow = StringUtils.parseMarkdownTableRow(headerRow);
-        const columns = headerRow.split('|');
-        numColumns = columns.length;
-
-        let sepLine = tableRows.shift().trim();
-        sepLine = StringUtils.parseMarkdownTableRow(sepLine);
-        const rows = sepLine.split('|');
-        for (const col of rows) {
-          if (!col.includes('-')) break; // Not a valid sep
-        }
-        numDataRows = tableRows.length;
-      }
-
-      if (numDataRows == 0) continue;
-
-      // get x data
-      const columnXDataset = xDatasetQuery.getAccessor(1);
-      if (columnXDataset >= numColumns) continue;
-      const xValues = [];
-
-      let indLine = 0;
-      for (const row of tableRows) {
-        const dataRow = StringUtils.parseMarkdownTableRow(row.trim());
-        const cells = dataRow.split('|');
-        if (columnXDataset < cells.length) {
-          const data = cells[columnXDataset].trim();
-          const date = DateTimeUtils.stringToDate(data, renderInfo.dateFormat);
-
-          if (date.isValid()) {
-            xValues.push(date);
-            if (
-              !processInfo.minDate.isValid() &&
-              !processInfo.maxDate.isValid()
-            ) {
-              processInfo.minDate = date.clone();
-              processInfo.maxDate = date.clone();
-            } else {
-              if (date < processInfo.minDate)
-                processInfo.minDate = date.clone();
-              if (date > processInfo.maxDate)
-                processInfo.maxDate = date.clone();
-            }
-          } else {
-            xValues.push(null);
-          }
-        } else {
-          xValues.push(null);
-        }
-
-        // TODO What is this doing?
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        indLine++;
-      }
-
-      if (xValues.every((v) => v === null)) {
-        processInfo.errorMessage = 'No valid date as X value found in table';
-        return;
-      } else {
-        processInfo.gotAnyValidXValue ||= true;
-      }
-
-      // get y data
-      for (const yDatasetQuery of yDatasetQueries) {
-        const columnOfInterest = yDatasetQuery.getAccessor(1);
-        // console.log(`columnOfInterest: ${columnOfInterest}, numColumns: ${numColumns}`);
-        if (columnOfInterest >= numColumns) continue;
-
-        let indLine = 0;
-        for (const row of tableRows) {
-          const dataRow = StringUtils.parseMarkdownTableRow(row.trim());
-          const dataRowSplitted = dataRow.split('|');
-          if (columnOfInterest < dataRowSplitted.length) {
-            const data = dataRowSplitted[columnOfInterest].trim();
-            const splitData = data.split(yDatasetQuery.getSeparator());
-            // console.log(splitData);
-            if (!splitData) continue;
-            if (splitData.length === 1) {
-              const parsed = NumberUtils.parseFloatFromAny(
-                splitData[0],
-                renderInfo.textValueMap
-              );
-              // console.log(parsed);
-              if (parsed.value !== null) {
-                if (parsed.type === ValueType.Time) {
-                  yDatasetQuery.valueType = ValueType.Time;
-                }
-                const value = parsed.value;
-                if (indLine < xValues.length && xValues[indLine]) {
-                  processInfo.gotAnyValidYValue ||= true;
-                  addToDataMap(
-                    dataMap,
-                    DateTimeUtils.dateToString(
-                      xValues[indLine],
-                      renderInfo.dateFormat
-                    ),
-                    yDatasetQuery,
-                    value
-                  );
-                }
-              }
-            } else if (
-              splitData.length > yDatasetQuery.getAccessor(2) &&
-              yDatasetQuery.getAccessor(2) >= 0
-            ) {
-              let value = null;
-              const accessor2 = splitData[yDatasetQuery.getAccessor(2)].trim();
-              // console.log(accessor2);
-              const parsed = NumberUtils.parseFloatFromAny(
-                accessor2,
-                renderInfo.textValueMap
-              );
-              // console.log(parsed);
-              if (parsed.value !== null) {
-                if (parsed.type === ValueType.Time) {
-                  yDatasetQuery.valueType = ValueType.Time;
-                }
-                value = parsed.value;
-                if (indLine < xValues.length && xValues[indLine]) {
-                  processInfo.gotAnyValidYValue ||= true;
-                  addToDataMap(
-                    dataMap,
-                    DateTimeUtils.dateToString(
-                      xValues[indLine],
-                      renderInfo.dateFormat
-                    ),
-                    yDatasetQuery,
-                    value
-                  );
-                }
-              }
-            }
-          }
-
-          indLine++;
-        } // Loop over tableRows
-      }
-    }
-  }
-
   addCodeBlock(type: ComponentType): void {
-    const currentView = this.app.workspace.activeLeaf.view;
+    const currentView = this.workspace.activeLeaf.view;
 
     if (!(currentView instanceof MarkdownView)) {
       return;
