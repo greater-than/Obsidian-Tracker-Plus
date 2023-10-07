@@ -19,10 +19,10 @@ export default async (): Promise<Config> => ({
   coverageDirectory: './.coverage',
   coverageThreshold: {
     global: {
-      branches: 1.5,
-      functions: 4,
+      branches: 1.75,
+      functions: 5,
       lines: 3,
-      statements: 3.25,
+      statements: 3.5,
     },
   },
   testEnvironment: 'node',
