@@ -25,7 +25,6 @@ export const replaceImgTagByAlt = (imageTag: string): string => {
   if (imageTag === null) return null;
   const strRegex =
     '<img[^>]*?alt\\s*=\\s*[""\']?(?<emoji>[^\'"" >]+?)[ \'""][^>]*?>';
-  // console.log(strRegex);
   const regex = new RegExp(strRegex, 'g');
   const output = imageTag.replace(regex, (...args) => {
     const groups = args[args.length - 1];

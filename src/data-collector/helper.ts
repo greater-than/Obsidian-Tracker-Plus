@@ -3,6 +3,7 @@ import { Query } from '../models/query';
 import { RenderInfo } from '../models/render-info';
 import { DataMap, XValueMap } from '../models/types';
 import { DateTimeUtils, NumberUtils } from '../utils';
+import { TMoment, getMoment } from '../utils/date-time.utils';
 import Moment = moment.Moment;
 
 /**
@@ -17,9 +18,10 @@ import Moment = moment.Moment;
 export const extractDateUsingRegexWithValue = (
   text: string,
   pattern: string,
-  renderInfo: RenderInfo
+  renderInfo: RenderInfo,
+  moment?: TMoment
 ): Moment => {
-  let date = window.moment('');
+  let date = getMoment(moment)('');
 
   const regex = new RegExp(pattern, 'gm');
   let match;

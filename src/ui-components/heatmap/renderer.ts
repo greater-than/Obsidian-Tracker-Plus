@@ -1,12 +1,14 @@
 import { Heatmap } from '../../models/heatmap';
 import { RenderInfo } from '../../models/render-info';
 import { ChartElements } from '../../models/types';
+import { TMoment, getMoment } from '../../utils/date-time.utils';
 import { createAreas, renderHeatmapDays, renderHeatmapHeader } from './helper';
 
 export const renderHeatmap = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  component: Heatmap
+  component: Heatmap,
+  moment?: TMoment
 ) => {
   // console.log("renderHeatmap");
   // console.log(renderInfo);
@@ -19,7 +21,7 @@ export const renderHeatmap = (
 
   // TODO Why is this here?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const today = window.moment();
+  const today = getMoment(moment)();
 
   // TODO Why is this here?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

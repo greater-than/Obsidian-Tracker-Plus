@@ -1,32 +1,35 @@
 import { ValueType } from '../models/enums';
 import { TextValueMap } from '../models/types';
-import { timeFormat } from './date-time.utils';
+import { TMoment, getMoment, timeFormats } from './date-time.utils';
 
 export const parseFloatFromAny = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   toParse: any,
-  textValueMap: TextValueMap = null
+  textValueMap: TextValueMap = null,
+  moment?: TMoment
 ): { type: ValueType; value: number } => {
   // TODO Remove multiple instances of re-assignment of toParse below because 'any' is not immutable
-  // console.log("parseFloatFromAny");
   let value = null;
   let type = ValueType.Number;
+
+  if (typeof toParse !== 'string' && typeof toParse !== 'number')
+    return { type, value };
+
   if (typeof toParse === 'string') {
     // time value
     if (toParse.includes(':')) {
+      // TODO Move this block to date-time.utils
       let negativeValue = false;
       if (toParse.startsWith('-')) {
         negativeValue = true;
         toParse = toParse.substring(1);
       }
-      const timeValue = window.moment(toParse, timeFormat, true);
+      const m = getMoment(moment);
+      const timeValue = m(toParse, timeFormats, true);
       if (timeValue.isValid()) {
-        value = timeValue.diff(
-          window.moment('00:00', 'HH:mm', true),
-          'seconds'
-        );
+        const input = (m('00:00', 'HH:mm', true), 'seconds');
+        value = timeValue.diff(input, 'seconds');
         if (negativeValue) value = -1 * value;
-
         type = ValueType.Time;
       }
     } else {
@@ -34,22 +37,17 @@ export const parseFloatFromAny = (
         const keys = Object.keys(textValueMap);
         for (const key of keys) {
           const regex = new RegExp(key, 'gm');
-          // console.log(toParse);
           if (regex.test(toParse) && Number.isNumber(textValueMap[key])) {
             const strReplacedValue = textValueMap[key].toString();
             toParse = toParse.replace(regex, strReplacedValue);
-            // console.log(toParse);
             break;
           }
         }
-        value = parseFloat(toParse);
-        if (Number.isNaN(value)) value = null;
-      } else {
-        value = parseFloat(toParse);
-        if (Number.isNaN(value)) value = null;
       }
+      value = parseFloat(toParse);
+      if (Number.isNaN(value)) value = null;
     }
-  } else if (typeof toParse === 'number') {
+  } else {
     value = toParse;
   }
 

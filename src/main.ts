@@ -22,10 +22,9 @@ import { getRenderInfoFromYaml } from './parser/yaml-parser';
 import Renderer from './renderer';
 import { DEFAULT_SETTINGS, TrackerSettingTab } from './settings';
 import { TrackerSettings } from './types';
-import Moment = moment.Moment;
-
 import { DateTimeUtils, NumberUtils } from './utils';
-// import { getDailyNoteSettings } from "obsidian-daily-notes-interface";
+import { getMoment, TMoment } from './utils/date-time.utils';
+import Moment = moment.Moment;
 
 declare global {
   interface Window {
@@ -256,7 +255,8 @@ export default class Tracker extends Plugin {
     source: string,
     element: HTMLElement,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _context: MarkdownPostProcessorContext
+    _context: MarkdownPostProcessorContext,
+    moment?: TMoment
   ): Promise<void> {
     // console.log("postprocess");
     const canvas = document.createElement('div');
@@ -363,7 +363,7 @@ export default class Tracker extends Plugin {
       for (const xDatasetId of renderInfo.xDataset) {
         // console.log(`xDatasetId: ${xDatasetId}`);
         if (!xValueMap.has(xDatasetId)) {
-          let xDate = window.moment('');
+          let xDate = getMoment(moment)('');
           if (xDatasetId === -1) {
             // Default using date in filename as xValue
             xDate = DataCollector.getDateFromFilename(file, renderInfo);

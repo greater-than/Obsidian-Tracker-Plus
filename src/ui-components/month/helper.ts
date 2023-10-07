@@ -4,6 +4,7 @@ import { MonthInfo } from '../../models/month';
 import { RenderInfo } from '../../models/render-info';
 import { ChartElements } from '../../models/types';
 import { ChartUtils, DateTimeUtils, DomUtils } from '../../utils';
+import { TMoment, getMoment } from '../../utils/date-time.utils';
 import { DayInfo } from './types';
 import Moment = moment.Moment;
 
@@ -485,7 +486,8 @@ export function renderMonthDays(
   elements: ChartElements,
   renderInfo: RenderInfo,
   component: MonthInfo,
-  curMonthDate: Moment
+  curMonthDate: Moment,
+  moment?: TMoment
 ): string {
   // console.log("renderMonthDays");
   // console.log(renderInfo);
@@ -896,7 +898,7 @@ export function renderMonthDays(
 
   // today rings
   const today = DateTimeUtils.dateToString(
-    window.moment(),
+    getMoment(moment)(),
     renderInfo.dateFormat
   );
   if (mode === 'circle' && component.showTodayRing) {
@@ -999,7 +1001,7 @@ export function renderMonthDays(
         const valueType = d3.select(this).attr('valueType');
         let valueText = '';
         if (valueType === 'Time') {
-          const dayStart = window.moment('00:00', 'HH:mm', true);
+          const dayStart = getMoment(moment)('00:00', 'HH:mm', true);
           const tickTime = dayStart.add(parseFloat(strValue), 'seconds');
           valueText = tickTime.format('HH:mm');
         } else {

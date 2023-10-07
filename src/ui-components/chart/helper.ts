@@ -10,6 +10,7 @@ import { LineChart } from '../../models/line-chart';
 import { RenderInfo } from '../../models/render-info';
 import { ChartElements } from '../../models/types';
 import { ChartUtils, DateTimeUtils, DomUtils } from '../../utils';
+import { TMoment, getMoment } from '../../utils/date-time.utils';
 
 export const getXTickValues = (
   dates: Moment[],
@@ -57,11 +58,15 @@ export const getXTickValues = (
 
 export const getXTickLabelFormat = (
   dates: Moment[],
-  inTickLabelFormat: string
+  inTickLabelFormat: string,
+  moment?: TMoment
 ): ((date: Date) => string) => {
   if (inTickLabelFormat) {
     const fnTickLabelFormat = (date: Date): string => {
-      return DateTimeUtils.dateToString(window.moment(date), inTickLabelFormat);
+      return DateTimeUtils.dateToString(
+        getMoment(moment)(date),
+        inTickLabelFormat
+      );
     };
     return fnTickLabelFormat;
   } else {
@@ -95,7 +100,8 @@ export const getYTickValues = (
   yLower: number,
   yUpper: number,
   interval: number | Duration,
-  isTimeValue = false
+  isTimeValue = false,
+  moment?: TMoment
 ): number[] => {
   // The input interval could be null,
   // generate tick values for time values even if interval is null
@@ -112,7 +118,7 @@ export const getYTickValues = (
     }
   } else {
     // y values are time values
-    if (interval && window.moment.isDuration(interval)) {
+    if (interval && getMoment(moment).isDuration(interval)) {
       const intervalInSeconds = Math.abs(interval.asSeconds());
       tickValues = d3.range(yLower, yUpper, intervalInSeconds);
     } else {
@@ -142,7 +148,8 @@ export const getYTickLabelFormat = (
   yLower: number,
   yUpper: number,
   inTickLabelFormat: string,
-  isTimeValue = false
+  isTimeValue = false,
+  moment?: TMoment
 ): ((value: number) => string) => {
   // return a function convert value to time string
   if (!isTimeValue) {
@@ -159,7 +166,7 @@ export const getYTickLabelFormat = (
     // values in seconds
     if (inTickLabelFormat) {
       return (value: number): string => {
-        const dayStart = window.moment('00:00', 'HH:mm', true);
+        const dayStart = getMoment(moment)('00:00', 'HH:mm', true);
         const tickTime = dayStart.add(value, 'seconds');
         const format = tickTime.format(inTickLabelFormat);
 
@@ -174,7 +181,7 @@ export const getYTickLabelFormat = (
     } else {
       return (value: number): string => {
         const absExtent = Math.abs(yUpper - yLower);
-        const dayStart = window.moment('00:00', 'HH:mm', true);
+        const dayStart = moment('00:00', 'HH:mm', true);
         const tickTime = dayStart.add(value, 'seconds');
         let format = tickTime.format('HH:mm');
         // console.log(`yLower/yUpper: ${yLower}/${yUpper}`)
@@ -675,7 +682,8 @@ export function renderTooltip(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   targetElements: any,
   elements: ChartElements,
-  renderInfo: RenderInfo
+  renderInfo: RenderInfo,
+  moment?: TMoment
 ): void {
   const tooltip = elements.dataArea.append('svg').style('opacity', 0);
   const tooltipBg = tooltip.append('rect').attr('x', 0).attr('y', 0);
@@ -716,7 +724,7 @@ export function renderTooltip(
       const strValue = d3.select(this).attr('value');
       // strValue += y.toString();//debug
       if (valueType === 'Time') {
-        const dayStart = window.moment('00:00', 'HH:mm', true);
+        const dayStart = getMoment(moment)('00:00', 'HH:mm', true);
         const tickTime = dayStart.add(parseFloat(strValue), 'seconds');
         const dateValue = tickTime.format('HH:mm');
         labelValueText += dateValue;

@@ -12,6 +12,7 @@ import {
   ObjectUtils,
   StringUtils,
 } from '../utils';
+import { TMoment, getMoment } from '../utils/date-time.utils';
 import {
   addToDataMap,
   extractDataUsingRegexWithMultipleValues,
@@ -59,12 +60,13 @@ export const getDateFromFilename = (
 export const getDateFromFrontmatter = (
   fileCache: CachedMetadata,
   query: Query,
-  renderInfo: RenderInfo
+  renderInfo: RenderInfo,
+  moment?: TMoment
 ): Moment => {
   // console.log("getDateFromFrontmatter");
   // Get date from 'frontMatterKey: date'
 
-  let date = window.moment('');
+  let date = getMoment(moment)('');
 
   const frontMatter = fileCache.frontmatter;
   if (frontMatter) {
@@ -93,7 +95,8 @@ export const getDateFromFrontmatter = (
 export const getDateFromTag = (
   content: string,
   query: Query,
-  renderInfo: RenderInfo
+  renderInfo: RenderInfo,
+  moment?: TMoment
 ): Moment => {
   // console.log("getDateFromTag");
   // Get date from '#tagName: date'
@@ -101,7 +104,7 @@ export const getDateFromTag = (
 
   // TODO Why is this here?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const date = window.moment('');
+  const date = getMoment(moment)('');
 
   let tagName = query.target;
   if (query.parentTarget) {
@@ -123,14 +126,15 @@ export const getDateFromTag = (
 export const getDateFromText = (
   content: string,
   query: Query,
-  renderInfo: RenderInfo
+  renderInfo: RenderInfo,
+  moment?: TMoment
 ): Moment => {
   // console.log("getDateFromText");
   // Get date from text using regex with value
 
   // TODO Why is this here?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const date = window.moment('');
+  const date = getMoment(moment)('');
 
   const pattern = query.target;
   // console.log(strTextRegex);
@@ -143,14 +147,15 @@ export const getDateFromText = (
 export const getDateFromDvField = (
   content: string,
   query: Query,
-  renderInfo: RenderInfo
+  renderInfo: RenderInfo,
+  moment?: TMoment
 ): Moment => {
   // console.log("getDateFromDvField");
   // Get date form 'targetName:: date'
 
   // TODO Why is this here?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const date = window.moment('');
+  const date = getMoment(moment)('');
 
   let target = query.parentTarget ?? query.target;
 
@@ -175,12 +180,13 @@ export const getDateFromDvField = (
 export const getDateFromWiki = (
   metadata: CachedMetadata,
   query: Query,
-  renderInfo: RenderInfo
+  renderInfo: RenderInfo,
+  moment?: TMoment
 ): Moment => {
   // console.log("getDateFromWiki");
   // Get date from '[[regex with value]]'
 
-  const date = window.moment('');
+  const date = getMoment(moment)('');
 
   const links = metadata.links;
   if (!links) return date;
@@ -214,12 +220,13 @@ export const getDateFromWiki = (
 export const getDateFromFileMeta = (
   file: TFile,
   query: Query,
-  renderInfo: RenderInfo
+  renderInfo: RenderInfo,
+  moment?: TMoment
 ): Moment => {
   // console.log("getDateFromFileMeta");
   // Get date from cDate, mDate or baseFileName
 
-  let date = window.moment('');
+  let date = getMoment(moment)('');
 
   if (file && file instanceof TFile) {
     // console.log(file.stat);
@@ -245,14 +252,15 @@ export const getDateFromFileMeta = (
 export const getDateFromTask = (
   content: string,
   query: Query,
-  renderInfo: RenderInfo
+  renderInfo: RenderInfo,
+  moment?: TMoment
 ): Moment => {
   // console.log("getDateFromTask");
   // Get date from '- [ ] regex with value' or '- [x] regex with value'
 
   // Why is this here?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const date = window.moment('');
+  const date = getMoment(moment)('');
   const { target, type } = query;
 
   const pattern = getSearchTypePattern(type);

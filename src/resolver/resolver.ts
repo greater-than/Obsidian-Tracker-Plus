@@ -1,6 +1,7 @@
 import { sprintf } from 'sprintf-js';
 import { RenderInfo } from '../models/render-info';
 import { DateTimeUtils } from '../utils';
+import { TMoment, getMoment } from '../utils/date-time.utils';
 import { resolve } from './helper';
 import { IExprResolved } from './types';
 import Moment = moment.Moment;
@@ -13,7 +14,8 @@ import Moment = moment.Moment;
  */
 export const resolveTemplate = (
   template: string,
-  renderInfo: RenderInfo
+  renderInfo: RenderInfo,
+  moment?: TMoment
 ): string => {
   const resolved = resolve(template, renderInfo);
   if (typeof resolved === 'string') return resolved; // error message
@@ -30,7 +32,7 @@ export const resolveTemplate = (
       formatted = format
         ? sprintf('%' + format, value)
         : (formatted = value.toFixed(1));
-    } else if (window.moment.isMoment(value)) {
+    } else if (getMoment(moment).isMoment(value)) {
       formatted = format
         ? DateTimeUtils.dateToString(value, format)
         : DateTimeUtils.dateToString(value, renderInfo.dateFormat);

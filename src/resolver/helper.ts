@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 import jsep from 'jsep';
 import { Dataset } from '../models/dataset';
 import { RenderInfo } from '../models/render-info';
+import { TMoment, getMoment } from '../utils/date-time.utils';
 import { BinaryOperator, UnaryOperator, ValidExpression } from './enums';
 import {
   IBinaryOperationMap,
@@ -30,10 +31,10 @@ export const checkDivisor = (divisor: any): boolean => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const validateBinaryOperand = (operand: any) => {
+export const validateBinaryOperand = (operand: any, moment?: TMoment) => {
   if (
     typeof operand !== 'number' &&
-    !window.moment.isMoment(operand) &&
+    !getMoment(moment).isMoment(operand) &&
     !(operand instanceof Dataset)
   )
     throw new Error('Error: Invalid operand');
@@ -860,7 +861,8 @@ export const evaluate = (
 // Get a list of resolved result containing source, value, and format
 export const resolve = (
   text: string,
-  renderInfo: RenderInfo
+  renderInfo: RenderInfo,
+  moment?: TMoment
 ): Array<IExprResolved> | string => {
   // console.log(text);
   const exprMap: Array<IExprResolved> = [];
@@ -891,7 +893,7 @@ export const resolve = (
         const value = evaluate(ast, renderInfo);
         if (typeof value === 'string') return value; // error message
 
-        if (typeof value === 'number' || window.moment.isMoment(value)) {
+        if (typeof value === 'number' || getMoment(moment).isMoment(value)) {
           const format =
             typeof match.groups.format !== 'undefined'
               ? match.groups.format

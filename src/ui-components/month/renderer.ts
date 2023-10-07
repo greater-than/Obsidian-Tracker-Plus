@@ -3,6 +3,7 @@ import { MonthInfo } from '../../models/month';
 import { RenderInfo } from '../../models/render-info';
 import { ChartElements } from '../../models/types';
 import { DateTimeUtils } from '../../utils';
+import { TMoment, getMoment } from '../../utils/date-time.utils';
 import {
   createAreas,
   renderMonthDays,
@@ -14,7 +15,8 @@ import {
 export const renderMonth = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  component: MonthInfo
+  component: MonthInfo,
+  moment?: TMoment
 ): string => {
   // console.log("renderMonth");
   // console.log(renderInfo);
@@ -53,7 +55,7 @@ export const renderMonth = (
       renderInfo.dateFormat
     );
     if (!monthDate) {
-      const initMonth = window.moment(component.initMonth, 'YYYY-MM', true);
+      const initMonth = getMoment(moment)(component.initMonth, 'YYYY-MM', true);
       // console.log(initMonth);
       if (initMonth.isValid()) {
         monthDate = initMonth;
