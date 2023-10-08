@@ -1,9 +1,9 @@
-name: Release Obsidian TrackerGT plugin
+name: Release Obsidian Tracker+ plugin
 
 on:
   push:
     tags:
-      - "*"
+      - '*'
 
 jobs:
   build:
@@ -16,7 +16,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3.8.1
         with:
-          node-version: "18.x"
+          node-version: '18.x'
 
       - name: Build plugin
         run: |
