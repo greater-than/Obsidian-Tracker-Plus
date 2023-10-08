@@ -71,7 +71,7 @@ export const createAreas = (
     .attr('id', 'graphArea')
     .attr(
       'transform',
-      'translate(' + renderInfo.margin.left + ',' + renderInfo.margin.top + ')'
+      `translate(${renderInfo.margin.left}, ${renderInfo.margin.top})`
     )
     .attr('width', renderInfo.dataAreaSize.width + renderInfo.margin.right)
     .attr('height', renderInfo.dataAreaSize.height + renderInfo.margin.bottom);
@@ -111,11 +111,8 @@ export const renderTitle = (
     .attr('id', 'title')
     .attr(
       'transform',
-      'translate(' +
-        renderInfo.dataAreaSize.width / 2 +
-        ',' +
-        titleSize.height / 2 +
-        ')'
+      `translate(
+        ${renderInfo.dataAreaSize.width / 2}, ${titleSize.height / 2})`
     )
     .attr('height', titleSize.height) // for later use
     .attr('class', 'tracker-title');
@@ -235,7 +232,7 @@ export const renderLegend = (
   const legend = elements.graphArea
     .append('g')
     .attr('id', 'legend')
-    .attr('transform', 'translate(' + legendX + ',' + legendY + ')');
+    .attr('transform', `translate(${legendX}, ${legendY})`);
   // console.log('legendX: %d, legendY: %d', legendX, legendY);
   const legendBg = legend
     .append('rect')
@@ -420,12 +417,9 @@ export const renderPie = (
 
   const sectorsGroup = elements.dataArea.append('g');
   sectorsGroup.attr('transform', () => {
-    const strTranslate =
-      'translate(' +
-      renderInfo.dataAreaSize.width * 0.5 +
-      ',' +
-      renderInfo.dataAreaSize.height * 0.5 +
-      ')';
+    const strTranslate = `translate(${renderInfo.dataAreaSize.width * 0.5}, ${
+      renderInfo.dataAreaSize.height * 0.5
+    })`;
 
     return strTranslate;
   });
@@ -450,19 +444,14 @@ export const renderPie = (
   sectors
     .append('path')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .attr('fill', (_d: any, i: number) => {
-      return colorScale(i.toString());
-    })
+    .attr('fill', (_d: any, i: number) => colorScale(i.toString()))
     .attr('d', arc);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isLabelHidden = (arcObj: any) => {
     // console.log(`start/end: ${arcObj.startAngle}/${arcObj.endAngle}`);
     const fraction = (arcObj.endAngle - arcObj.startAngle) / (2 * Math.PI);
-    if (fraction < hideLabelLessThan) {
-      return true;
-    }
-    return false;
+    return fraction < hideLabelLessThan ? true : false;
   };
 
   // label elements
@@ -472,16 +461,12 @@ export const renderPie = (
     .enter()
     .append('text')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .text((arcObj: any, i: number) => {
-      if (isLabelHidden(arcObj)) {
-        return '';
-      }
-      return labels[i];
-    })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .attr('transform', (d: any) => {
-      return 'translate(' + arc.centroid(d)[0] + ',' + arc.centroid(d)[1] + ')';
-    })
+    .text((arcObj: any, i: number) => (isLabelHidden(arcObj) ? '' : labels[i]))
+    .attr(
+      'transform',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (d: any) => `translate(${arc.centroid(d)[0]}, ${arc.centroid(d)[1]})`
+    )
     .style('text-anchor', 'middle')
     .attr('class', 'tracker-pie-label');
 
@@ -499,10 +484,7 @@ export const renderPie = (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .text((arcObj: any, i: number) => {
       if (showExtLabelOnlyIfNoLabel) {
-        if (labels[i] === '' || isLabelHidden(arcObj)) {
-          return extLabels[i];
-        }
-        return '';
+        return labels[i] === '' || isLabelHidden(arcObj) ? extLabels[i] : '';
       } else {
         return extLabels[i];
       }
@@ -515,7 +497,7 @@ export const renderPie = (
       posLabel[0] =
         (radius * 0.99 - extLabelSizes[i].width) *
         (midAngle < Math.PI ? 1 : -1);
-      return 'translate(' + posLabel[0] + ',' + posLabel[1] + ')';
+      return `translate(${posLabel[0]}, ${posLabel[1]})`;
     })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .style('text-anchor', (arcObj: any) => {

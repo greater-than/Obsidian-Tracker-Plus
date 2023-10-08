@@ -131,7 +131,7 @@ export const createAreas = (
     .attr('id', 'graphArea')
     .attr(
       'transform',
-      'translate(' + renderInfo.margin.left + ',' + renderInfo.margin.top + ')'
+      `translate(${renderInfo.margin.left}, ${renderInfo.margin.top})`
     )
     .attr('width', renderInfo.dataAreaSize.width + renderInfo.margin.right)
     .attr('height', renderInfo.dataAreaSize.height + renderInfo.margin.bottom);
@@ -234,10 +234,7 @@ export const renderMonthHeader = (
     .append('text')
     .text(headerMonthText) // pivot at center
     .attr('id', 'titleMonth')
-    .attr(
-      'transform',
-      'translate(' + cellSize / 4 + ',' + headerMonthSize.height + ')'
-    )
+    .attr('transform', `translate(${cellSize / 4}, ${headerMonthSize.height})`)
     .attr('class', 'tracker-month-header-month')
     .style('cursor', 'default')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
@@ -265,11 +262,7 @@ export const renderMonthHeader = (
     .attr('id', 'titleYear')
     .attr(
       'transform',
-      'translate(' +
-        cellSize / 4 +
-        ',' +
-        (headerHeight + headerYearSize.height) +
-        ')'
+      `translate(${cellSize / 4}, ${headerHeight + headerYearSize.height})`
     )
     .attr('class', 'tracker-month-header-year')
     .style('cursor', 'default')
@@ -299,7 +292,7 @@ export const renderMonthHeader = (
       .text(datasetName)
       .attr(
         'transform',
-        'translate(' + 3.5 * cellSize + ',' + datasetNameSize.height + ')'
+        `translate(${3.5 * cellSize}, ${datasetNameSize.height})`
       )
       .attr('class', 'tracker-month-title-rotator')
       .style('cursor', 'pointer')
@@ -328,11 +321,9 @@ export const renderMonthHeader = (
     .attr('class', 'tracker-month-title-monitor')
     .attr(
       'transform',
-      'translate(' +
-        3.5 * cellSize +
-        ',' +
-        (datasetNameSize.height + monitorTextSize.height) +
-        ')'
+      `translate(${3.5 * cellSize}, ${
+        datasetNameSize.height + monitorTextSize.height
+      })`
     )
     .style('cursor', 'pointer')
     .style('fill', component.selectedRingColor);
@@ -349,16 +340,11 @@ export const renderMonthHeader = (
     .attr('id', 'arrowLeft')
     .attr(
       'transform',
-      'translate(' +
-        5.5 * cellSize +
-        ',' +
-        (headerHeight / 2 + arrowSize.height / 2) +
-        ')'
+      `translate(${5.5 * cellSize}, ${headerHeight / 2 + arrowSize.height / 2})`
     )
     .attr('class', 'tracker-month-title-arrow')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
-      // console.log("left arrow clicked");
       clearSelection(elements, component);
       component.selectedDate = '';
       const prevMonthDate = curMonthDate.clone().add(-1, 'month');
@@ -373,18 +359,12 @@ export const renderMonthHeader = (
     .attr('id', 'arrowLeft')
     .attr(
       'transform',
-      'translate(' +
-        6.5 * cellSize +
-        ',' +
-        (headerHeight / 2 + arrowSize.height / 2) +
-        ')'
+      `translate(${6.5 * cellSize}, ${headerHeight / 2 + arrowSize.height / 2})`
     )
     .attr('class', 'tracker-month-title-arrow')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
-      // console.log("right arrow clicked");
       clearSelection(elements, component);
-
       const nextMonthDate = curMonthDate.clone().add(1, 'month');
       refresh(canvas, elements, renderInfo, component, nextMonthDate);
     })
@@ -397,11 +377,7 @@ export const renderMonthHeader = (
     .attr('id', 'arrowToday')
     .attr(
       'transform',
-      'translate(' +
-        6 * cellSize +
-        ',' +
-        (headerHeight / 2 + arrowSize.height / 2) +
-        ')'
+      `translate(${6 * cellSize}, ${headerHeight / 2 + arrowSize.height / 2})`
     )
     .attr('class', 'tracker-month-title-arrow')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
@@ -434,12 +410,9 @@ export const renderMonthHeader = (
       return n;
     })
     .attr('transform', (_n: string, i: number) => {
-      const strTranslate =
-        'translate(' +
-        (i + 0.5) * cellSize +
-        ',' +
-        (headerHeight + weekdayNameSize.height) +
-        ')';
+      const strTranslate = `translate(${(i + 0.5) * cellSize}, ${
+        headerHeight + weekdayNameSize.height
+      })`;
       return strTranslate;
     })
     .attr('class', 'tracker-month-weekday')
@@ -752,23 +725,14 @@ export function renderMonthDays(
     // console.log(streakColor);
     elements.dataArea
       .selectAll('streakIn')
-      .data(
-        daysInMonthView.filter((d: DayInfo) => {
-          return d.streakIn;
-        })
-      )
+      .data(daysInMonthView.filter((d: DayInfo) => d.streakIn))
       .enter()
       .append('rect')
       // .attr("id", (d: DayInfo) => {
       //     return "in" + d.date.format("YYYY-MM-DD");
       // })
-      .attr('x', (d: DayInfo) => {
-        const x = scale(d.col) - dotRadius - streakWidth;
-        return x;
-      })
-      .attr('y', (d: DayInfo) => {
-        return scale(d.row) - streakHeight / 2;
-      })
+      .attr('x', (d: DayInfo) => scale(d.col) - dotRadius - streakWidth)
+      .attr('y', (d: DayInfo) => scale(d.row) - streakHeight / 2)
       .attr('width', streakWidth)
       .attr('height', streakHeight)
       .style('fill', (d: DayInfo) => {
@@ -788,60 +752,38 @@ export function renderMonthDays(
         return 'none';
       })
       .style('opacity', (d: DayInfo) => {
-        if (
-          d.isOutOfDataRange ||
+        return d.isOutOfDataRange ||
           (component.dimNotInMonth && !d.isInThisMonth)
-        ) {
-          return 0.2;
-        }
-        return 1;
+          ? 0.2
+          : 1;
       });
 
     elements.dataArea
       .selectAll('streakOut')
-      .data(
-        daysInMonthView.filter((d: DayInfo) => {
-          return d.streakOut;
-        })
-      )
+      .data(daysInMonthView.filter((d: DayInfo) => d.streakOut))
       .enter()
       .append('rect')
       // .attr("id", (d: DayInfo) => {
       //     return "out" + d.date.format("YYYY-MM-DD");
       // })
-      .attr('x', (d: DayInfo) => {
-        const x = scale(d.col) + dotRadius;
-        return x;
-      })
-      .attr('y', (d: DayInfo) => {
-        return scale(d.row) - streakHeight / 2;
-      })
+      .attr('x', (d: DayInfo) => scale(d.col) + dotRadius)
+      .attr('y', (d: DayInfo) => scale(d.row) - streakHeight / 2)
       .attr('width', streakWidth)
       .attr('height', streakHeight)
       .style('fill', (d: DayInfo) => {
         if (d.showCircle) {
-          if (!component.circleColorByValue) {
-            return streakColor;
-          }
-          if (d.scaledValue !== null) {
-            return d3.interpolateLab(
-              'white',
-              streakColor
-            )(d.scaledValue * 0.8 + 0.2);
-          } else {
-            return 'none';
-          }
+          if (!component.circleColorByValue) return streakColor;
+          return d.scaledValue !== null
+            ? d3.interpolateLab('white', streakColor)(d.scaledValue * 0.8 + 0.2)
+            : 'none';
         }
         return 'none';
       })
       .style('opacity', (d: DayInfo) => {
-        if (
-          d.isOutOfDataRange ||
+        return d.isOutOfDataRange ||
           (component.dimNotInMonth && !d.isInThisMonth)
-        ) {
-          return 0.2;
-        }
-        return 1;
+          ? 0.2
+          : 1;
       });
   }
 
@@ -904,28 +846,18 @@ export function renderMonthDays(
   if (mode === 'circle' && component.showTodayRing) {
     const todayRings = elements.dataArea
       .selectAll('todayRing')
-      .data(
-        daysInMonthView.filter((d: DayInfo) => {
-          return d.date === today;
-        })
-      )
+      .data(daysInMonthView.filter((d: DayInfo) => d.date === today))
       .enter()
       .append('circle')
       .attr('r', dotRadius * 0.9)
-      .attr('cx', (d: DayInfo) => {
-        return scale(d.col);
-      })
-      .attr('cy', (d: DayInfo) => {
-        return scale(d.row);
-      })
+      .attr('cx', (d: DayInfo) => scale(d.col))
+      .attr('cy', (d: DayInfo) => scale(d.row))
       .attr('class', 'tracker-month-today-circle') // stroke not works??
       .style('cursor', 'default');
 
-    if (component.todayRingColor !== '') {
-      todayRings.style('stroke', component.todayRingColor);
-    } else {
-      todayRings.style('stroke', 'white');
-    }
+    component.todayRingColor !== ''
+      ? todayRings.style('stroke', component.todayRingColor)
+      : todayRings.style('stroke', 'white');
   }
 
   // selected rings
@@ -936,15 +868,9 @@ export function renderMonthDays(
       .enter()
       .append('circle')
       .attr('r', dotRadius)
-      .attr('cx', (d: DayInfo) => {
-        return scale(d.col);
-      })
-      .attr('cy', (d: DayInfo) => {
-        return scale(d.row);
-      })
-      .attr('id', (d: DayInfo) => {
-        return 'tracker-selected-circle-' + d.date;
-      })
+      .attr('cx', (d: DayInfo) => scale(d.col))
+      .attr('cy', (d: DayInfo) => scale(d.row))
+      .attr('id', (d: DayInfo) => 'tracker-selected-circle-' + d.date)
       .attr('class', 'tracker-month-selected-circle') // stroke not works??
       .style('cursor', 'default')
       .style('stroke', 'none');
@@ -956,21 +882,16 @@ export function renderMonthDays(
     .data(daysInMonthView)
     .enter()
     .append('text')
-    .text((d: DayInfo) => {
-      return d.dayInMonth.toString();
-    })
+    .text((d: DayInfo) => d.dayInMonth.toString())
     .attr('transform', (d: DayInfo) => {
       const transX = scale(d.col);
       const transY = scale(d.row) + maxDayTextSize.height / 4;
-      const strTranslate = 'translate(' + transX + ',' + transY + ')';
-
-      return strTranslate;
+      return `translate(${transX}, ${transY})`;
     })
     .style('fill-opacity', (d: DayInfo) => {
-      if (d.isOutOfDataRange || (component.dimNotInMonth && !d.isInThisMonth)) {
-        return 0.2;
-      }
-      return 1;
+      return d.isOutOfDataRange || (component.dimNotInMonth && !d.isInThisMonth)
+        ? 0.2
+        : 1;
     })
     .attr('date', (d: DayInfo) => {
       return d.date;
@@ -1019,18 +940,12 @@ export function renderMonthDays(
       .data(daysInMonthView)
       .enter()
       .append('text')
-      .text((d: DayInfo) => {
-        return d.annotation;
-      })
+      .text((d: DayInfo) => d.annotation)
       .attr('transform', (d: DayInfo) => {
         const transX = scale(d.col);
         let transY = scale(d.row) + maxDayTextSize.height / 4;
-        if (d.annotation) {
-          transY += dotRadius;
-        }
-        const strTranslate = 'translate(' + transX + ',' + transY + ')';
-
-        return strTranslate;
+        if (d.annotation) transY += dotRadius;
+        return `translate(${transX}, ${transY})`;
       })
       .attr('class', 'tracker-month-annotation');
   }

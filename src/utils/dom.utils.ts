@@ -16,10 +16,6 @@ export const moveArea = (area: any, shiftX: number, shiftY: number): void => {
   const trans = new Transform(area.attr('transform'));
   area.attr(
     'transform',
-    'translate(' +
-      (trans.translateX + shiftX) +
-      ',' +
-      (trans.translateY + shiftY) +
-      ')'
+    `translate(${trans.translateX + shiftX}, ${trans.translateY + shiftY})`
   );
 };

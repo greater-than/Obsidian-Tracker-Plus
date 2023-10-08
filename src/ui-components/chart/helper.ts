@@ -206,7 +206,6 @@ export const renderXAxis = (
   renderInfo: RenderInfo,
   component: BaseChart
 ): void => {
-  // console.log("renderXAxis");
   if (!renderInfo || !component) return;
 
   const datasets = renderInfo.datasets;
@@ -244,7 +243,7 @@ export const renderXAxis = (
   const xAxis = elements.dataArea // axis includes ticks
     .append('g')
     .attr('id', 'xAxis')
-    .attr('transform', 'translate(0,' + renderInfo.dataAreaSize.height + ')') // relative to graphArea
+    .attr('transform', `translate(0, ${renderInfo.dataAreaSize.height})`) // relative to graphArea
     .call(xAxisGen)
     .attr('class', 'tracker-axis');
   if (component.xAxisColor) {
@@ -272,11 +271,9 @@ export const renderXAxis = (
     .text(component.xAxisLabel)
     .attr(
       'transform',
-      'translate(' +
-        renderInfo.dataAreaSize.width / 2 +
-        ',' +
-        (tickLength + tickLabelHeight) +
-        ')'
+      `translate(${renderInfo.dataAreaSize.width / 2}, ${
+        tickLength + tickLabelHeight
+      })`
     )
     .attr('class', 'tracker-axis-label');
   if (component.xAxisLabelColor) {
@@ -298,10 +295,6 @@ export const renderYAxis = (
   yAxisLocation: string,
   datasetIds: Array<number>
 ): string => {
-  // console.log("renderYAxis")
-  // console.log(datasets);
-  // console.log(renderInfo);
-  // console.log(datasetIds);
   if (!renderInfo || !component) return;
 
   const datasets = renderInfo.datasets;
@@ -487,10 +480,7 @@ export const renderYAxis = (
     .call(yAxisGen)
     .attr('class', 'tracker-axis');
   if (yAxisLocation == 'right') {
-    yAxis.attr(
-      'transform',
-      'translate(' + renderInfo.dataAreaSize.width + ' ,0)'
-    );
+    yAxis.attr('transform', `translate(${renderInfo.dataAreaSize.width}, 0)`);
   }
   if (yAxisLocation === 'left') {
     elements['leftYAxis'] = yAxis;
@@ -529,7 +519,7 @@ export const renderYAxis = (
       }
     }
   }
-  // console.log(maxTickLabelWidth);
+
   if (yAxisUnitText !== '') {
     yAxisLabelText += ' (' + yAxisUnitText + ')';
   }
@@ -627,8 +617,6 @@ export const renderPoints = (
   dataset: Dataset,
   yAxisLocation: string
 ): void => {
-  // console.log(component);
-  // console.log(dataset);
   if (!renderInfo || !component) return;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -789,9 +777,6 @@ export const renderBar = (
   currBarSet: number,
   totalNumOfBarSets: number
 ): void => {
-  // console.log(dataset);
-  // console.log(barInfo);
-  // console.log("%d/%d", currBarSet, totalNumOfBarSets);
   if (!renderInfo || !component) return;
 
   const barGap = 1;
@@ -871,13 +856,8 @@ export const renderLegend = (
   renderInfo: RenderInfo,
   component: BaseChart
 ): void => {
-  // console.log(component.legendPosition);
-  // console.log(component.legendOrientation);
   // Get chart elements
   const svg = elements.svg;
-  // TODO Why is this here?
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const graphArea = elements.graphArea;
   const dataArea = elements.dataArea;
   const title = elements.title;
   const xAxis = elements.xAxis;
@@ -898,10 +878,11 @@ export const renderLegend = (
   if (rightYAxis) {
     rightYAxisWidth = parseFloat(rightYAxis.attr('width'));
   }
+
   // Get datasets
   const datasets = renderInfo.datasets;
   const xDatasetIds = datasets.getXDatasetIds();
-  // console.log(xDatasetIds);
+
   // Get names and their dimension
   const names = datasets.names; // xDataset name included
   const nameSizes = names.map((n) => {
@@ -938,11 +919,7 @@ export const renderLegend = (
       d3.sum(nameSizes, (s, i) => (xDatasetIds.includes(i) ? 0 : s.width));
     legendHeight = ySpacing + nameHeight;
   }
-  // console.log(
-  //     `maxName: ${maxName}, characterWidth: ${characterWidth}, maxNameWidth: ${maxNameWidth}`
-  // );
-  // console.log(`xSpacing:${xSpacing}, numNames: ${numNames}, markerWidth: ${markerWidth}`);
-  // console.log(`legendWidth: ${legendWidth}, legendHeight: ${legendHeight}`);
+
   // Calculate legendX and legendY
   let legendX = 0; // relative to graphArea
   let legendY = 0;
@@ -984,12 +961,11 @@ export const renderLegend = (
   } else {
     return;
   }
-  // console.log(`legendX: ${legendX}, legendY: ${legendY}`);
+
   const legend = elements.graphArea
     .append('g')
     .attr('id', 'legend')
-    .attr('transform', 'translate(' + legendX + ',' + legendY + ')');
-  // console.log('legendX: %d, legendY: %d', legendX, legendY);
+    .attr('transform', `translate(${legendX}, ${legendY})`);
   const legendBg = legend
     .append('rect')
     .attr('class', 'tracker-legend')
@@ -1284,11 +1260,7 @@ export const renderTitle = (
     .attr('id', 'title')
     .attr(
       'transform',
-      'translate(' +
-        renderInfo.dataAreaSize.width / 2 +
-        ',' +
-        titleSize.height / 2 +
-        ')'
+      `translate(${renderInfo.dataAreaSize.width / 2}, ${titleSize.height / 2})`
     )
     .attr('height', titleSize.height) // for later use
     .attr('class', 'tracker-title');
@@ -1360,7 +1332,7 @@ export const createAreas = (
     .attr('id', 'graphArea')
     .attr(
       'transform',
-      'translate(' + renderInfo.margin.left + ',' + renderInfo.margin.top + ')'
+      `translate(${renderInfo.margin.left}, ${renderInfo.margin.top})`
     )
     .attr('width', renderInfo.dataAreaSize.width + renderInfo.margin.right)
     .attr('height', renderInfo.dataAreaSize.height + renderInfo.margin.bottom);

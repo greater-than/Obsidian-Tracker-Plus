@@ -46,7 +46,7 @@ export const createAreas = (
     .attr('id', 'graphArea')
     .attr(
       'transform',
-      'translate(' + renderInfo.margin.left + ',' + renderInfo.margin.top + ')'
+      `translate(${renderInfo.margin.left}, ${renderInfo.margin.top})`
     )
     .attr('width', renderInfo.dataAreaSize.width + renderInfo.margin.right)
     .attr('height', renderInfo.dataAreaSize.height + renderInfo.margin.bottom);

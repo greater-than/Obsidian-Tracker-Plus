@@ -46,7 +46,7 @@ export const createAreas = (
     .attr('id', 'graphArea')
     .attr(
       'transform',
-      'translate(' + renderInfo.margin.left + ',' + renderInfo.margin.top + ')'
+      `translate(${renderInfo.margin.left}, ${renderInfo.margin.top})`
     )
     .attr('width', renderInfo.dataAreaSize.width + renderInfo.margin.right)
     .attr('height', renderInfo.dataAreaSize.height + renderInfo.margin.bottom);
@@ -268,7 +268,7 @@ export const renderAxis = (
     const axis = elements.dataArea
       .append('g')
       .attr('id', 'axis')
-      .attr('transform', 'translate(0,' + renderInfo.dataAreaSize.height + ')')
+      .attr(`transform', 'translate(0, ${renderInfo.dataAreaSize.height})`)
       .call(axisGen)
       .attr('class', 'tracker-axis');
     elements['axis'] = axis;
