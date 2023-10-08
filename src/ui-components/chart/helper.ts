@@ -18,7 +18,6 @@ export const getXTickValues = (
 ): [Array<Date>, d3.TimeInterval] => {
   // The input interval could be null,
   // generate tick values even if interval is null
-  // console.log(interval);
   let tickValues: Array<Date> = [];
   let tickInterval = null;
 
@@ -61,39 +60,22 @@ export const getXTickLabelFormat = (
   inTickLabelFormat: string,
   moment?: TMoment
 ): ((date: Date) => string) => {
-  if (inTickLabelFormat) {
-    const fnTickLabelFormat = (date: Date): string => {
-      return DateTimeUtils.dateToString(
-        getMoment(moment)(date),
-        inTickLabelFormat
-      );
-    };
-    return fnTickLabelFormat;
-  } else {
-    let tickLabelFormat = null;
-    const days = dates.length;
+  if (inTickLabelFormat)
+    return (date: Date): string =>
+      DateTimeUtils.dateToString(getMoment(moment)(date), inTickLabelFormat);
 
-    if (days <= 15) {
-      // number of ticks: 0-15
-      tickLabelFormat = d3.timeFormat('%y-%m-%d');
-    } else if (days <= 4 * 15) {
-      // number of ticks: 4-15
-      tickLabelFormat = d3.timeFormat('%y-%m-%d');
-    } else if (days <= 7 * 15) {
-      // number of ticks: 8-15
-      tickLabelFormat = d3.timeFormat('%y-%m-%d');
-    } else if (days <= 15 * 30) {
-      // number of ticks: 4-15
-      tickLabelFormat = d3.timeFormat('%y %b');
-    } else if (days <= 15 * 60) {
-      // number of ticks: 8-15
-      tickLabelFormat = d3.timeFormat('%y %b');
-    } else {
-      tickLabelFormat = d3.timeFormat('%Y');
-    }
-
-    return tickLabelFormat;
-  }
+  const { length: days } = dates;
+  return days <= 15
+    ? d3.timeFormat('%y-%m-%d')
+    : days <= 4 * 15
+    ? d3.timeFormat('%y-%m-%d')
+    : days <= 7 * 15
+    ? d3.timeFormat('%y-%m-%d')
+    : days <= 15 * 30
+    ? d3.timeFormat('%y %b')
+    : days <= 15 * 60
+    ? d3.timeFormat('%y %b')
+    : d3.timeFormat('%Y');
 };
 
 export const getYTickValues = (
@@ -105,8 +87,6 @@ export const getYTickValues = (
 ): number[] => {
   // The input interval could be null,
   // generate tick values for time values even if interval is null
-  // console.log(interval);
-  // console.log(isTimeValue);
   const absExtent = Math.abs(yUpper - yLower);
   let tickValues: Array<number> = [];
 
@@ -140,8 +120,7 @@ export const getYTickValues = (
     }
   }
 
-  if (tickValues.length === 0) return null;
-  return tickValues;
+  return tickValues.length === 0 ? null : tickValues;
 };
 
 export const getYTickLabelFormat = (
@@ -184,8 +163,6 @@ export const getYTickLabelFormat = (
         const dayStart = moment('00:00', 'HH:mm', true);
         const tickTime = dayStart.add(value, 'seconds');
         let format = tickTime.format('HH:mm');
-        // console.log(`yLower/yUpper: ${yLower}/${yUpper}`)
-        // console.log(`value/extent/inter:${value}/${absExtent}/${(value-yLower)/3600}`);
         // auto interleave if extent over 12 hours
         if (absExtent > 12 * 60 * 60) {
           const devHour = (value - yLower) / 3600;
@@ -208,26 +185,25 @@ export const renderXAxis = (
 ): void => {
   if (!renderInfo || !component) return;
 
-  const datasets = renderInfo.datasets;
+  const { datasets, dataAreaSize } = renderInfo;
+  const {
+    xAxisColor,
+    xAxisLabelColor,
+    xAxisTickInterval,
+    xAxisTickLabelFormat,
+  } = component;
+
   const xDomain = d3.extent(datasets.dates);
-  const xScale = d3
-    .scaleTime()
-    .domain(xDomain)
-    .range([0, renderInfo.dataAreaSize.width]);
+  const xScale = d3.scaleTime().domain(xDomain).range([0, dataAreaSize.width]);
   elements['xScale'] = xScale;
 
-  const tickIntervalInDuration = DateTimeUtils.parseDuration(
-    component.xAxisTickInterval
-  );
+  const tickIntervalInDuration = DateTimeUtils.parseDuration(xAxisTickInterval);
 
   const [tickValues, tickInterval] = getXTickValues(
     datasets.dates,
     tickIntervalInDuration
   );
-  const tickFormat = getXTickLabelFormat(
-    datasets.dates,
-    component.xAxisTickLabelFormat
-  );
+  const tickFormat = getXTickLabelFormat(datasets.dates, xAxisTickLabelFormat);
 
   const xAxisGen = d3.axisBottom(xScale);
 
@@ -243,12 +219,11 @@ export const renderXAxis = (
   const xAxis = elements.dataArea // axis includes ticks
     .append('g')
     .attr('id', 'xAxis')
-    .attr('transform', `translate(0, ${renderInfo.dataAreaSize.height})`) // relative to graphArea
+    .attr('transform', `translate(0, ${dataAreaSize.height})`) // relative to graphArea
     .call(xAxisGen)
     .attr('class', 'tracker-axis');
-  if (component.xAxisColor) {
-    xAxis.style('stroke', component.xAxisColor);
-  }
+  if (xAxisColor) xAxis.style('stroke', xAxisColor);
+
   elements['xAxis'] = xAxis;
 
   const textSize = ChartUtils.measureTextSize('99-99-99');
@@ -260,9 +235,7 @@ export const renderXAxis = (
     .attr('transform', 'rotate(-65)')
     .style('text-anchor', 'end')
     .attr('class', 'tracker-tick-label');
-  if (component.xAxisColor) {
-    xAxisTickLabels.style('fill', component.xAxisColor);
-  }
+  if (xAxisColor) xAxisTickLabels.style('fill', xAxisColor);
 
   const tickLength = 6;
   const tickLabelHeight = textSize.width * Math.sin((65 / 180) * Math.PI);
@@ -271,14 +244,10 @@ export const renderXAxis = (
     .text(component.xAxisLabel)
     .attr(
       'transform',
-      `translate(${renderInfo.dataAreaSize.width / 2}, ${
-        tickLength + tickLabelHeight
-      })`
+      `translate(${dataAreaSize.width / 2}, ${tickLength + tickLabelHeight})`
     )
     .attr('class', 'tracker-axis-label');
-  if (component.xAxisLabelColor) {
-    xAxisLabel.style('fill', component.xAxisLabelColor);
-  }
+  if (xAxisLabelColor) xAxisLabel.style('fill', xAxisLabelColor);
 
   // xAxis height
   xAxis.attr('height', tickLength + tickLabelHeight);
@@ -297,10 +266,9 @@ export const renderYAxis = (
 ): string => {
   if (!renderInfo || !component) return;
 
-  const datasets = renderInfo.datasets;
-  if (datasetIds.length === 0) {
-    return;
-  }
+  const { datasets, dataAreaSize } = renderInfo;
+
+  if (datasetIds.length === 0) return;
 
   if (yAxisLocation !== 'left' && yAxisLocation !== 'right') return;
 
@@ -329,8 +297,7 @@ export const renderYAxis = (
       }
     }
   }
-  // console.log(yMinOfDatasets);
-  // console.log(yMaxOfDatasets);
+
   let yMin = null;
   if (yAxisLocation === 'left') {
     yMin = component.yMin[0];
@@ -395,7 +362,7 @@ export const renderYAxis = (
   ) {
     domain = [yUpper, yLower];
   }
-  yScale.domain(domain).range([renderInfo.dataAreaSize.height, 0]);
+  yScale.domain(domain).range([dataAreaSize.height, 0]);
 
   if (yAxisLocation === 'left') {
     elements['leftYScale'] = yScale;
@@ -480,23 +447,16 @@ export const renderYAxis = (
     .call(yAxisGen)
     .attr('class', 'tracker-axis');
   if (yAxisLocation == 'right') {
-    yAxis.attr('transform', `translate(${renderInfo.dataAreaSize.width}, 0)`);
+    yAxis.attr('transform', `translate(${dataAreaSize.width}, 0)`);
   }
-  if (yAxisLocation === 'left') {
-    elements['leftYAxis'] = yAxis;
-  } else if (yAxisLocation === 'right') {
-    elements['rightYAxis'] = yAxis;
-  }
+  if (yAxisLocation === 'left') elements['leftYAxis'] = yAxis;
+  else if (yAxisLocation === 'right') elements['rightYAxis'] = yAxis;
 
   const yAxisLine = yAxis.selectAll('path');
-  if (yAxisColor) {
-    yAxisLine.style('stroke', yAxisColor);
-  }
+  if (yAxisColor) yAxisLine.style('stroke', yAxisColor);
 
   const yAxisTicks = yAxis.selectAll('line');
-  if (yAxisColor) {
-    yAxisTicks.style('stroke', yAxisColor);
-  }
+  if (yAxisColor) yAxisTicks.style('stroke', yAxisColor);
 
   const yAxisTickLabels = yAxis
     .selectAll('text')
@@ -508,7 +468,6 @@ export const renderYAxis = (
   // Get max tick label width
   let maxTickLabelWidth = 0;
   for (const label of yAxisTickLabels) {
-    // console.log(label.textContent);
     if (label.textContent) {
       const labelSize = ChartUtils.measureTextSize(
         label.textContent,
@@ -529,7 +488,7 @@ export const renderYAxis = (
     .append('text')
     .text(yAxisLabelText)
     .attr('transform', 'rotate(-90)')
-    .attr('x', (-1 * renderInfo.dataAreaSize.height) / 2)
+    .attr('x', (-1 * dataAreaSize.height) / 2)
     .attr('class', 'tracker-axis-label');
   if (yAxisLocation === 'left') {
     yAxisLabel.attr(
@@ -572,8 +531,6 @@ export const renderLine = (
   dataset: Dataset,
   yAxisLocation: string
 ): void => {
-  // console.log(dataset);
-  // console.log(renderInfo);
   if (!renderInfo || !component) return;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -621,11 +578,8 @@ export const renderPoints = (
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let yScale: any = null;
-  if (yAxisLocation === 'left') {
-    yScale = elements.leftYScale;
-  } else if (yAxisLocation === 'right') {
-    yScale = elements.rightYScale;
-  }
+  if (yAxisLocation === 'left') yScale = elements.leftYScale;
+  else if (yAxisLocation === 'right') yScale = elements.rightYScale;
 
   if (component.showPoint[dataset.id]) {
     const dots = elements.dataArea
@@ -710,7 +664,7 @@ export function renderTooltip(
       let labelValueText = 'value: ';
       const valueType = d3.select(this).attr('valueType');
       const strValue = d3.select(this).attr('value');
-      // strValue += y.toString();//debug
+
       if (valueType === 'Time') {
         const dayStart = getMoment(moment)('00:00', 'HH:mm', true);
         const tickTime = dayStart.add(parseFloat(strValue), 'seconds');
@@ -1157,10 +1111,9 @@ export const renderLegend = (
         .attr('cy', firstMarkerY)
         .attr('r', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          if ((component as LineChart).showPoint[i]) {
-            return (component as LineChart).pointSize[i];
-          }
-          return 0;
+          return (component as LineChart).showPoint[i]
+            ? (component as LineChart).pointSize[i]
+            : 0;
         })
         .style('fill', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
@@ -1170,11 +1123,7 @@ export const renderLegend = (
       // bars
       legend
         .selectAll('markers')
-        .data(
-          names.filter((n, i) => {
-            return !xDatasetIds.includes(i);
-          })
-        )
+        .data(names.filter((n, i) => !xDatasetIds.includes(i)))
         .enter()
         .append('rect')
         .attr('x', (name: string, i: number) => {
@@ -1246,8 +1195,8 @@ export const renderTitle = (
   // console.log("renderTitle")
   // under graphArea
   if (!renderInfo || !component) return;
-
   if (!component.title) return;
+
   const titleSize = ChartUtils.measureTextSize(
     component.title,
     'tracker-title'
@@ -1281,6 +1230,7 @@ export const setChartScale = (
   elements: ChartElements,
   renderInfo: RenderInfo
 ): void => {
+  const { fitPanelWidth, fixedScale } = renderInfo;
   const canvas = d3.select(_canvas);
   const svg = elements.svg;
   const svgWidth = parseFloat(svg.attr('width'));
@@ -1291,14 +1241,11 @@ export const setChartScale = (
     .attr('viewBox', `0 0 ${svgWidth} ${svgHeight}`)
     .attr('preserveAspectRatio', 'xMidYMid meet');
 
-  if (renderInfo.fitPanelWidth) {
+  if (fitPanelWidth) {
     canvas.style('width', '100%');
   } else {
-    canvas.style('width', (svgWidth * renderInfo.fixedScale).toString() + 'px');
-    canvas.style(
-      'height',
-      (svgHeight * renderInfo.fixedScale).toString() + 'px'
-    );
+    canvas.style('width', (svgWidth * fixedScale).toString() + 'px');
+    canvas.style('height', (svgHeight * fixedScale).toString() + 'px');
   }
 };
 
@@ -1308,42 +1255,31 @@ export const createAreas = (
 ): ChartElements => {
   const elements: ChartElements = {};
   // whole area for plotting, includes margins
+
+  const { dataAreaSize, margin } = renderInfo;
   const svg = d3
     .select(canvas)
     .append('svg')
     .attr('id', 'svg')
-    .attr(
-      'width',
-      renderInfo.dataAreaSize.width +
-        renderInfo.margin.left +
-        renderInfo.margin.right
-    )
-    .attr(
-      'height',
-      renderInfo.dataAreaSize.height +
-        renderInfo.margin.top +
-        renderInfo.margin.bottom
-    );
+    .attr('width', dataAreaSize.width + margin.left + margin.right)
+    .attr('height', dataAreaSize.height + margin.top + margin.bottom);
   elements['svg'] = svg;
 
   // graphArea, includes chartArea, title, legend
   const graphArea = svg
     .append('g')
     .attr('id', 'graphArea')
-    .attr(
-      'transform',
-      `translate(${renderInfo.margin.left}, ${renderInfo.margin.top})`
-    )
-    .attr('width', renderInfo.dataAreaSize.width + renderInfo.margin.right)
-    .attr('height', renderInfo.dataAreaSize.height + renderInfo.margin.bottom);
+    .attr('transform', `translate(${margin.left}, ${margin.top})`)
+    .attr('width', dataAreaSize.width + margin.right)
+    .attr('height', dataAreaSize.height + margin.bottom);
   elements['graphArea'] = graphArea;
 
   // dataArea, under graphArea, includes points, lines, xAxis, yAxis
   const dataArea = graphArea
     .append('g')
     .attr('id', 'dataArea')
-    .attr('width', renderInfo.dataAreaSize.width)
-    .attr('height', renderInfo.dataAreaSize.height);
+    .attr('width', dataAreaSize.width)
+    .attr('height', dataAreaSize.height);
   elements['dataArea'] = dataArea;
 
   return elements;

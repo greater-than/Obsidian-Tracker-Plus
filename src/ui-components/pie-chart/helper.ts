@@ -134,9 +134,6 @@ export const renderLegend = (
   renderInfo: RenderInfo,
   component: PieChart
 ): void => {
-  // console.log("renderLegend");
-  // console.log(piInfo.legendPosition);
-  // console.log(piInfo.legendOrientation);
   // Get chart elements
   const svg = elements.svg;
 
@@ -189,11 +186,7 @@ export const renderLegend = (
       d3.sum(nameSizes, (s, _i) => s.width);
     legendHeight = ySpacing + nameHeight;
   }
-  // console.log(
-  //     `maxName: ${maxName}, characterWidth: ${characterWidth}, maxNameWidth: ${maxNameWidth}`
-  // );
-  // console.log(`xSpacing:${xSpacing}, numNames: ${numNames}, markerWidth: ${markerWidth}`);
-  // console.log(`legendWidth: ${legendWidth}, legendHeight: ${legendHeight}`);
+
   // Calculate legendX and legendY
   let legendX = 0; // relative to graphArea
   let legendY = 0;
@@ -228,12 +221,12 @@ export const renderLegend = (
   } else {
     return;
   }
-  // console.log(`legendX: ${legendX}, legendY: ${legendY}`);
+
   const legend = elements.graphArea
     .append('g')
     .attr('id', 'legend')
     .attr('transform', `translate(${legendX}, ${legendY})`);
-  // console.log('legendX: %d, legendY: %d', legendX, legendY);
+
   const legendBg = legend
     .append('rect')
     .attr('class', 'tracker-legend')
@@ -249,7 +242,7 @@ export const renderLegend = (
   const markerRadius = 5;
   const firstMarkerX = xSpacing;
   const firstMarkerY = nameHeight;
-  const firstLabelX = firstMarkerX + xSpacing + markerWidth; // xSpacing + 2 * xSpacing
+  const firstLabelX = firstMarkerX + xSpacing + markerWidth;
   const firstLabelY = firstMarkerY;
 
   if (component.legendOrientation === 'vertical') {
@@ -345,8 +338,6 @@ export const renderPie = (
   renderInfo: RenderInfo,
   component: PieChart
 ): string => {
-  // console.log("renderPie");
-  // console.log(renderInfo);
   let errorMessage = '';
 
   const radius = renderInfo.dataAreaSize.width * 0.5;
@@ -367,12 +358,11 @@ export const renderPie = (
   if (errorMessage !== '') {
     return errorMessage;
   }
-  // console.log(values);
+
   // labels
   const labels: Array<string> = [];
   for (const strExpr of component.label) {
     const label = Resolver.resolveTemplate(strExpr, renderInfo);
-    // console.log(retLabel);
     if (label.startsWith('Error')) {
       errorMessage = label;
       break;
@@ -382,7 +372,7 @@ export const renderPie = (
   if (errorMessage !== '') {
     return errorMessage;
   }
-  // console.log(labels);
+
   // hideLabelLessThan
   const hideLabelLessThan = component.hideLabelLessThan;
 
@@ -404,12 +394,11 @@ export const renderPie = (
   if (errorMessage !== '') {
     return errorMessage;
   }
-  // console.log(extLabels);
+
   // extLabel sizes
   const extLabelSizes = extLabels.map((n) => {
     return ChartUtils.measureTextSize(n, 'tracker-pie-label');
   });
-  // console.log(extLabelSizes);
   const showExtLabelOnlyIfNoLabel = component.showExtLabelOnlyIfNoLabel;
 
   // scale
@@ -524,8 +513,6 @@ export const renderPie = (
     const posMiddle = hiddenArc.centroid(arcObj); // line break: we use the other arc generator that has been built only for that
     const posExtLabel = hiddenArc.centroid(arcObj); // Label position = almost the same as posB
 
-    // console.log(labels[i]);
-    // console.log(`label/middle/extLabel: ${posLabel}/${posMiddle}/${posExtLabel}`);
     let distMiddleToLabel = Math.sqrt(
       (posMiddle[0] - posLabel[0]) ** 2 + (posMiddle[1] - posLabel[1]) ** 2
     );
@@ -552,11 +539,9 @@ export const renderPie = (
       (posExtLabel[0] - posLabel[0]) ** 2 + (posExtLabel[1] - posLabel[1]) ** 2
     );
 
-    if (distMiddleToLabel > distExtLabelToLabel) {
-      // console.log("two points");
-      return [posLabel, posExtLabel];
-    }
-    return [posLabel, posMiddle, posExtLabel];
+    return distMiddleToLabel > distExtLabelToLabel
+      ? [posLabel, posExtLabel]
+      : [posLabel, posMiddle, posExtLabel];
   };
 
   // Add lines between sectors and external labels

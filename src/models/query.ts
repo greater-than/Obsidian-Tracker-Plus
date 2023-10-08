@@ -117,17 +117,15 @@ export class Query implements IQuery {
     this._separator = sep;
   }
 
-  public getSeparator(isForFrontmatterTags: boolean = false) {
-    if (this._separator === '') {
-      if (isForFrontmatterTags) {
-        return ',';
-      }
-      return '/';
-    }
-    return this._separator;
+  public getSeparator(isForFrontmatterTags: boolean = false): string {
+    return this._separator === ''
+      ? isForFrontmatterTags
+        ? ','
+        : '/'
+      : this._separator;
   }
 
-  public incrementTargets(num: number = 1) {
+  public incrementTargets(num: number = 1): void {
     this._numTargets = this._numTargets + num;
   }
 }
