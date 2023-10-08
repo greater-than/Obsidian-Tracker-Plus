@@ -2,7 +2,7 @@
 
 ## v1.11.0
 
-- Renamed to **TrackerGT** (GT: GreaterThan)
+- Renamed to **Tracker+**
 - Adds aspect ratio parameter for graphs. Thanks, [@woodworker](https://github.com/woodworker)
 - Support for inline dataview fields. Thanks, [@Laharah](https://github.com/Laharah)
 - Adds ability to track boolean properties. Thanks, [@bnjbvr](https://github.com/bnjbvr)
@@ -57,11 +57,11 @@
 
 ## v1.10.0
 
-- Add annotation mode for month view ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestCalendar.md))
-- Add parameters `xAxisTickInterval`, `yAxisTickInterval`, `xAxisTickLabelFormat` and `yAxisTickLabelFormat` for the line and bar chart ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestAxisIntervalAndFormat.md))
-- Allow using regular expression in parameter `dateFormatPrefix` and `dateFormatSuffix` ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestDateFormats.md))
-- Add parameters `file`, `specifiedFilesOnly`, `fileContainsLinkedFiles`, and `fileMultiplierAfterLink` to retrieve data from specified files ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestSpecifiedFiles.md))
-- Add a parameter `textValueMap` to convert texts or emojis to specified values ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestTextValueMap.md))
+- Add annotation mode for month view ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestCalendar.md))
+- Add parameters `xAxisTickInterval`, `yAxisTickInterval`, `xAxisTickLabelFormat` and `yAxisTickLabelFormat` for the line and bar chart ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestAxisIntervalAndFormat.md))
+- Allow using regular expression in parameter `dateFormatPrefix` and `dateFormatSuffix` ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestDateFormats.md))
+- Add parameters `file`, `specifiedFilesOnly`, `fileContainsLinkedFiles`, and `fileMultiplierAfterLink` to retrieve data from specified files ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestSpecifiedFiles.md))
+- Add a parameter `textValueMap` to convert texts or emojis to specified values ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestTextValueMap.md))
 - Fixed bugs
 - Enhanced error messages
 
@@ -77,9 +77,9 @@
 
 ## v1.9.0
 
-- Add a new output type `pie`, rendering a pie chart ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestPieChart.md))
-- Allow expressions (operators and functions) as data inputs for output type `summary`, `bullet`, and `pie` (examples: [expression](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestExpression.md), [summary](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestSummary.md), [bullet](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestBullet.md), [pie](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestPieChart.md))
-- Allow formatting evaluated expressions by a following format string ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestExpression.md))
+- Add a new output type `pie`, rendering a pie chart ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestPieChart.md))
+- Allow expressions (operators and functions) as data inputs for output type `summary`, `bullet`, and `pie` (examples: [expression](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestExpression.md), [summary](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestSummary.md), [bullet](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestBullet.md), [pie](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestPieChart.md))
+- Allow formatting evaluated expressions by a following format string ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestExpression.md))
 
 ## v1.8.2
 
@@ -91,33 +91,33 @@
 
 ## v1.8.0
 
-- Add a new `searchType` `task`, retrieving data from tasks ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestTask.md))
+- Add a new `searchType` `task`, retrieving data from tasks ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestTask.md))
 - Enhancement
-  - Month view ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestCalendar.md))
+  - Month view ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestCalendar.md))
     - Add parameter `circleColorByValue` to show color based on the value
     - Support multiple targets (dataset), change the dataset by clicking the header
     - Add a button (◦) to show current month
-  - Accept ISO-8601 date as `dateFormat` ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestDateFormats.md#iso-8601-date-format))
-  - Relative date input for `startDate` and `endDate` ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestDateFormats.md#relative-date-input-for-startdate-and-enddate))
+  - Accept ISO-8601 date as `dateFormat` ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestDateFormats.md#iso-8601-date-format))
+  - Relative date input for `startDate` and `endDate` ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestDateFormats.md#relative-date-input-for-startdate-and-enddate))
 - Fixed missing dvField values at the last line of files
 
 ## v1.7.0
 
-- Add a new output type 'month', rendering a month view for a given dataset ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestCalendar.md))
+- Add a new output type 'month', rendering a month view for a given dataset ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestCalendar.md))
 
 ## v1.6.1
 
-- Add new targets 'numWords', 'numChars', and 'numSentences' for input type 'fileMeta' ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestWordCounting.md))
+- Add new targets 'numWords', 'numChars', and 'numSentences' for input type 'fileMeta' ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestWordCounting.md))
 
 ## v1.6.0
 
-- Add a new input type 'fileMeta', getting meta data from a file ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestFileMeta.md))
-- Add a new output type 'bullet', rendering a bullet chart ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestBullet.md))
+- Add a new input type 'fileMeta', getting meta data from a file ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestFileMeta.md))
+- Add a new output type 'bullet', rendering a bullet chart ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestBullet.md))
 - Enhancement
-  - Accept tracking time values ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestTimeValues.md))
+  - Accept tracking time values ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestTimeValues.md))
   - Allow tracking nested values from front matter
-  - Allow using dataset with date values as xDataset ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestXDataset.md))
-  - Add more template variables ([examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestTemplateVariables.md))
+  - Allow using dataset with date values as xDataset ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestXDataset.md))
+  - Add more template variables ([examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestTemplateVariables.md))
   - Allow parsing date in wiki brackets
 - Fixed bugs
 

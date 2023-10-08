@@ -1,7 +1,7 @@
 {
-  "name": "tracker-gt",
+  "name": "tracker-plus",
   "version": "1.11.1",
-  "description": "A plugin tracks occurrences and numbers in your notes",
+  "description": "Obsidian plugin to track and visualize data from your notes.",
   "author": "greater-than",
   "license": "MIT",
   "keywords": [
