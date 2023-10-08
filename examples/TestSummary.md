@@ -23,4 +23,4 @@ summary:
 
 ## Using Expressions
 
-Please check [expression examples](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestExpression.md) for more examples.
+Please check [expression examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestExpression.md) for more examples.

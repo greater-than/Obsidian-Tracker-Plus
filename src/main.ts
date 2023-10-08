@@ -51,7 +51,7 @@ export default class Tracker extends Plugin {
   }
 
   async onload(): Promise<void> {
-    console.log('loading TrackerGT plugin');
+    console.log('loading Tracker+ plugin');
 
     await this.loadSettings();
 
@@ -100,7 +100,7 @@ export default class Tracker extends Plugin {
   }
 
   onunload(): void {
-    console.log('unloading TrackerGT plugin');
+    console.log('unloading Tracker+ plugin');
   }
 
   getFilesInFolder(

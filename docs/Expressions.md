@@ -24,7 +24,7 @@ If the resolved output of an expression is a string, we can assign a format stri
 
 For the number output, use '[Printf Format String](https://en.wikipedia.org/wiki/Printf_format_string)' for the format string. For the date output, use the date format string defined in [Moment.js](https://momentjscom.readthedocs.io/en/latest/moment/04-displaying/01-format/).
 
-The following tables show all the operators and functions available for now. Please make sure the input type and output type when you are combining them together. Examples could be found [here](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/examples/TestExpression.md). Requests for operators or functions are welcome.
+The following tables show all the operators and functions available for now. Please make sure the input type and output type when you are combining them together. Examples could be found [here](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestExpression.md). Requests for operators or functions are welcome.
 
 ## List of Operators
 

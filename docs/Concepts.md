@@ -2,7 +2,7 @@
 
 This plugin was designed to read code blocks in [YAML format](https://en.wikipedia.org/wiki/YAML). The key-value pairs in the code blocks tell the plugin what data to collect and how to represent the result.
 
-[Here](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/docs/InputParameters.md) are all the parameters (key-value pairs) defined in this plugin. They are used for collecting data, evaluating targets, data preprocessing, and rendering output.
+[Here](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/docs/InputParameters.md) are all the parameters (key-value pairs) defined in this plugin. They are used for collecting data, evaluating targets, data preprocessing, and rendering output.
 
 ### Collecting Data
 
@@ -12,7 +12,7 @@ Providing parameters `searchType` and `searchTarget` is the minimum requirement 
 
 Depends on the `searchType` and the `searchTarget` you provided, the evaluation of a target would be different. Simply speaking, you can track the occurrences of a target or the value attached/embedded in it.
 
-To see the detail about the target evaluation, please check the document [Target Evaluation](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/docs/TargetEvaluation.md).
+To see the detail about the target evaluation, please check the document [Target Evaluation](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/docs/TargetEvaluation.md).
 
 ### Rendering Output
 
@@ -24,7 +24,7 @@ With output type set to `line` or `bar`, Tracker plugin will generate a customiz
 
 #### Summary
 
-With the output type `summary`, a text block based on your '**template**' parameter will be created. You can use [expressions](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/docs/Expressions.md) like '{{sum()}}' or '{{maxStreak()}}' in the template parameter, to get a statistical summary of collected data.
+With the output type `summary`, a text block based on your '**template**' parameter will be created. You can use [expressions](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/docs/Expressions.md) like '{{sum()}}' or '{{maxStreak()}}' in the template parameter, to get a statistical summary of collected data.
 
 #### Bullet Graphs
 
@@ -40,4 +40,4 @@ Output type `pie` creates a pie chart. The `data` parameter should be applied fo
 
 ---
 
-Detailed description for all parameters of the output types can be found [here](https://github.com/greater-than/Obsidian-TrackerGT/blob/main/docs/InputParameters.md).
+Detailed description for all parameters of the output types can be found [here](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/docs/InputParameters.md).
