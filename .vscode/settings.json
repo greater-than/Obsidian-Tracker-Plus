@@ -18,8 +18,11 @@
     "codemirror",
     "dataview",
     "datetime",
+    "dvfield",
+    "filemeta",
     "frontmatter",
     "getFirstLinkpathDest",
+    "heatmaps",
     "jsep",
     "Laharah",
     "notdone",
@@ -27,6 +30,8 @@
     "obsidianmd",
     "onwarn",
     "pyrochlore",
-    "sprintf"
+    "sinsquare",
+    "sprintf",
+    "torantine"
   ]
 }

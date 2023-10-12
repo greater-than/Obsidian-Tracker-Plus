@@ -1,5 +1,5 @@
 import 'colors';
-import { footer, restoreEnv } from '../test-utils';
+import { footer, restoreEnv } from '../_utils';
 import { origEnv } from './global-setup';
 
 const globalTeardown = async (): Promise<void> => {

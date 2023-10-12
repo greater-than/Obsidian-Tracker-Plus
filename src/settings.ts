@@ -1,10 +1,6 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import Tracker from './main';
-
-export interface TrackerSettings {
-  folder: string;
-  dateFormat: string;
-}
+import { TrackerSettings } from './types';
 
 export const DEFAULT_SETTINGS: TrackerSettings = {
   folder: '/',
