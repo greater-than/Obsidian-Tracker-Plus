@@ -3,40 +3,40 @@ import { Dataset } from '../models/dataset';
 import { RenderInfo } from '../models/render-info';
 
 // Function accept datasetId as first argument
-type FnDatasetToValue = (
+type TDatasetToValue = (
   dataset: Dataset,
   renderInfo: RenderInfo
 ) => number | Moment | string;
 
-type FnDatasetToDataset = (
+type TDatasetToDataset = (
   dataset: Dataset,
   args: Array<number | Dataset>,
   renderInfo: RenderInfo
-) => Dataset | string;
+) => Dataset;
 
-type FnUnaryOp = (
+type TUnaryOperation = (
   u: number | Moment | Dataset
-) => number | Moment | Dataset | string;
+) => number | Moment | Dataset;
 
-type FnBinaryOp = (
+type TBinaryOperation = (
   l: number | Moment | Dataset,
   r: number | Moment | Dataset
-) => number | Moment | Dataset | string;
+) => number | Moment | Dataset;
 
 export interface IDatasetToValueMap {
-  [key: string]: FnDatasetToValue;
+  [key: string]: TDatasetToValue;
 }
 
 export interface IDatasetToDatasetMap {
-  [key: string]: FnDatasetToDataset;
+  [key: string]: TDatasetToDataset;
 }
 
 export interface IBinaryOperationMap {
-  [key: string]: FnBinaryOp;
+  [key: string]: TBinaryOperation;
 }
 
 export interface IMapUnaryOperationMap {
-  [key: string]: FnUnaryOp;
+  [key: string]: TUnaryOperation;
 }
 
 export interface IExprResolved {

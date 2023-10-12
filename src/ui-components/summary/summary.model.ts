@@ -1,5 +1,5 @@
-import { ComponentType } from './enums';
-import { IComponent } from './types';
+import { ComponentType } from '../../models/enums';
+import { IComponent } from '../../models/types';
 
 export class Summary implements IComponent {
   template: string;

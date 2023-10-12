@@ -1,7 +1,7 @@
 import { sprintf } from 'sprintf-js';
+import { TrackerError } from '../errors';
 import { RenderInfo } from '../models/render-info';
 import { DateTimeUtils } from '../utils';
-import { TMoment, getMoment } from '../utils/date-time.utils';
 import { resolve } from './helper';
 import { IExprResolved } from './types';
 import Moment = moment.Moment;
@@ -14,11 +14,9 @@ import Moment = moment.Moment;
  */
 export const resolveTemplate = (
   template: string,
-  renderInfo: RenderInfo,
-  moment?: TMoment
+  renderInfo: RenderInfo
 ): string => {
   const resolved = resolve(template, renderInfo);
-  if (typeof resolved === 'string') return resolved; // error message
 
   const expressions = resolved as Array<IExprResolved>;
 
@@ -32,7 +30,7 @@ export const resolveTemplate = (
       formatted = format
         ? sprintf('%' + format, value)
         : (formatted = value.toFixed(1));
-    } else if (getMoment(moment).isMoment(value)) {
+    } else if (window.moment.isMoment(value)) {
       formatted = format
         ? DateTimeUtils.dateToString(value, format)
         : DateTimeUtils.dateToString(value, renderInfo.dateFormat);
@@ -52,8 +50,7 @@ export const resolveTemplate = (
 export const resolveValue = (
   text: string,
   renderInfo: RenderInfo
-): number | Moment | string => {
-  // console.log(template);
+): number | Moment => {
   text = text.trim();
 
   // input is pure number
@@ -63,16 +60,11 @@ export const resolveValue = (
 
   // template
   const resolved = resolve(text, renderInfo);
-  if (typeof resolved === 'string') {
-    return resolved; // error message
-  }
+
   const exprMap = resolved as Array<IExprResolved>;
+  if (exprMap.length <= 0) throw new TrackerError('Failed to resolve values');
 
-  if (exprMap.length > 0) {
-    return exprMap[0].value; // only first value will be return
-  }
-
-  return 'Error: Failed to resolve values';
+  return exprMap[0].value; // only first value will be return
 };
 
 const Resolver = {

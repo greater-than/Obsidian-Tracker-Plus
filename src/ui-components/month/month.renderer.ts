@@ -1,29 +1,21 @@
 import { Moment } from 'moment';
-import { MonthInfo } from '../../models/month';
 import { RenderInfo } from '../../models/render-info';
-import { ChartElements } from '../../models/types';
 import { DateTimeUtils } from '../../utils';
-import { TMoment, getMoment } from '../../utils/date-time.utils';
+import { createElements } from '../shared';
 import {
-  createAreas,
   renderMonthDays,
   renderMonthHeader,
   setChartScale,
   toNextDataset,
-} from './helper';
+} from './month.helper';
+import { Month } from './month.model';
 
 export const renderMonth = (
-  canvas: HTMLElement,
+  container: HTMLElement,
   renderInfo: RenderInfo,
-  component: MonthInfo,
-  moment?: TMoment
+  component: Month
 ): string => {
-  // console.log("renderMonth");
-  // console.log(renderInfo);
-  // console.log(component);
-
-  // TODO Why check for renderMonth?
-  if (!renderInfo || !renderMonth) return;
+  if (!renderInfo) return;
 
   // dataset
 
@@ -37,16 +29,14 @@ export const renderMonth = (
       numAvailableDataset++;
     }
   }
-  if (numAvailableDataset === 0) {
-    return 'No available dataset found';
-  }
-  toNextDataset(renderInfo, component);
-  if (component.selectedDataset === null) {
-    return 'No available dataset found';
-  }
+  if (numAvailableDataset === 0) return 'No available dataset found';
 
-  let elements: ChartElements = {};
-  elements = createAreas(elements, canvas, renderInfo, component);
+  toNextDataset(renderInfo, component);
+  if (component.selectedDataset === null) return 'No available dataset found';
+
+  const elements = createElements(container, renderInfo, {
+    clearContents: true,
+  });
 
   let monthDate: Moment = null;
   if (component.initMonth) {
@@ -55,8 +45,7 @@ export const renderMonth = (
       renderInfo.dateFormat
     );
     if (!monthDate) {
-      const initMonth = getMoment(moment)(component.initMonth, 'YYYY-MM', true);
-      // console.log(initMonth);
+      const initMonth = window.moment(component.initMonth, 'YYYY-MM', true);
       if (initMonth.isValid()) {
         monthDate = initMonth;
       } else {
@@ -68,7 +57,7 @@ export const renderMonth = (
   }
   if (!monthDate) return;
 
-  renderMonthHeader(canvas, elements, renderInfo, component, monthDate);
-  renderMonthDays(canvas, elements, renderInfo, component, monthDate);
-  setChartScale(canvas, elements, renderInfo);
+  renderMonthHeader(container, elements, renderInfo, component, monthDate);
+  renderMonthDays(elements, renderInfo, component, monthDate);
+  setChartScale(container, elements, renderInfo);
 };

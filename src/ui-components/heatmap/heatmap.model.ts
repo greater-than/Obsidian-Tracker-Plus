@@ -1,5 +1,6 @@
-import { ComponentType } from './enums';
-import { IComponent } from './types';
+import { Orientation } from 'src/enums';
+import { ComponentType } from '../../models/enums';
+import { IComponent } from '../../models/types';
 
 export class Heatmap implements IComponent {
   dataset: string;
@@ -12,7 +13,7 @@ export class Heatmap implements IComponent {
   constructor() {
     this.dataset = '0';
     this.startWeekOn = 'Sun';
-    this.orientation = 'vertical';
+    this.orientation = Orientation.VERTICAL;
     this.yMin = null;
     this.yMax = null;
     this.color = null;

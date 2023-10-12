@@ -1,5 +1,4 @@
-import { TMoment, getMoment } from '../utils/date-time.utils';
-import { DataPoint } from './data-point';
+import { DataPoint } from '../ui-components/chart/data-point.model';
 import { ValueType } from './enums';
 import { Query } from './query';
 import { RenderInfo } from './render-info';
@@ -117,7 +116,6 @@ export class Dataset implements IterableIterator<DataPoint> {
 
   public setValue(date: Moment, value: number): void {
     const index = this._parent.getIndexOfDate(date);
-    // console.log(index);
 
     if (index <= 0 || index >= this.values.length) return;
 
@@ -230,26 +228,24 @@ export class Dataset implements IterableIterator<DataPoint> {
 }
 
 export class Datasets implements IterableIterator<Dataset> {
-  constructor(startDate: Moment, endDate: Moment, moment?: TMoment) {
+  constructor(startDate: Moment, endDate: Moment) {
     this._dates = [];
     this._datasets = [];
 
     const cData = startDate.creationData();
-    // console.log(cData);
     const dateFormat = cData.format.toString();
     for (
       let curDate = startDate.clone();
       curDate <= endDate;
       curDate.add(1, 'days')
     ) {
-      const newDate = getMoment(moment)(
+      const newDate = window.moment(
         curDate.format(dateFormat),
         dateFormat,
         true
       );
       this._dates.push(newDate);
     }
-    // console.log(this.dates);
   }
 
   private _dates: Moment[];

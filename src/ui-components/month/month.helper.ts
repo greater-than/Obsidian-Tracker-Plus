@@ -1,23 +1,22 @@
 import * as d3 from 'd3';
 import { ValueType } from '../../models/enums';
-import { MonthInfo } from '../../models/month';
 import { RenderInfo } from '../../models/render-info';
 import { ChartElements } from '../../models/types';
-import { ChartUtils, DateTimeUtils, DomUtils } from '../../utils';
-import { TMoment, getMoment } from '../../utils/date-time.utils';
+import { DateTimeUtils, DomUtils, UiUtils } from '../../utils';
+import { createElements } from '../shared';
+import { Month } from './month.model';
 import { DayInfo } from './types';
 import Moment = moment.Moment;
 
-let logToConsole = false;
 const RATIO_CELL_TO_TEXT = 2.8;
 const RATIO_DOT_TO_TEXT = 1.8;
 
 export const setChartScale = (
-  _canvas: HTMLElement,
+  container: HTMLElement,
   elements: ChartElements,
   renderInfo: RenderInfo
 ): void => {
-  const canvas = d3.select(_canvas);
+  const selection = d3.select(container);
   const svg = elements.svg;
   const svgWidth = parseFloat(svg.attr('width'));
   const svgHeight = parseFloat(svg.attr('height'));
@@ -28,10 +27,13 @@ export const setChartScale = (
     .attr('preserveAspectRatio', 'xMidYMid meet');
 
   if (renderInfo.fitPanelWidth) {
-    canvas.style('width', '100%');
+    selection.style('width', '100%');
   } else {
-    canvas.style('width', (svgWidth * renderInfo.fixedScale).toString() + 'px');
-    canvas.style(
+    selection.style(
+      'width',
+      (svgWidth * renderInfo.fixedScale).toString() + 'px'
+    );
+    selection.style(
       'height',
       (svgHeight * renderInfo.fixedScale).toString() + 'px'
     );
@@ -40,7 +42,7 @@ export const setChartScale = (
 
 export const toNextDataset = (
   renderInfo: RenderInfo,
-  component: MonthInfo
+  component: Month
 ): boolean => {
   const datasetIds = component.dataset;
   if (datasetIds.length === 0) return false; // false if selected dataset not changed
@@ -91,71 +93,9 @@ export const toNextDataset = (
   return false;
 };
 
-export const createAreas = (
-  elements: ChartElements,
-  canvas: HTMLElement,
-  renderInfo: RenderInfo,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _component: MonthInfo
-): ChartElements => {
-  // clean areas
-  d3.select(canvas).select('#svg').remove();
-  const props = Object.getOwnPropertyNames(elements);
-  for (let i = 0; i < props.length; i++) {
-    // d3.select(elements[props[i]]).remove();
-    delete elements[props[i]];
-  }
-  // console.log(elements);
-  // whole area for plotting, includes margins
-  const svg = d3
-    .select(canvas)
-    .append('svg')
-    .attr('id', 'svg')
-    .attr(
-      'width',
-      renderInfo.dataAreaSize.width +
-        renderInfo.margin.left +
-        renderInfo.margin.right
-    )
-    .attr(
-      'height',
-      renderInfo.dataAreaSize.height +
-        renderInfo.margin.top +
-        renderInfo.margin.bottom
-    );
-  elements['svg'] = svg;
-
-  // graphArea, includes chartArea, title, legend
-  const graphArea = svg
-    .append('g')
-    .attr('id', 'graphArea')
-    .attr(
-      'transform',
-      `translate(${renderInfo.margin.left}, ${renderInfo.margin.top})`
-    )
-    .attr('width', renderInfo.dataAreaSize.width + renderInfo.margin.right)
-    .attr('height', renderInfo.dataAreaSize.height + renderInfo.margin.bottom);
-  elements['graphArea'] = graphArea;
-
-  // dataArea, under graphArea, includes points, lines, xAxis, yAxis
-  const dataArea = graphArea
-    .append('g')
-    .attr('id', 'dataArea')
-    .attr('width', renderInfo.dataAreaSize.width)
-    .attr('height', renderInfo.dataAreaSize.height);
-  elements['dataArea'] = dataArea;
-
-  return elements;
-};
-
-export const clearSelection = (
-  elements: ChartElements,
-  component: MonthInfo
-) => {
+export const clearSelection = (elements: ChartElements, component: Month) => {
   const circles = elements.svg.selectAll('circle');
-  // console.log(circles);
   for (const circle of circles) {
-    // console.log(circle);
     const id = d3.select(circle).attr('id');
     if (id && id.startsWith('tracker-selected-circle-')) {
       d3.select(circle).style('stroke', 'none');
@@ -168,13 +108,12 @@ export const clearSelection = (
 };
 
 export const renderMonthHeader = (
-  canvas: HTMLElement,
+  container: HTMLElement,
   elements: ChartElements,
   renderInfo: RenderInfo,
-  component: MonthInfo,
-  curMonthDate: Moment
+  component: Month,
+  currMonthDate: Moment
 ): void => {
-  // console.log("renderMonthHeader")
   if (!renderInfo || !component) return;
 
   const curDatasetId = component.selectedDataset;
@@ -185,18 +124,15 @@ export const renderMonthHeader = (
 
   // TODO What are these for?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const curMonth = curMonthDate.month(); // 0~11
+  const curMonth = currMonthDate.month(); // 0~11
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const curDaysInMonth = curMonthDate.daysInMonth(); // 28~31
+  const curDaysInMonth = currMonthDate.daysInMonth(); // 28~31
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const curYear = curMonthDate.year();
+  const curYear = currMonthDate.year();
 
-  const maxDayTextSize = ChartUtils.measureTextSize(
-    '30',
-    'tracker-month-label'
-  );
+  const maxDayTextSize = UiUtils.getTextDimensions('30', 'tracker-month-label');
   const cellSize =
     Math.max(maxDayTextSize.width, maxDayTextSize.height) * RATIO_CELL_TO_TEXT;
 
@@ -204,13 +140,13 @@ export const renderMonthHeader = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const dotRadius = ((cellSize / RATIO_CELL_TO_TEXT) * RATIO_DOT_TO_TEXT) / 2;
 
-  const headerYearText = curMonthDate.format('YYYY');
-  const headerMonthText = curMonthDate.format('MMM');
-  const headerYearSize = ChartUtils.measureTextSize(
+  const headerYearText = currMonthDate.format('YYYY');
+  const headerMonthText = currMonthDate.format('MMM');
+  const headerYearSize = UiUtils.getTextDimensions(
     headerYearText,
     'tracker-month-header-year'
   );
-  const headerMonthSize = ChartUtils.measureTextSize(
+  const headerMonthSize = UiUtils.getTextDimensions(
     headerMonthText,
     'tracker-month-header-month'
   );
@@ -242,20 +178,15 @@ export const renderMonthHeader = (
       clearSelection(elements, component);
     });
 
-  if (headerMonthColor) {
-    headerMonth.style('fill', headerMonthColor);
-  }
+  if (headerMonthColor) headerMonth.style('fill', headerMonthColor);
+
   headerHeight += headerMonthSize.height;
 
   // header year
   let headerYearColor = null;
-  if (component.headerYearColor) {
-    headerYearColor = component.headerYearColor;
-  } else {
-    if (component.color) {
-      headerYearColor = component.color;
-    }
-  }
+  if (component.headerYearColor) headerYearColor = component.headerYearColor;
+  else if (component.color) headerYearColor = component.color;
+
   const headerYear = headerGroup
     .append('text')
     .text(headerYearText) // pivot at center
@@ -272,14 +203,12 @@ export const renderMonthHeader = (
       clearSelection(elements, component);
     });
 
-  if (headerYearColor) {
-    headerYear.style('fill', headerYearColor);
-  }
+  if (headerYearColor) headerYear.style('fill', headerYearColor);
 
   headerHeight += headerYearSize.height;
 
   // dataset rotator
-  const datasetNameSize = ChartUtils.measureTextSize(
+  const datasetNameSize = UiUtils.getTextDimensions(
     datasetName,
     'tracker-month-title-rotator'
   );
@@ -303,18 +232,18 @@ export const renderMonthHeader = (
           // clear circles
           clearSelection(elements, component);
 
-          refresh(canvas, elements, renderInfo, component, curMonthDate);
+          refresh(container, elements, renderInfo, component, currMonthDate);
         }
       });
-    elements['rotator'] = datasetRotator;
+    elements.rotator = datasetRotator;
   }
 
   // value monitor
-  const monitorTextSize = ChartUtils.measureTextSize(
+  const monitorTextSize = UiUtils.getTextDimensions(
     '0.0000',
     'tracker-month-title-monitor'
   );
-  const monitor = headerGroup
+  elements.monitor = headerGroup
     .append('text')
     .text('')
     .attr('id', 'monitor')
@@ -327,13 +256,9 @@ export const renderMonthHeader = (
     )
     .style('cursor', 'pointer')
     .style('fill', component.selectedRingColor);
-  elements['monitor'] = monitor;
 
   // arrow left
-  const arrowSize = ChartUtils.measureTextSize(
-    '<',
-    'tracker-month-title-arrow'
-  );
+  const arrowSize = UiUtils.getTextDimensions('<', 'tracker-month-title-arrow');
   headerGroup
     .append('text')
     .text('<') // pivot at center
@@ -347,8 +272,8 @@ export const renderMonthHeader = (
     .on('click', (_event: any) => {
       clearSelection(elements, component);
       component.selectedDate = '';
-      const prevMonthDate = curMonthDate.clone().add(-1, 'month');
-      refresh(canvas, elements, renderInfo, component, prevMonthDate);
+      const prevMonthDate = currMonthDate.clone().add(-1, 'month');
+      refresh(container, elements, renderInfo, component, prevMonthDate);
     })
     .style('cursor', 'pointer');
 
@@ -365,8 +290,8 @@ export const renderMonthHeader = (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
       clearSelection(elements, component);
-      const nextMonthDate = curMonthDate.clone().add(1, 'month');
-      refresh(canvas, elements, renderInfo, component, nextMonthDate);
+      const nextMonthDate = currMonthDate.clone().add(1, 'month');
+      refresh(container, elements, renderInfo, component, nextMonthDate);
     })
     .style('cursor', 'pointer');
 
@@ -382,11 +307,10 @@ export const renderMonthHeader = (
     .attr('class', 'tracker-month-title-arrow')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
-      // console.log("today arrow clicked");
       clearSelection(elements, component);
 
       const todayDate = DateTimeUtils.getDateToday(renderInfo.dateFormat);
-      refresh(canvas, elements, renderInfo, component, todayDate);
+      refresh(container, elements, renderInfo, component, todayDate);
     })
     .style('cursor', 'pointer');
 
@@ -397,7 +321,7 @@ export const renderMonthHeader = (
   if (component.startWeekOn.toLowerCase() === 'mon') {
     weekdayNames.push(weekdayNames.shift());
   }
-  const weekdayNameSize = ChartUtils.measureTextSize(
+  const weekdayNameSize = UiUtils.getTextDimensions(
     weekdayNames[0],
     'tracker-month-weekday'
   );
@@ -447,24 +371,18 @@ export const renderMonthHeader = (
   }
   headerHeight += dividingLineHeight;
 
-  headerGroup.attr('height', headerHeight);
-  elements['header'] = headerGroup;
+  elements.header = headerGroup.attr('height', headerHeight);
 
   // Move sibling areas
   DomUtils.moveArea(elements.dataArea, 0, headerHeight);
 };
 
 export function renderMonthDays(
-  _canvas: HTMLElement,
   elements: ChartElements,
   renderInfo: RenderInfo,
-  component: MonthInfo,
-  curMonthDate: Moment,
-  moment?: TMoment
+  component: Month,
+  curMonthDate: Moment
 ): string {
-  // console.log("renderMonthDays");
-  // console.log(renderInfo);
-  // console.log(component);
   if (!renderInfo || !component) return;
 
   const mode = component.mode;
@@ -476,7 +394,6 @@ export function renderMonthDays(
   if (curDatasetId === null) return;
   const dataset = renderInfo.datasets.getDataset(curDatasetId);
   if (!dataset) return;
-  // console.log(dataset);
   let curDatasetIndex = component.dataset.findIndex((id) => {
     return id === curDatasetId;
   });
@@ -490,10 +407,7 @@ export function renderMonthDays(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const curDaysInMonth = curMonthDate.daysInMonth(); // 28~31
 
-  const maxDayTextSize = ChartUtils.measureTextSize(
-    '30',
-    'tracker-month-label'
-  );
+  const maxDayTextSize = UiUtils.getTextDimensions('30', 'tracker-month-label');
   const cellSize =
     Math.max(maxDayTextSize.width, maxDayTextSize.height) * RATIO_CELL_TO_TEXT;
   const dotRadius = ((cellSize / RATIO_CELL_TO_TEXT) * RATIO_DOT_TO_TEXT) / 2;
@@ -509,12 +423,10 @@ export function renderMonthDays(
   if (component.yMax[curDatasetIndex] !== null) {
     yMax = component.yMax[curDatasetIndex];
   }
-  // console.log(`yMin:${yMin}, yMax:${yMax}`);
   let allowScaledValue = true;
   if (yMax === null || yMin === null || yMax <= yMin) {
     // scaledValue can not be calculated, do not use gradient color
     allowScaledValue = false;
-    // console.log("scaledValue not allowed");
   }
 
   // Start and end
@@ -530,8 +442,6 @@ export function renderMonthDays(
   }
   const dataStartDate = dataset.startDate;
   const dataEndDate = dataset.endDate;
-  // console.log(monthStartDate.format("YYYY-MM-DD"));
-  // console.log(startDate.format("YYYY-MM-DD"));
   // annotations
   const showAnnotation = component.showAnnotation;
   const annotations = component.annotation;
@@ -554,9 +464,6 @@ export function renderMonthDays(
       DateTimeUtils.dateToString(curDate, renderInfo.dateFormat),
       renderInfo.dateFormat
     );
-    if (curDate.format('YYYY-MM-DD') === '2021-09-13') {
-      logToConsole = false; // Change this to do debugging
-    }
 
     if (component.startWeekOn.toLowerCase() === 'mon') {
       indCol = curDate.day() - 1;
@@ -586,11 +493,6 @@ export function renderMonthDays(
     }
 
     const curValue = dataset.getValue(curDate);
-    if (logToConsole) {
-      console.log(dataset);
-      console.log(DateTimeUtils.dateToString(curDate, renderInfo.dateFormat));
-      console.log(curValue);
-    }
 
     // showCircle
     let showCircle = false;
@@ -620,11 +522,6 @@ export function renderMonthDays(
         scaledValue = (curValue - yMin) / (yMax - yMin);
       }
     }
-    if (logToConsole) {
-      console.log(yMin);
-      console.log(yMax);
-      console.log(scaledValue);
-    }
 
     // streakIn and streakOut
     const nextValue = dataset.getValue(curDate, 1);
@@ -640,13 +537,6 @@ export function renderMonthDays(
       if (nextValue !== null && nextValue > threshold) {
         streakOut = true;
       }
-    }
-    if (logToConsole) {
-      console.log(
-        `preValue: ${prevValue}, curValue: ${curValue}, nextValue: ${nextValue}`
-      );
-      console.log(component.threshold);
-      console.log(`streakIn: ${streakIn}, streakOut: ${streakOut}`);
     }
 
     let textAnnotation = '';
@@ -689,19 +579,8 @@ export function renderMonthDays(
     });
 
     ind++;
-
-    // Disable logging starts at the beginning of each loop
-    if (logToConsole) {
-      logToConsole = false;
-    }
   }
-  // console.log(daysInMonthView);
-  // console.log(daysInMonthView.filter((d: DayInfo) => {
-  //     return d.streakIn;
-  // }));
-  // console.log(daysInMonthView.filter((d: DayInfo) => {
-  //     return d.streakOut;
-  // }));
+
   // scale
   const totalDayBlockWidth = (indCol + 1) * cellSize;
 
@@ -722,7 +601,6 @@ export function renderMonthDays(
     } else if (component.color) {
       streakColor = component.color;
     }
-    // console.log(streakColor);
     elements.dataArea
       .selectAll('streakIn')
       .data(daysInMonthView.filter((d: DayInfo) => d.streakIn))
@@ -817,8 +695,6 @@ export function renderMonthDays(
               'white',
               circleColor
             )(d.scaledValue * 0.8 + 0.2);
-            // console.log(d.scaledValue);
-            // console.log(scaledColor);
             return scaledColor;
           } else {
             return 'none';
@@ -840,7 +716,7 @@ export function renderMonthDays(
 
   // today rings
   const today = DateTimeUtils.dateToString(
-    getMoment(moment)(),
+    window.moment(),
     renderInfo.dateFormat
   );
   if (mode === 'circle' && component.showTodayRing) {
@@ -922,7 +798,7 @@ export function renderMonthDays(
         const valueType = d3.select(this).attr('valueType');
         let valueText = '';
         if (valueType === 'Time') {
-          const dayStart = getMoment(moment)('00:00', 'HH:mm', true);
+          const dayStart = window.moment('00:00', 'HH:mm', true);
           const tickTime = dayStart.add(parseFloat(strValue), 'seconds');
           valueText = tickTime.format('HH:mm');
         } else {
@@ -972,19 +848,20 @@ export function renderMonthDays(
 }
 
 export const refresh = (
-  canvas: HTMLElement,
+  container: HTMLElement,
   elements: ChartElements,
   renderInfo: RenderInfo,
-  component: MonthInfo,
+  component: Month,
   curMonthDate: Moment
 ): void => {
-  // console.log("refresh");
-  // console.log(renderInfo);
   if (!renderInfo) return;
 
-  elements = createAreas(elements, canvas, renderInfo, component);
+  elements = createElements(container, renderInfo, {
+    elements,
+    clearContents: true,
+  });
 
   // render
-  renderMonthHeader(canvas, elements, renderInfo, component, curMonthDate);
-  renderMonthDays(canvas, elements, renderInfo, component, curMonthDate);
+  renderMonthHeader(container, elements, renderInfo, component, curMonthDate);
+  renderMonthDays(elements, renderInfo, component, curMonthDate);
 };

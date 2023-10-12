@@ -1,4 +1,15 @@
-import { BaseChart } from '../models/base-chart';
+import { Orientation } from 'src/enums';
+import {
+  EmptyArrayError,
+  InvalidInputError,
+  InvalidParameterError,
+  NoValidInputError,
+  Reason,
+  TooManyInputsError,
+  TrackerError,
+} from '../errors';
+import { SearchTypeValues, YAxisLocationValues } from '../models/enums';
+import { CartesianChart } from '../ui-components/chart/cartesian-chart.model';
 import { NumberUtils, StringUtils } from '../utils';
 
 /**
@@ -28,48 +39,31 @@ export const strToBool = (value: string): boolean | null => {
  * @param {string} searchType
  * @returns {boolean}
  */
-export const validateSearchType = (searchType: string): boolean => {
-  // TODO Refactor this using an array of valid search types
-  if (
-    searchType.toLowerCase() === 'tag' ||
-    searchType.toLowerCase() === 'text' ||
-    searchType.toLowerCase() === 'frontmatter' ||
-    searchType.toLowerCase() === 'wiki' ||
-    searchType.toLowerCase() === 'wiki.link' ||
-    searchType.toLowerCase() === 'wiki.display' ||
-    searchType.toLowerCase() === 'dvfield' ||
-    searchType.toLowerCase() === 'table' ||
-    searchType.toLowerCase() === 'filemeta' ||
-    searchType.toLowerCase() === 'task' ||
-    searchType.toLowerCase() === 'task.all' ||
-    searchType.toLowerCase() === 'task.done' ||
-    searchType.toLowerCase() === 'task.notdone'
-  ) {
-    return true;
-  }
-  return false;
-};
+export const isSearchTypeValid = (searchType: string): boolean =>
+  SearchTypeValues.includes(searchType);
 
-export const validateYAxisLocation = (location: string): boolean => {
-  return location === 'left' || location === 'right' || location === 'none'
-    ? true
-    : false;
-};
+/**
+ * Returns true if the y-axis location is valid
+ * @param {string} location
+ * @returns {boolean}
+ */
+export const isYAxisLocationValid = (location: string): boolean =>
+  YAxisLocationValues.includes(location);
 
 // TODO Why does this function exist?
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const validateColor = (_color: string): boolean => true;
+export const isColorValid = (_color: string): boolean => true;
 
-export const splitInputByComma = (input: string): string[] => {
+export const splitByComma = (input: string): string[] => {
   // Split string by ',' but not by '\,'
   // let splitValues = input.split(/(?<!\\),/); // --> lookbehind not support in Safari for now
   // TODO This seems overly complex
   const dummy = '::::::tracker::::::';
   const temp = input.split('\\,').join(dummy);
   const splitValues = temp.split(',');
-  for (let ind = 0; ind < splitValues.length; ind++) {
+  for (let ind = 0; ind < splitValues.length; ind++)
     splitValues[ind] = splitValues[ind].split(dummy).join(',');
-  }
+
   return splitValues;
 };
 
@@ -89,9 +83,8 @@ export const getBoolArrayFromInput = (
   numDataset: number,
   defaultValue: boolean,
   allowNoValidValue: boolean
-): Array<boolean> | string => {
+): Array<boolean> => {
   const array: Array<boolean> = [];
-  let errorMessage = '';
   let numValidValue = 0;
 
   while (numDataset > array.length) array.push(defaultValue);
@@ -100,14 +93,10 @@ export const getBoolArrayFromInput = (
     // all defaultValue
   } else if (typeof input === 'object' && input !== null) {
     if (Array.isArray(input)) {
-      if (input.length > numDataset) {
-        errorMessage = "Too many inputs for parameter '" + name + "'";
-        return errorMessage;
-      }
-      if (input.length === 0) {
-        errorMessage = 'Empty array not allowed for ' + name;
-        return errorMessage;
-      }
+      if (input.length > numDataset) throw new TooManyInputsError(name);
+
+      if (input.length === 0) throw new EmptyArrayError(name);
+
       for (let ind = 0; ind < array.length; ind++) {
         if (ind < input.length) {
           let curr = input[ind];
@@ -116,35 +105,25 @@ export const getBoolArrayFromInput = (
             curr = curr.trim();
             if (curr === '') {
               array[ind] = prev !== null ? prev : defaultValue;
-            } else {
-              errorMessage = 'Invalid inputs for ' + name;
-              break;
-            }
+            } else throw new InvalidInputError(name);
           } else if (typeof curr === 'boolean') {
             array[ind] = curr;
             numValidValue++;
           } else {
-            errorMessage = 'Invalid inputs for ' + name;
-            break;
+            throw new InvalidInputError(name);
           }
         } else {
           // Exceeds the length of input, use prev value
           const last = input[input.length - 1];
-          if (numValidValue > 0) {
-            array[ind] = last;
-          } else {
-            array[ind] = defaultValue;
-          }
+          array[ind] = numValidValue > 0 ? last : defaultValue;
         }
       }
     }
   } else if (typeof input === 'string') {
-    const splitValues = splitInputByComma(input);
+    const splitValues = splitByComma(input);
     if (splitValues.length > 1) {
-      if (splitValues.length > numDataset) {
-        errorMessage = "Too many inputs for parameter '" + name + "'";
-        return errorMessage;
-      }
+      if (splitValues.length > numDataset) throw new TooManyInputsError(name);
+
       for (let ind = 0; ind < array.length; ind++) {
         if (ind < splitValues.length) {
           const curr = splitValues[ind].trim();
@@ -154,13 +133,9 @@ export const getBoolArrayFromInput = (
             array[ind] = prev !== null ? prev : defaultValue;
           } else {
             const currBool = strToBool(curr);
-            if (currBool !== null) {
-              array[ind] = currBool;
-              numValidValue++;
-            } else {
-              errorMessage = 'Invalid inputs for ' + name;
-              break;
-            }
+            if (currBool === null) throw new InvalidInputError(name);
+            array[ind] = currBool;
+            numValidValue++;
           }
         } else {
           // Exceeds the length of input, use prev value
@@ -168,37 +143,23 @@ export const getBoolArrayFromInput = (
           array[ind] = numValidValue > 0 && last !== null ? last : defaultValue;
         }
       }
-    } else {
-      if (input === '') {
-        // all defaultValue
-      } else {
-        const inputBool = strToBool(input);
-        if (inputBool !== null) {
-          array[0] = inputBool;
-          numValidValue++;
-          for (let ind = 1; ind < array.length; ind++) {
-            array[ind] = inputBool;
-          }
-        } else {
-          errorMessage = 'Invalid inputs for ' + name;
-        }
-      }
+    } else if (input !== '') {
+      const inputBool = strToBool(input);
+      if (inputBool === null) throw new InvalidInputError(name);
+      array[0] = inputBool;
+      numValidValue++;
+      for (let ind = 1; ind < array.length; ind++) array[ind] = inputBool;
     }
   } else if (typeof input === 'boolean') {
     array[0] = input;
     numValidValue++;
-    for (let ind = 1; ind < array.length; ind++) {
-      array[ind] = input;
-    }
-  } else {
-    errorMessage = 'Invalid inputs for ' + name;
-  }
+    for (let ind = 1; ind < array.length; ind++) array[ind] = input;
+  } else throw new InvalidInputError(name);
 
-  if (!allowNoValidValue && numValidValue === 0) {
-    errorMessage = 'No valid input for ' + name;
-  }
+  if (!allowNoValidValue && numValidValue === 0)
+    throw new NoValidInputError(name);
 
-  return errorMessage === '' ? array : errorMessage;
+  return array;
 };
 
 export const getNumberArrayFromInput = (
@@ -208,10 +169,8 @@ export const getNumberArrayFromInput = (
   numDataset: number,
   defaultValue: number,
   allowNoValidValue: boolean
-): Array<number> | string => {
-  // console.log("getNumberArrayFromInput");
+): Array<number> => {
   const array: Array<number> = [];
-  let errorMessage = '';
   let numValidValue = 0;
 
   while (numDataset > array.length) {
@@ -222,54 +181,41 @@ export const getNumberArrayFromInput = (
     // all defaultValue
   } else if (typeof input === 'object' && input !== null) {
     if (Array.isArray(input)) {
-      if (input.length > numDataset) {
-        errorMessage = "Too many inputs for parameter '" + name + "'";
-        return errorMessage;
-      }
-      if (input.length === 0) {
-        errorMessage = 'Empty array not allowed for ' + name;
-        return errorMessage;
-      }
+      if (input.length > numDataset) throw new TooManyInputsError(name);
+      if (input.length === 0) throw new EmptyArrayError(name);
+
       for (let ind = 0; ind < array.length; ind++) {
-        if (ind < input.length) {
-          let curr = input[ind];
-          let prev = null;
-          if (ind > 0) {
-            prev = input[ind - 1].trim();
-          }
-          if (typeof curr === 'string') {
-            curr = curr.trim();
-            if (curr === '') {
-              if (prev !== null) {
-                array[ind] = prev;
-              } else {
-                array[ind] = defaultValue;
-              }
-            } else {
-              errorMessage = 'Invalid inputs for ' + name;
-              break;
-            }
-          } else if (typeof curr === 'number') {
-            array[ind] = curr;
-            numValidValue++;
-          } else {
-            errorMessage = 'Invalid inputs for ' + name;
-            break;
-          }
-        } else {
+        if (ind >= input.length) {
           // Exceeds the length of input, use prev value
           const last = input[input.length - 1];
           array[ind] = numValidValue > 0 ? last : defaultValue;
+          break;
         }
+        let curr = input[ind];
+        let prev = null;
+        if (ind > 0) {
+          prev = input[ind - 1].trim();
+        }
+        if (typeof curr === 'string') {
+          curr = curr.trim();
+          if (curr === '')
+            if (prev !== null) {
+              array[ind] = prev;
+            } else {
+              array[ind] = defaultValue;
+            }
+          else throw new InvalidInputError(name);
+        } else if (typeof curr === 'number') {
+          array[ind] = curr;
+          numValidValue++;
+        } else throw new InvalidInputError(name);
       }
     }
   } else if (typeof input === 'string') {
-    const splitValues = splitInputByComma(input);
+    const splitValues = splitByComma(input);
     if (splitValues.length > 1) {
-      if (splitValues.length > numDataset) {
-        errorMessage = "Too many inputs for parameter '" + name + "'";
-        return errorMessage;
-      }
+      if (splitValues.length > numDataset) throw new TooManyInputsError(name);
+
       for (let ind = 0; ind < array.length; ind++) {
         if (ind < splitValues.length) {
           const curr = splitValues[ind].trim();
@@ -283,14 +229,11 @@ export const getNumberArrayFromInput = (
             array[ind] =
               prev !== null && Number.isNumber(prev) ? prev : defaultValue;
           } else {
-            const currNum = NumberUtils.parseFloatFromAny(curr).value;
-            if (currNum !== null) {
-              array[ind] = currNum;
+            const value = NumberUtils.parseFloatFromAny(curr).value;
+            if (value !== null) {
+              array[ind] = value;
               numValidValue++;
-            } else {
-              errorMessage = 'Invalid inputs for ' + name;
-              break;
-            }
+            } else throw new InvalidInputError(name);
           }
         } else {
           // Exceeds the length of input, use prev value
@@ -300,40 +243,23 @@ export const getNumberArrayFromInput = (
           array[ind] = numValidValue > 0 && last !== null ? last : defaultValue;
         }
       }
-    } else {
-      if (input === '') {
-        // all defaultValue
-      } else {
-        const inputNum = NumberUtils.parseFloatFromAny(input).value;
-        if (inputNum !== null) {
-          array[0] = inputNum;
-          numValidValue++;
-          for (let ind = 1; ind < array.length; ind++) {
-            array[ind] = inputNum;
-          }
-        } else {
-          errorMessage = 'Invalid inputs for ' + name;
-        }
-      }
+    } else if (input !== '') {
+      const value = NumberUtils.parseFloatFromAny(input).value;
+      if (value === null) throw new InvalidInputError(name);
+
+      array[0] = value;
+      numValidValue++;
+      for (let ind = 1; ind < array.length; ind++) array[ind] = value;
     }
   } else if (typeof input === 'number') {
-    if (Number.isNumber(input)) {
-      array[0] = input;
-      numValidValue++;
-      for (let ind = 1; ind < array.length; ind++) {
-        array[ind] = input;
-      }
-    } else {
-      errorMessage = 'Invalid inputs for ' + name;
-    }
-  } else {
-    errorMessage = 'Invalid inputs for ' + name;
-  }
+    if (!Number.isNumber(input)) throw new InvalidInputError(name);
+    array[0] = input;
+    numValidValue++;
+    for (let ind = 1; ind < array.length; ind++) array[ind] = input;
+  } else throw new InvalidInputError(name);
 
   if (!allowNoValidValue && numValidValue === 0)
-    errorMessage = 'No valid input for ' + name;
-
-  if (errorMessage !== '') return errorMessage;
+    throw new NoValidInputError(name);
 
   return array;
 };
@@ -343,11 +269,8 @@ export const getStringFromInput = (
   input: any,
   defaultValue: string
 ): string => {
-  if (typeof input === 'string') {
-    return StringUtils.replaceImgTagByAlt(input);
-  } else if (typeof input === 'number') {
-    return input.toString();
-  }
+  if (typeof input === 'string') return StringUtils.replaceImgTagByAlt(input);
+  else if (typeof input === 'number') return input.toString();
   return defaultValue;
 };
 
@@ -362,166 +285,85 @@ export const getStringArrayFromInput = (
   // eslint-disable-next-line @typescript-eslint/ban-types
   validator: Function,
   allowNoValidValue: boolean
-): Array<string> | string => {
+): Array<string> => {
   const array: Array<string> = [];
-  let errorMessage = '';
   let numValidValue = 0;
 
-  while (numDataset > array.length) {
-    array.push(defaultValue);
-  }
+  while (numDataset > array.length) array.push(defaultValue);
 
   if (typeof input === 'undefined' || input === null) {
     // all defaultValue
   } else if (typeof input === 'object' && input !== null) {
     if (Array.isArray(input)) {
-      if (input.length > numDataset) {
-        errorMessage = "Too many inputs for parameter '" + name + "'";
-        return errorMessage;
-      }
-      if (input.length === 0) {
-        errorMessage = 'Empty array not allowed for ' + name;
-        return errorMessage;
-      }
+      if (input.length > numDataset) throw new TooManyInputsError(name);
+      if (input.length === 0) throw new EmptyArrayError(name);
+
       for (let ind = 0; ind < array.length; ind++) {
         if (ind < input.length) {
           let curr = input[ind];
-          let prev = null;
-          if (ind > 0) {
-            prev = input[ind - 1].trim();
-          }
+          const prev = ind > 0 ? input[ind - 1].trim() : null;
+
           if (typeof curr === 'string') {
             curr = curr.trim();
-            if (curr === '') {
-              if (prev !== null) {
-                array[ind] = prev;
-              } else {
-                array[ind] = defaultValue;
-              }
-            } else {
-              if (validator) {
-                if (validator(curr)) {
-                  array[ind] = curr;
-                  numValidValue++;
-                } else {
-                  errorMessage = 'Invalid inputs for ' + name;
-                  break;
-                }
-              } else {
-                array[ind] = curr;
-                numValidValue++;
-              }
+            if (curr === '') array[ind] = prev !== null ? prev : defaultValue;
+            else if (validator && !validator(curr))
+              throw new InvalidInputError(name);
+            else {
+              array[ind] = curr;
+              numValidValue++;
             }
-          } else {
-            errorMessage = 'Invalid inputs for ' + name;
-            break;
-          }
+          } else throw new InvalidInputError(name);
         } else {
           // Exceeds the length of input, use prev value
           const last = input[input.length - 1].trim();
-          if (numValidValue > 0) {
-            array[ind] = last;
-          } else {
-            array[ind] = defaultValue;
-          }
+          array[ind] = numValidValue > 0 ? last : defaultValue;
         }
       }
     }
   } else if (typeof input === 'string') {
-    const splitValues = splitInputByComma(input);
+    const splitValues = splitByComma(input);
     if (splitValues.length > 1) {
-      if (splitValues.length > numDataset) {
-        errorMessage = "Too many inputs for parameter '" + name + "'";
-        return errorMessage;
-      }
+      if (splitValues.length > numDataset) throw new TooManyInputsError(name);
+
       for (let ind = 0; ind < array.length; ind++) {
         if (ind < splitValues.length) {
           const curr = splitValues[ind].trim();
           let prev = null;
-          if (ind > 0) {
-            prev = splitValues[ind - 1].trim();
-          }
-          if (curr === '') {
-            if (prev !== null) {
-              array[ind] = prev;
-            } else {
-              array[ind] = defaultValue;
-            }
-          } else {
-            if (validator) {
-              if (validator(curr)) {
-                array[ind] = curr;
-                numValidValue++;
-              } else {
-                errorMessage = 'Invalid inputs for ' + name;
-                break;
-              }
-            } else {
-              array[ind] = curr;
-              numValidValue++;
-            }
+          if (ind > 0) prev = splitValues[ind - 1].trim();
+
+          if (curr === '') array[ind] = prev !== null ? prev : defaultValue;
+          else if (validator && !validator(curr))
+            throw new InvalidInputError(name);
+          else {
+            array[ind] = curr;
+            numValidValue++;
           }
         } else {
           // Exceeds the length of input, use prev value
           const last = splitValues[splitValues.length - 1].trim();
-          if (numValidValue > 0) {
-            array[ind] = last;
-          } else {
-            array[ind] = defaultValue;
-          }
+          array[ind] = numValidValue > 0 ? (array[ind] = last) : defaultValue;
         }
       }
-    } else {
-      if (input === '') {
-        // all defaultValue
-      } else {
-        if (validator) {
-          if (validator(input)) {
-            array[0] = input;
-            numValidValue++;
-            for (let ind = 1; ind < array.length; ind++) {
-              array[ind] = input;
-            }
-          } else {
-            errorMessage = 'Invalid inputs for ' + name;
-          }
-        } else {
-          array[0] = input;
-          numValidValue++;
-          for (let ind = 1; ind < array.length; ind++) {
-            array[ind] = input;
-          }
-        }
-      }
+    } else if (input !== '') {
+      if (validator && !validator(input)) throw new InvalidInputError(name);
+
+      array[0] = input;
+      numValidValue++;
+      for (let ind = 1; ind < array.length; ind++) array[ind] = input;
     }
   } else if (typeof input === 'number') {
     const strNumber = input.toString();
-    if (validator) {
-      if (validator(strNumber)) {
-        array[0] = strNumber;
-        numValidValue++;
-        for (let ind = 1; ind < array.length; ind++) {
-          array[ind] = strNumber;
-        }
-      } else {
-        errorMessage = 'Invalid inputs for ' + name;
-      }
-    } else {
-      array[0] = strNumber;
-      numValidValue++;
-      for (let ind = 1; ind < array.length; ind++) {
-        array[ind] = strNumber;
-      }
-    }
+    if (validator && !validator(strNumber)) throw new InvalidInputError(name);
+
+    array[0] = strNumber;
+    numValidValue++;
+    for (let ind = 1; ind < array.length; ind++) array[ind] = strNumber;
   } else {
-    errorMessage = 'Invalid inputs for ' + name;
+    throw new InvalidInputError(name);
   }
 
-  if (!allowNoValidValue && numValidValue === 0) {
-    errorMessage = 'No valid input for ' + name;
-  }
-
-  if (errorMessage !== '') return errorMessage;
+  if (!allowNoValidValue && numValidValue === 0)
+    throw new NoValidInputError(name);
 
   for (let ind = 0; ind < array.length; ind++) {
     array[ind] = StringUtils.replaceImgTagByAlt(array[ind]);
@@ -534,7 +376,7 @@ export const getNumberArray = (
   name: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   input: any
-): Array<number> | string => {
+): Array<number> => {
   const numArray: Array<number> = [];
 
   if (typeof input === 'undefined' || input === null) return numArray;
@@ -544,45 +386,30 @@ export const getNumberArray = (
       for (const elem of input) {
         if (typeof elem === 'string') {
           const v = parseFloat(elem);
-          if (Number.isNumber(v)) {
-            numArray.push(v);
-          } else {
-            const errorMessage = `Parameter '${name}' accepts only numbers`;
-            return errorMessage;
-          }
+          if (Number.isNumber(v)) numArray.push(v);
+          else throw new InvalidParameterError(name, Reason.ONLY_NUMBERS);
         }
       }
     }
   } else if (typeof input === 'string') {
-    const splitValues = splitInputByComma(input);
+    const splitValues = splitByComma(input);
     if (splitValues.length > 1) {
       for (const piece of splitValues) {
         const v = parseFloat(piece.trim());
-        if (!Number.isNaN(v)) {
-          // Number.isNumber(NaN) --> true
-          numArray.push(v);
-        } else {
-          const errorMessage = `Parameter '${name}' accepts only numbers`;
-          return errorMessage;
-        }
+        if (!Number.isNaN(v)) numArray.push(v);
+        else throw new InvalidParameterError(name, Reason.ONLY_NUMBERS);
       }
     } else if (input === '') {
-      const errorMessage = `Empty ${name} is not allowed.`;
-      return errorMessage;
+      throw new InvalidParameterError(name, Reason.EMPTY);
     } else {
       const v = parseFloat(input);
-      if (Number.isNumber(v)) {
-        numArray.push(v);
-      } else {
-        const errorMessage = `Parameter '${name}' accepts only numbers`;
-        return errorMessage;
-      }
+      if (Number.isNumber(v)) numArray.push(v);
+      else throw new InvalidParameterError(name, Reason.ONLY_NUMBERS);
     }
   } else if (typeof input === 'number') {
     numArray.push(input);
   } else {
-    const errorMessage = `Invalid ${name}`;
-    return errorMessage;
+    throw new InvalidParameterError(name);
   }
 
   return numArray;
@@ -592,7 +419,7 @@ export const getStringArray = (
   name: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   input: any
-): Array<string> | string => {
+): Array<string> => {
   const strArray: Array<string> = [];
 
   if (typeof input === 'undefined' || input === null) return strArray;
@@ -606,36 +433,30 @@ export const getStringArray = (
       }
     }
   } else if (typeof input === 'string') {
-    const splitValues = splitInputByComma(input);
-    // console.log(splitValues);
+    const splitValues = splitByComma(input);
     if (splitValues.length > 1) {
       for (const piece of splitValues) {
         strArray.push(piece.trim());
       }
     } else if (input === '') {
-      const errorMessage = `Empty ${name} is not allowed.`;
-      return errorMessage;
+      throw new TrackerError(`Empty ${name} is not allowed.`);
     } else {
       strArray.push(input);
     }
   } else {
-    const errorMessage = `Invalid ${name}`;
-    return errorMessage;
+    throw new TrackerError(`Invalid ${name}`);
   }
-
   for (let ind = 0; ind < strArray.length; ind++) {
     strArray[ind] = StringUtils.replaceImgTagByAlt(strArray[ind]);
   }
-
   return strArray;
 };
 
 export const parseCommonChartInfo = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   yaml: any,
-  renderInfo: BaseChart
-): string => {
-  // console.log("parseCommonChartInfo");
+  renderInfo: CartesianChart
+): void => {
   // single value, use default value if no value from YAML
   if (yaml) {
     // title
@@ -643,19 +464,19 @@ export const parseCommonChartInfo = (
 
     // xAxisLabel
     renderInfo.xAxisLabel = getStringFromInput(
-      yaml?.xAxisLabel,
+      yaml.xAxisLabel,
       renderInfo.xAxisLabel
     );
 
     // xAxisColor
     renderInfo.xAxisColor = getStringFromInput(
-      yaml?.xAxisColor,
+      yaml.xAxisColor,
       renderInfo.xAxisColor
     );
 
     // xAxisLabelColor
     renderInfo.xAxisLabelColor = getStringFromInput(
-      yaml?.xAxisLabelColor,
+      yaml.xAxisLabelColor,
       renderInfo.xAxisLabelColor
     );
 
@@ -684,27 +505,25 @@ export const parseCommonChartInfo = (
         renderInfo.legendPosition === 'top' ||
         renderInfo.legendPosition === 'bottom'
       ) {
-        renderInfo.legendOrientation = 'horizontal';
+        renderInfo.legendOrientation = Orientation.HORIZONTAL;
       } else if (
         renderInfo.legendPosition === 'left' ||
         renderInfo.legendPosition === 'right'
       ) {
-        renderInfo.legendOrientation = 'vertical';
+        renderInfo.legendOrientation = Orientation.VERTICAL;
       } else {
-        renderInfo.legendOrientation = 'horizontal';
+        renderInfo.legendOrientation = Orientation.HORIZONTAL;
       }
     }
-    // console.log(renderInfo.legendPosition);
-    // console.log(renderInfo.legendOrientation);
     // legendBgColor
     renderInfo.legendBgColor = getStringFromInput(
-      yaml?.legendBgColor,
+      yaml.legendBgColor,
       renderInfo.legendBgColor
     );
 
     // legendBorderColor
     renderInfo.legendBorderColor = getStringFromInput(
-      yaml?.legendBorderColor,
+      yaml.legendBorderColor,
       renderInfo.legendBorderColor
     );
   }
@@ -718,48 +537,45 @@ export const parseCommonChartInfo = (
     null,
     true
   );
-  if (typeof yAxisLabel === 'string') {
-    return yAxisLabel; // errorMessage
-  }
-  if (yAxisLabel.length > 2) {
-    return 'yAxisLabel accepts not more than two values for left and right y-axes';
-  }
+
+  if (yAxisLabel.length > 2)
+    throw new TrackerError(
+      'yAxisLabel accepts no more than two values for left and right y-axes'
+    );
+
   renderInfo.yAxisLabel = yAxisLabel;
-  // console.log(renderInfo.yAxisLabel);
   // yAxisColor
   const yAxisColor = getStringArrayFromInput(
     'yAxisColor',
     yaml?.yAxisColor,
     2,
     '',
-    validateColor,
+    isColorValid,
     true
   );
-  if (typeof yAxisColor === 'string') {
-    return yAxisColor; // errorMessage
-  }
-  if (yAxisColor.length > 2) {
-    return 'yAxisColor accepts not more than two values for left and right y-axes';
-  }
+
+  if (yAxisColor.length > 2)
+    throw new TrackerError(
+      'yAxisColor accepts no more than two values for left and right y-axes'
+    );
+
   renderInfo.yAxisColor = yAxisColor;
-  // console.log(renderInfo.yAxisColor);
   // yAxisLabelColor
   const yAxisLabelColor = getStringArrayFromInput(
     'yAxisLabelColor',
     yaml?.yAxisLabelColor,
     2,
     '',
-    validateColor,
+    isColorValid,
     true
   );
-  if (typeof yAxisLabelColor === 'string') {
-    return yAxisLabelColor; // errorMessage
-  }
-  if (yAxisLabelColor.length > 2) {
-    return 'yAxisLabelColor accepts not more than two values for left and right y-axes';
-  }
+
+  if (yAxisLabelColor.length > 2)
+    throw new TrackerError(
+      'yAxisLabelColor accepts no more than two values for left and right y-axes'
+    );
+
   renderInfo.yAxisLabelColor = yAxisLabelColor;
-  // console.log(renderInfo.yAxisLabelColor);
   // yAxisUnit
   const yAxisUnit = getStringArrayFromInput(
     'yAxisUnit',
@@ -769,20 +585,18 @@ export const parseCommonChartInfo = (
     null,
     true
   );
-  if (typeof yAxisUnit === 'string') {
-    return yAxisUnit; // errorMessage
-  }
+
   if (yAxisUnit.length > 2) {
-    return 'yAxisUnit accepts not more than two values for left and right y-axes';
+    throw new TrackerError(
+      'yAxisUnit accepts no more than two values for left and right y-axes'
+    );
   }
   renderInfo.yAxisUnit = yAxisUnit;
-  // console.log(renderInfo.yAxisUnit);
   // xAxisTickInterval
   renderInfo.xAxisTickInterval = getStringFromInput(
     yaml?.xAxisTickInterval,
     renderInfo.xAxisTickInterval
   );
-  // console.log(renderInfo.xAxisTickInterval);
   // yAxisTickInterval
   const yAxisTickInterval = getStringArrayFromInput(
     'yAxisTickInterval',
@@ -792,20 +606,18 @@ export const parseCommonChartInfo = (
     null,
     true
   );
-  if (typeof yAxisTickInterval === 'string') {
-    return yAxisTickInterval; // errorMessage
-  }
+
   if (yAxisTickInterval.length > 2) {
-    return 'yAxisTickInterval accepts not more than two values for left and right y-axes';
+    throw new TrackerError(
+      'yAxisTickInterval accepts no more than two values for left and right y-axes'
+    );
   }
   renderInfo.yAxisTickInterval = yAxisTickInterval;
-  // console.log(renderInfo.yAxisTickInterval);
   // xAxisTickLabelFormat
   renderInfo.xAxisTickLabelFormat = getStringFromInput(
     yaml?.xAxisTickLabelFormat,
     renderInfo.xAxisTickLabelFormat
   );
-  // console.log(renderInfo.xAxisTickLabelFormat);
   // yAxisTickLabelFormat
   const yAxisTickLabelFormat = getStringArrayFromInput(
     'yAxisTickLabelFormat',
@@ -815,34 +627,31 @@ export const parseCommonChartInfo = (
     null,
     true
   );
-  if (typeof yAxisTickLabelFormat === 'string') {
-    return yAxisTickLabelFormat; // errorMessage
-  }
+
   if (yAxisTickLabelFormat.length > 2) {
-    return 'yAxisTickLabelFormat accepts not more than two values for left and right y-axes';
+    throw new TrackerError(
+      'yAxisTickLabelFormat accepts no more than two values for left and right y-axes'
+    );
   }
   renderInfo.yAxisTickLabelFormat = yAxisTickLabelFormat;
-  // console.log(renderInfo.yAxisTickLabelFormat);
   // yMin
   const yMin = getNumberArrayFromInput('yMin', yaml?.yMin, 2, null, true);
-  if (typeof yMin === 'string') {
-    return yMin; // errorMessage
-  }
+
   if (yMin.length > 2) {
-    return 'yMin accepts not more than two values for left and right y-axes';
+    throw new TrackerError(
+      'yMin accepts no more than two values for left and right y-axes'
+    );
   }
   renderInfo.yMin = yMin;
-  // console.log(renderInfo.yMin);
   // yMax
   const yMax = getNumberArrayFromInput('yMax', yaml?.yMax, 2, null, true);
-  if (typeof yMax === 'string') {
-    return yMax; // errorMessage
-  }
+
   if (yMax.length > 2) {
-    return 'yMax accepts not more than two values for left and right y-axes';
+    throw new TrackerError(
+      'yMax accepts no more than two values for left and right y-axes'
+    );
   }
   renderInfo.yMax = yMax;
-  // console.log(renderInfo.yMax);
   // reverseYAxis
   const reverseYAxis = getBoolArrayFromInput(
     'reverseYAxis',
@@ -851,14 +660,13 @@ export const parseCommonChartInfo = (
     false,
     true
   );
-  if (typeof reverseYAxis === 'string') {
-    return reverseYAxis; // errorMessage
-  }
+
   if (reverseYAxis.length > 2) {
-    return 'reverseYAxis accepts not more than two values for left and right y-axes';
+    throw new TrackerError(
+      'reverseYAxis accepts no more than two values for left and right y-axes'
+    );
   }
   renderInfo.reverseYAxis = reverseYAxis;
-  // console.log(renderInfo.reverseYAxis);
 };
 
 export const getKeys = (obj: object): string[] =>
@@ -868,11 +676,9 @@ export const validateYamlKeys = (
   keys: string[],
   renderInfoKeys: string[],
   allowedKeys: string[]
-) => {
-  // console.log(additionalAllowedKeys);
-  for (const key of keys) {
-    if (!renderInfoKeys.includes(key) && !allowedKeys.includes(key)) {
-      throw new Error(`'${key}' is not an available key`);
-    }
-  }
+): void => {
+  keys.forEach((key): void => {
+    if (!renderInfoKeys.includes(key) && !allowedKeys.includes(key))
+      throw new TrackerError(`'${key}' is not an available key`);
+  });
 };

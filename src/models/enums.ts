@@ -1,17 +1,28 @@
 export enum SearchType {
-  Tag,
-  Frontmatter,
-  Wiki,
-  WikiLink,
-  WikiDisplay,
-  Text,
-  dvField,
-  Table,
-  FileMeta,
-  Task,
-  TaskDone,
-  TaskNotDone,
+  Tag = 'tag',
+  Frontmatter = 'frontmatter',
+  Wiki = 'wiki',
+  WikiLink = 'wiki.link',
+  WikiDisplay = 'wiki.display',
+  Text = 'text',
+  DvField = 'dvField',
+  Table = 'table',
+  FileMeta = 'filemeta',
+  Task = 'task',
+  TaskDone = 'task.done',
+  TaskNotDone = 'task.notdone',
 }
+
+export const SearchTypeValues: string[] = Object.values(SearchType);
+
+export enum YAxisLocation {
+  NONE = 'none',
+  LEFT = 'left',
+  RIGHT = 'right',
+}
+
+export const YAxisLocationValues: string[] = Object.values(YAxisLocation);
+
 export enum ComponentType {
   LineChart,
   BarChart,

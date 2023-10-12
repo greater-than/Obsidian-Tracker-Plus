@@ -1,16 +1,16 @@
+import { BulletGraph } from '../ui-components/bullet-graph/bullet-graph.model';
+import { BarChart } from '../ui-components/chart/bar-chart.model';
+import { LineChart } from '../ui-components/chart/line-chart.model';
+import { Heatmap } from '../ui-components/heatmap/heatmap.model';
+import { Month } from '../ui-components/month/month.model';
+import { PieChart } from '../ui-components/pie-chart/pie-chart.model';
+import { Summary } from '../ui-components/summary/summary.model';
 import { AspectRatio } from './aspect-ratio';
-import { BarChart } from './bar-chart';
-import { BulletGraph } from './bullet-graph';
 import { CustomDataset } from './custom-dataset';
 import { Datasets } from './dataset';
-import { Heatmap } from './heatmap';
-import { LineChart } from './line-chart';
 import { Margin } from './margin';
-import { MonthInfo } from './month';
-import { PieChart } from './pie-chart';
 import { Query } from './query';
 import { Size } from './size';
-import { Summary } from './summary';
 import { TextValueMap } from './types';
 import Moment = moment.Moment;
 
@@ -51,7 +51,7 @@ export class RenderInfo {
   barCharts: BarChart[];
   pieCharts: PieChart[];
   summaries: Summary[];
-  months: MonthInfo[];
+  months: Month[];
   heatmaps: Heatmap[];
   bulletGraphs: BulletGraph[];
   customDatasets: CustomDataset[];

@@ -1,3 +1,4 @@
+// TODO Does this need to be a class?
 export class Transform {
   translateX: number;
   translateY: number;

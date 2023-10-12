@@ -1,6 +1,5 @@
 import {
   App,
-  CachedMetadata,
   Editor,
   MarkdownPostProcessorContext,
   MarkdownView,
@@ -12,7 +11,9 @@ import {
   Vault,
   Workspace,
 } from 'obsidian';
+import { commands } from './commands';
 import DataCollector from './data-collector/data-collector';
+import { InvalidDateRangeError, TrackerError } from './errors';
 import { Datasets } from './models/dataset';
 import { ComponentType, SearchType } from './models/enums';
 import { ProcessInfo } from './models/process-info';
@@ -23,7 +24,6 @@ import Renderer from './renderer';
 import { DEFAULT_SETTINGS, TrackerSettingTab } from './settings';
 import { TrackerSettings } from './types';
 import { DateTimeUtils, NumberUtils } from './utils';
-import { getMoment, TMoment } from './utils/date-time.utils';
 import Moment = moment.Moment;
 
 declare global {
@@ -62,23 +62,7 @@ export default class Tracker extends Plugin {
       this.postProcessor.bind(this)
     );
 
-    this.addCommand({
-      id: 'add-line-chart-tracker',
-      name: 'Add Line Chart Tracker',
-      callback: () => this.addCodeBlock(ComponentType.LineChart),
-    });
-
-    this.addCommand({
-      id: 'add-bar-chart-tracker',
-      name: 'Add Bar Chart Tracker',
-      callback: () => this.addCodeBlock(ComponentType.BarChart),
-    });
-
-    this.addCommand({
-      id: 'add-summary-tracker',
-      name: 'Add Summary Tracker',
-      callback: () => this.addCodeBlock(ComponentType.Summary),
-    });
+    commands.forEach((command) => this.addCommand(command));
   }
 
   async loadSettings(): Promise<void> {
@@ -90,13 +74,12 @@ export default class Tracker extends Plugin {
   }
 
   renderErrorMessage(
-    message: string,
-    canvas: HTMLElement,
+    error: Error,
+    container: HTMLElement,
     element: HTMLElement
   ): void {
-    Renderer.renderErrorMessage(canvas, message);
-    element.appendChild(canvas);
-    return;
+    Renderer.renderErrorMessage(container, error);
+    element.appendChild(container);
   }
 
   onunload(): void {
@@ -109,68 +92,48 @@ export default class Tracker extends Plugin {
   ): TFile[] {
     let files: TFile[] = [];
 
-    for (const item of folder.children) {
-      if (item instanceof TFile && item.extension === 'md') {
-        files.push(item);
-      } else if (item instanceof TFolder && includeSubFolders) {
-        files = files.concat(this.getFilesInFolder(item));
-      }
-    }
-
+    folder.children.forEach((item) =>
+      item instanceof TFile && item.extension === 'md'
+        ? files.push(item)
+        : item instanceof TFolder && includeSubFolders
+        ? (files = files.concat(this.getFilesInFolder(item)))
+        : (files = [])
+    );
     return files;
   }
 
-  async getFiles(
-    files: TFile[],
-    renderInfo: RenderInfo,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _includeSubFolders: boolean = true
-  ): Promise<void> {
+  async getFiles(files: TFile[], renderInfo: RenderInfo): Promise<void> {
     if (!files) return;
 
-    const folderToSearch = renderInfo.folder;
-    const useSpecifiedFilesOnly = renderInfo.specifiedFilesOnly;
-    const specifiedFiles = renderInfo.file;
-    const filesContainsLinkedFiles = renderInfo.fileContainsLinkedFiles;
-    const fileMultiplierAfterLink = renderInfo.fileMultiplierAfterLink;
+    const {
+      folder: rootFolder,
+      specifiedFilesOnly,
+      file: specifiedFiles,
+      fileContainsLinkedFiles: linkedFiles,
+      fileMultiplierAfterLink,
+      textValueMap,
+    } = renderInfo;
+
+    const { vault } = this;
 
     // Include files in folder
-    // console.log(useSpecifiedFilesOnly);
-    if (!useSpecifiedFilesOnly) {
-      const folder = this.vault.getAbstractFileByPath(
-        normalizePath(folderToSearch)
-      );
-      if (folder && folder instanceof TFolder) {
-        const folderFiles = this.getFilesInFolder(folder);
-        for (const file of folderFiles) {
-          files.push(file);
-        }
-      }
+    if (!specifiedFilesOnly) {
+      const folder = vault.getAbstractFileByPath(normalizePath(rootFolder));
+      if (folder && folder instanceof TFolder)
+        this.getFilesInFolder(folder).forEach((file) => files.push(file));
     }
 
-    // Include specified file
-    // console.log(specifiedFiles);
-    for (const filePath of specifiedFiles) {
-      let path = filePath;
-      if (!path.endsWith('.md')) {
-        path += '.md';
-      }
-      path = normalizePath(path);
-      // console.log(path);
-
-      const file = this.vault.getAbstractFileByPath(path);
-      // console.log(file);
-      if (file && file instanceof TFile) {
-        files.push(file);
-      }
-    }
-    // console.log(files);
+    // Include specified files
+    specifiedFiles.forEach((filePath) => {
+      const path = filePath.endsWith('.md') ? filePath : `${filePath}.md`;
+      const file = vault.getAbstractFileByPath(normalizePath(path));
+      if (file && file instanceof TFile) files.push(file);
+    });
 
     // Include files in pointed by links in file
-    // console.log(filesContainsLinkedFiles);
-    // console.log(fileMultiplierAfterLink);
     let linkedFileMultiplier = 1;
     let searchFileMultiplierAfterLink = true;
+
     if (fileMultiplierAfterLink === '') {
       searchFileMultiplierAfterLink = false;
     } else if (/^[0-9]+$/.test(fileMultiplierAfterLink)) {
@@ -181,17 +144,15 @@ export default class Tracker extends Plugin {
       // no 'value' named group
       searchFileMultiplierAfterLink = false;
     }
-    for (let filePath of filesContainsLinkedFiles) {
-      if (!filePath.endsWith('.md')) {
-        filePath += '.md';
-      }
-      const file = this.vault.getAbstractFileByPath(normalizePath(filePath));
+
+    for (const filePath of linkedFiles) {
+      const path = filePath.endsWith('.md') ? filePath : `${filePath}.md`;
+      const file = this.vault.getAbstractFileByPath(normalizePath(path));
       if (file && file instanceof TFile) {
         // Get linked files
         const fileCache = this.metadataCache.getFileCache(file);
-        const fileContent = await this.vault.adapter.read(file.path);
+        const fileContent = await vault.adapter.read(file.path);
         const lines = fileContent.split(/\r\n|[\n\v\f\r\x85\u2028\u2029]/);
-        // console.log(lines);
 
         if (!fileCache?.links) continue;
 
@@ -199,538 +160,369 @@ export default class Tracker extends Plugin {
           if (!link) continue;
           const linkedFile = this.metadataCache.getFirstLinkpathDest(
             link.link,
-            filePath
+            path
           );
           if (linkedFile && linkedFile instanceof TFile) {
-            if (searchFileMultiplierAfterLink) {
-              // Get the line of link in file
-              const lineNumber = link.position.end.line;
-              // console.log(lineNumber);
-              if (lineNumber >= 0 && lineNumber < lines.length) {
-                const line = lines[lineNumber];
-                // console.log(line);
+            if (!searchFileMultiplierAfterLink) continue;
 
-                // Try extract multiplier
-                // if (link.position)
-                const splitLines = line.split(link.original);
-                // console.log(splitLines);
-                if (splitLines.length === 2) {
-                  const toParse = splitLines[1].trim();
-                  const pattern = fileMultiplierAfterLink;
-                  const regex = new RegExp(pattern, 'gm');
-                  let match;
-                  while ((match = regex.exec(toParse))) {
-                    // console.log(match);
-                    if (
-                      typeof match.groups !== 'undefined' &&
-                      typeof match.groups.value !== 'undefined'
-                    ) {
-                      // must have group name 'value'
-                      const parsed = NumberUtils.parseFloatFromAny(
-                        match.groups.value.trim(),
-                        renderInfo.textValueMap
-                      );
-                      if (parsed.value !== null) {
-                        linkedFileMultiplier = parsed.value;
-                        break;
-                      }
-                    }
-                  }
+            // Get the line of link in file
+            const lineNumber = link.position.end.line;
+            if (!(lineNumber >= 0 && lineNumber < lines.length)) continue;
+            const line = lines[lineNumber];
+
+            // Extract multiplier
+            const splitLines = line.split(link.original);
+            if (!(splitLines.length === 2)) continue;
+
+            const toParse = splitLines[1].trim();
+            const pattern = fileMultiplierAfterLink;
+            const regex = new RegExp(pattern, 'gm');
+            let match;
+            while ((match = regex.exec(toParse))) {
+              if (
+                typeof match.groups !== 'undefined' &&
+                typeof match.groups.value !== 'undefined'
+              ) {
+                // must have group name 'value'
+                const parsed = NumberUtils.parseFloatFromAny(
+                  match.groups.value.trim(),
+                  textValueMap
+                );
+                if (parsed.value === null) {
+                  linkedFileMultiplier = parsed.value;
+                  break;
                 }
               }
             }
 
-            for (let i = 0; i < linkedFileMultiplier; i++) {
+            for (let i = 0; i < linkedFileMultiplier; i++)
               files.push(linkedFile);
-            }
           }
         }
       }
     }
-
-    // console.log(files);
   }
 
   async postProcessor(
     source: string,
     element: HTMLElement,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _context: MarkdownPostProcessorContext,
-    moment?: TMoment
+    _context: MarkdownPostProcessorContext
   ): Promise<void> {
-    // console.log("postprocess");
-    const canvas = document.createElement('div');
+    const container = document.createElement('div');
 
-    let yamlText = source.trim();
-
-    // Replace all tabs by spaces
-    const tabSize = this.vault.getConfig('tabSize');
-    const spaces = Array(tabSize).fill(' ').join('');
-    yamlText = yamlText.replace(/\t/gm, spaces);
-
-    // Get render info
-    const renderInfo = getRenderInfoFromYaml(yamlText, this);
-    if (typeof renderInfo === 'string') {
-      return this.renderErrorMessage(renderInfo, canvas, element);
-    }
-    // console.log(renderInfo);
-
-    // Get files
-    const files: TFile[] = [];
     try {
+      let yamlText = source.trim();
+
+      // Replace all tabs by spaces
+      const tabSize = this.vault.getConfig('tabSize');
+      const spaces = Array(tabSize).fill(' ').join('');
+      yamlText = yamlText.replace(/\t/gm, spaces);
+
+      // Get render info
+      const renderInfo = getRenderInfoFromYaml(yamlText, this);
+
+      // Get files
+      const files: TFile[] = [];
+
       await this.getFiles(files, renderInfo);
-    } catch (e) {
-      return this.renderErrorMessage(e.message, canvas, element);
-    }
-    if (files.length === 0) {
-      return this.renderErrorMessage(
-        'No markdown files found in folder',
-        canvas,
-        element
-      );
-    }
-    // console.log(files);
+      if (files.length === 0)
+        throw new TrackerError('No markdown files found in folder');
 
-    // let dailyNotesSettings = getDailyNoteSettings();
-    // console.log(dailyNotesSettings);
-    // I always got YYYY-MM-DD from dailyNotesSettings.format
-    // Use own settings panel for now
+      // Collecting data to dataMap first
+      const dataMap: DataMap = new Map(); // {strDate: [query: value, ...]}
+      const processInfo = new ProcessInfo();
+      processInfo.fileTotal = files.length;
 
-    // Collecting data to dataMap first
-    const dataMap: DataMap = new Map(); // {strDate: [query: value, ...]}
-    const processInfo = new ProcessInfo();
-    processInfo.fileTotal = files.length;
+      // Collect data from files, each file has one data point for each query
+      const filePromises = files.map(async (file) => {
+        // Get fileCache and content
+        const needFileCache = renderInfo.queries.some(
+          (q) =>
+            q.type === SearchType.Frontmatter ||
+            SearchType.Tag ||
+            SearchType.Wiki ||
+            SearchType.WikiLink ||
+            SearchType.WikiDisplay
+        );
 
-    // Collect data from files, each file has one data point for each query
-    const loopFilePromises = files.map(async (file) => {
-      // console.log(file.basename);
-      // Get fileCache and content
-      let fileCache: CachedMetadata = null;
-      const needFileCache = renderInfo.queries.some((q) => {
-        const type = q.type;
+        const fileCache = needFileCache
+          ? this.metadataCache.getFileCache(file)
+          : null;
 
-        // Why is this here?
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const target = q.target;
+        const needContent = renderInfo.queries.some(
+          (q) =>
+            q.type ===
+            (SearchType.Tag ||
+              SearchType.Text ||
+              SearchType.DvField ||
+              SearchType.Task ||
+              SearchType.TaskDone ||
+              SearchType.TaskNotDone ||
+              (SearchType.FileMeta &&
+                ['numWords', 'numChars', 'numSentences'].includes(q.target)))
+        );
 
-        if (
-          type === SearchType.Frontmatter ||
-          type === SearchType.Tag ||
-          type === SearchType.Wiki ||
-          type === SearchType.WikiLink ||
-          type === SearchType.WikiDisplay
-        ) {
-          return true;
-        }
-        return false;
-      });
-      if (needFileCache) {
-        fileCache = this.metadataCache.getFileCache(file);
-      }
+        const content: string = needContent
+          ? await this.vault.adapter.read(file.path)
+          : null;
 
-      let content: string = null;
-      const needContent = renderInfo.queries.some((q) => {
-        const type = q.type;
-        const target = q.target;
-        if (
-          type === SearchType.Tag ||
-          type === SearchType.Text ||
-          type === SearchType.dvField ||
-          type === SearchType.Task ||
-          type === SearchType.TaskDone ||
-          type === SearchType.TaskNotDone
-        ) {
-          return true;
-        } else if (type === SearchType.FileMeta) {
-          if (
-            target === 'numWords' ||
-            target === 'numChars' ||
-            target === 'numSentences'
-          ) {
-            return true;
-          }
-        }
-        return false;
-      });
-      if (needContent) {
-        content = await this.vault.adapter.read(file.path);
-      }
-
-      // Get xValue and add it into xValueMap for later use
-      const xValueMap: XValueMap = new Map(); // queryId: xValue for this file
-      let skipThisFile = false;
-      // console.log(renderInfo.xDataset);
-      for (const xDatasetId of renderInfo.xDataset) {
-        // console.log(`xDatasetId: ${xDatasetId}`);
-        if (!xValueMap.has(xDatasetId)) {
-          let xDate = getMoment(moment)('');
-          if (xDatasetId === -1) {
-            // Default using date in filename as xValue
-            xDate = DataCollector.getDateFromFilename(file, renderInfo);
-            // console.log(xDate);
-          } else {
-            const xDatasetQuery = renderInfo.queries[xDatasetId];
-            // console.log(xDatasetQuery);
-            switch (xDatasetQuery.type) {
-              case SearchType.Frontmatter:
-                xDate = DataCollector.getDateFromFrontmatter(
-                  fileCache,
-                  xDatasetQuery,
-                  renderInfo
-                );
-                break;
-              case SearchType.Tag:
-                xDate = DataCollector.getDateFromTag(
-                  content,
-                  xDatasetQuery,
-                  renderInfo
-                );
-                break;
-              case SearchType.Text:
-                xDate = DataCollector.getDateFromText(
-                  content,
-                  xDatasetQuery,
-                  renderInfo
-                );
-                break;
-              case SearchType.dvField:
-                xDate = DataCollector.getDateFromDvField(
-                  content,
-                  xDatasetQuery,
-                  renderInfo
-                );
-                break;
-              case SearchType.FileMeta:
-                xDate = DataCollector.getDateFromFileMeta(
-                  file,
-                  xDatasetQuery,
-                  renderInfo
-                );
-                break;
-              case SearchType.Task:
-              case SearchType.TaskDone:
-              case SearchType.TaskNotDone:
-                xDate = DataCollector.getDateFromTask(
-                  content,
-                  xDatasetQuery,
-                  renderInfo
-                );
-                break;
-            }
-          }
-
-          if (!xDate.isValid()) {
-            // console.log("Invalid xDate");
-            skipThisFile = true;
-            processInfo.fileNotInFormat++;
-          } else {
-            // console.log("file " + file.basename + " accepted");
-            if (renderInfo.startDate !== null) {
-              if (xDate < renderInfo.startDate) {
-                skipThisFile = true;
-                processInfo.fileOutOfDateRange++;
-              }
-            }
-            if (renderInfo.endDate !== null) {
-              if (xDate > renderInfo.endDate) {
-                skipThisFile = true;
-                processInfo.fileOutOfDateRange++;
-              }
-            }
-          }
-
-          if (!skipThisFile) {
-            processInfo.gotAnyValidXValue ||= true;
-            xValueMap.set(
-              xDatasetId,
-              DateTimeUtils.dateToString(xDate, renderInfo.dateFormat)
-            );
-            processInfo.fileAvailable++;
-
-            // Get min/max date
-            if (processInfo.fileAvailable == 1) {
-              processInfo.minDate = xDate.clone();
-              processInfo.maxDate = xDate.clone();
+        // Get xValue and add it into xValueMap for later use
+        const xValueMap: XValueMap = new Map(); // queryId: xValue for this file
+        let skipThisFile = false;
+        for (const xDatasetId of renderInfo.xDataset) {
+          if (!xValueMap.has(xDatasetId)) {
+            let xDate = window.moment('');
+            if (xDatasetId === -1) {
+              // Default using date in filename as xValue
+              xDate = DataCollector.getDateFromFilename(file, renderInfo);
             } else {
-              if (xDate < processInfo.minDate) {
-                processInfo.minDate = xDate.clone();
+              const xDatasetQuery = renderInfo.queries[xDatasetId];
+              const args = [xDatasetQuery, renderInfo] as const;
+              switch (xDatasetQuery.type) {
+                case SearchType.Frontmatter:
+                  xDate = DataCollector.getDateFromFrontmatter(
+                    fileCache,
+                    ...args
+                  );
+                  break;
+                case SearchType.Tag:
+                  xDate = DataCollector.getDateFromTag(content, ...args);
+                  break;
+                case SearchType.Text:
+                  xDate = DataCollector.getDateFromText(content, ...args);
+                  break;
+                case SearchType.DvField:
+                  xDate = DataCollector.getDateFromDvField(content, ...args);
+                  break;
+                case SearchType.FileMeta:
+                  xDate = DataCollector.getDateFromFileMeta(file, ...args);
+                  break;
+                case SearchType.Task:
+                case SearchType.TaskDone:
+                case SearchType.TaskNotDone:
+                  xDate = DataCollector.getDateFromTask(content, ...args);
+                  break;
               }
-              if (xDate > processInfo.maxDate) {
+            }
+
+            if (!xDate.isValid()) {
+              skipThisFile = true;
+              processInfo.fileNotInFormat++;
+            } else if (
+              (renderInfo.startDate !== null && xDate < renderInfo.startDate) ||
+              (renderInfo.endDate !== null && xDate > renderInfo.endDate)
+            ) {
+              skipThisFile = true;
+              processInfo.fileOutOfDateRange++;
+            }
+
+            if (!skipThisFile) {
+              processInfo.gotAnyValidXValue ||= true;
+              xValueMap.set(
+                xDatasetId,
+                DateTimeUtils.dateToString(xDate, renderInfo.dateFormat)
+              );
+              processInfo.fileAvailable++;
+
+              // Get min/max date
+              if (processInfo.fileAvailable == 1) {
+                processInfo.minDate = xDate.clone();
                 processInfo.maxDate = xDate.clone();
+              } else {
+                if (xDate < processInfo.minDate)
+                  processInfo.minDate = xDate.clone();
+                if (xDate > processInfo.maxDate)
+                  processInfo.maxDate = xDate.clone();
               }
             }
           }
         }
-      }
-      if (skipThisFile) return;
-      // console.log(xValueMap);
-      // console.log(`minDate: ${minDate}`);
-      // console.log(`maxDate: ${maxDate}`);
+        if (skipThisFile) return;
 
-      // Loop over queries
-      const yDatasetQueries = renderInfo.queries.filter((q) => {
-        return q.type !== SearchType.Table && !q.usedAsXDataset;
+        // Loop over queries
+        const yQueries = renderInfo.queries.filter(
+          (q) => q.type !== SearchType.Table && !q.usedAsXDataset
+        );
+
+        // TODO Why is this callback async?
+        const queryPromises = yQueries.map(async (query) => {
+          // Get xValue from file if xDataset assigned
+          const args = [query, renderInfo, dataMap, xValueMap] as const;
+
+          if (fileCache && query.type === SearchType.Tag) {
+            // Add frontmatter tags, allow simple tag only
+            processInfo.gotAnyValidYValue ||=
+              DataCollector.collectDataFromFrontmatterTag(fileCache, ...args);
+          } // Search frontmatter tags
+
+          if (
+            fileCache &&
+            query.type === SearchType.Frontmatter &&
+            query.target !== 'tags'
+          ) {
+            processInfo.gotAnyValidYValue ||=
+              DataCollector.collectDataFromFrontmatterKey(fileCache, ...args);
+          }
+
+          if (
+            fileCache &&
+            (query.type === SearchType.Wiki ||
+              SearchType.WikiLink ||
+              SearchType.WikiDisplay)
+          ) {
+            processInfo.gotAnyValidYValue ||= DataCollector.collectDataFromWiki(
+              fileCache,
+              ...args
+            );
+          }
+
+          if (content && query.type === SearchType.Tag) {
+            processInfo.gotAnyValidYValue ||=
+              DataCollector.collectDataFromInlineTag(content, ...args);
+          } // Search inline tags
+
+          if (content && query.type === SearchType.Text) {
+            processInfo.gotAnyValidYValue ||= DataCollector.collectDataFromText(
+              content,
+              ...args
+            );
+          } // Search text
+
+          if (query.type === SearchType.FileMeta) {
+            processInfo.gotAnyValidYValue ||=
+              DataCollector.collectDataFromFileMeta(file, content, ...args);
+          } // Search FileMeta
+
+          if (content && query.type === SearchType.DvField) {
+            processInfo.gotAnyValidYValue ||=
+              DataCollector.collectDataFromDvField(content, ...args);
+          } // search dvField
+
+          if (
+            content &&
+            (query.type === SearchType.Task ||
+              query.type === SearchType.TaskDone ||
+              query.type === SearchType.TaskNotDone)
+          ) {
+            processInfo.gotAnyValidYValue ||= DataCollector.collectDataFromTask(
+              content,
+              ...args
+            );
+          } // search Task
+        });
+        await Promise.all(queryPromises);
       });
-      // console.log(yDatasetQueries);
+      await Promise.all(filePromises);
 
-      const loopQueryPromises = yDatasetQueries.map(async (query) => {
-        // Get xValue from file if xDataset assigned
-        // if (renderInfo.xDataset !== null)
-        // let xDatasetId = renderInfo.xDataset;
+      // Collect data from a file, one file contains full dataset
+      await DataCollector.collectDataFromTable(
+        this.vault,
+        dataMap,
+        renderInfo,
+        processInfo
+      );
 
-        if (fileCache && query.type === SearchType.Tag) {
-          // Add frontmatter tags, allow simple tag only
-          const gotAnyValue = DataCollector.collectDataFromFrontmatterTag(
-            fileCache,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        } // Search frontmatter tags
-
-        if (
-          fileCache &&
-          query.type === SearchType.Frontmatter &&
-          query.target !== 'tags'
-        ) {
-          const gotAnyValue = DataCollector.collectDataFromFrontmatterKey(
-            fileCache,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        }
-
-        if (
-          fileCache &&
-          (query.type === SearchType.Wiki ||
-            query.type === SearchType.WikiLink ||
-            query.type === SearchType.WikiDisplay)
-        ) {
-          const gotAnyValue = DataCollector.collectDataFromWiki(
-            fileCache,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        }
-
-        if (content && query.type === SearchType.Tag) {
-          const gotAnyValue = DataCollector.collectDataFromInlineTag(
-            content,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        } // Search inline tags
-
-        // console.log("Search Text");
-        if (content && query.type === SearchType.Text) {
-          const gotAnyValue = DataCollector.collectDataFromText(
-            content,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        } // Search text
-
-        // console.log("Search FileMeta");
-        if (query.type === SearchType.FileMeta) {
-          const gotAnyValue = DataCollector.collectDataFromFileMeta(
-            file,
-            content,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        } // Search FileMeta
-
-        // console.log("Search dvField");
-        if (content && query.type === SearchType.dvField) {
-          const gotAnyValue = DataCollector.collectDataFromDvField(
-            content,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        } // search dvField
-
-        // console.log("Search Task");
-        if (
-          content &&
-          (query.type === SearchType.Task ||
-            query.type === SearchType.TaskDone ||
-            query.type === SearchType.TaskNotDone)
-        ) {
-          const gotAnyValue = DataCollector.collectDataFromTask(
-            content,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        } // search Task
-      });
-      await Promise.all(loopQueryPromises);
-    });
-    await Promise.all(loopFilePromises);
-    // console.log(dataMap);
-
-    // Collect data from a file, one file contains full dataset
-    await DataCollector.collectDataFromTable(
-      this.vault,
-      dataMap,
-      renderInfo,
-      processInfo
-    );
-    if (processInfo.errorMessage) {
-      return this.renderErrorMessage(processInfo.errorMessage, canvas, element);
-    }
-    // console.log(minDate);
-    // console.log(maxDate);
-    // console.log(dataMap);
-
-    // Check date range
-    // minDate and maxDate are collected without knowing startDate and endDate
-    // console.log(`fileTotal: ${processInfo.fileTotal}`);
-    // console.log(`fileAvailable: ${processInfo.fileAvailable}`);
-    // console.log(`fileNotInFormat: ${processInfo.fileNotInFormat}`);
-    // console.log(`fileOutOfDateRange: ${processInfo.fileOutOfDateRange}`);
-    let dateErrorMessage = '';
-    if (
-      !processInfo.minDate.isValid() ||
-      !processInfo.maxDate.isValid() ||
-      processInfo.fileAvailable === 0 ||
-      !processInfo.gotAnyValidXValue
-    ) {
-      dateErrorMessage = `No valid date as X value found in notes`;
-      if (processInfo.fileOutOfDateRange > 0) {
-        dateErrorMessage += `\n${processInfo.fileOutOfDateRange} files are out of the date range.`;
-      }
-      if (processInfo.fileNotInFormat) {
-        dateErrorMessage += `\n${processInfo.fileNotInFormat} files are not in the right format.`;
-      }
-    }
-    if (renderInfo.startDate === null && renderInfo.endDate === null) {
-      // No date arguments
-      renderInfo.startDate = processInfo.minDate.clone();
-      renderInfo.endDate = processInfo.maxDate.clone();
-    } else if (renderInfo.startDate !== null && renderInfo.endDate === null) {
-      if (renderInfo.startDate < processInfo.maxDate) {
-        renderInfo.endDate = processInfo.maxDate.clone();
-      } else {
-        dateErrorMessage = 'Invalid date range';
-      }
-    } else if (renderInfo.endDate !== null && renderInfo.startDate === null) {
-      if (renderInfo.endDate > processInfo.minDate) {
-        renderInfo.startDate = processInfo.minDate.clone();
-      } else {
-        dateErrorMessage = 'Invalid date range';
-      }
-    } else {
-      // startDate and endDate are valid
+      // Check date range
+      // minDate and maxDate are collected without knowing startDate and endDate
       if (
+        !processInfo.minDate.isValid() ||
+        !processInfo.maxDate.isValid() ||
+        processInfo.fileAvailable === 0 ||
+        !processInfo.gotAnyValidXValue
+      ) {
+        const errorMessage = `No valid date as X value found in notes`;
+        if (processInfo.fileOutOfDateRange > 0)
+          throw new TrackerError(
+            `${errorMessage}\n${processInfo.fileOutOfDateRange} files are out of the date range.`
+          );
+
+        if (processInfo.fileNotInFormat)
+          throw new TrackerError(
+            `${errorMessage}\n${processInfo.fileNotInFormat} files are not in the right format.`
+          );
+      }
+      if (renderInfo.startDate === null && renderInfo.endDate === null) {
+        // No date arguments
+        renderInfo.startDate = processInfo.minDate.clone();
+        renderInfo.endDate = processInfo.maxDate.clone();
+      } else if (renderInfo.startDate !== null && renderInfo.endDate === null) {
+        if (renderInfo.startDate < processInfo.maxDate)
+          renderInfo.endDate = processInfo.maxDate.clone();
+        else throw new InvalidDateRangeError();
+      } else if (renderInfo.endDate !== null && renderInfo.startDate === null) {
+        if (renderInfo.endDate <= processInfo.minDate)
+          throw new InvalidDateRangeError();
+        renderInfo.startDate = processInfo.minDate.clone();
+      } else if (
         (renderInfo.startDate < processInfo.minDate &&
           renderInfo.endDate < processInfo.minDate) ||
         (renderInfo.startDate > processInfo.maxDate &&
           renderInfo.endDate > processInfo.maxDate)
-      ) {
-        dateErrorMessage = 'Invalid date range';
-      }
-    }
-    if (dateErrorMessage) {
-      return this.renderErrorMessage(dateErrorMessage, canvas, element);
-    }
-    // console.log(renderInfo.startDate);
-    // console.log(renderInfo.endDate);
+      )
+        throw new InvalidDateRangeError();
 
-    if (!processInfo.gotAnyValidYValue) {
-      return this.renderErrorMessage(
-        'No valid Y value found in notes',
-        canvas,
-        element
-      );
-    }
+      if (!processInfo.gotAnyValidYValue)
+        throw new TrackerError('No valid Y value found in notes');
 
-    // Reshape data for rendering
-    const datasets = new Datasets(renderInfo.startDate, renderInfo.endDate);
-    for (const query of renderInfo.queries) {
-      // We still create a dataset for xDataset,
-      // to keep the sequence and order of targets
-      const dataset = datasets.createDataset(query, renderInfo);
-      // Add number of targets to the dataset
-      // Number of targets has been accumulated while collecting data
-      dataset.incrementTargetCount(query.numTargets);
-      for (
-        let curDate = renderInfo.startDate.clone();
-        curDate <= renderInfo.endDate;
-        curDate.add(1, 'days')
-      ) {
-        // console.log(curDate);
+      // Reshape data for rendering
+      const datasets = new Datasets(renderInfo.startDate, renderInfo.endDate);
+      for (const query of renderInfo.queries) {
+        // We still create a dataset for xDataset,
+        // to keep the sequence and order of targets
+        const dataset = datasets.createDataset(query, renderInfo);
 
-        // dataMap --> {date: [query: value, ...]}
-        if (
-          dataMap.has(
-            DateTimeUtils.dateToString(curDate, renderInfo.dateFormat)
-          )
+        // Add number of targets to the dataset
+        // Number of targets has been accumulated while collecting data
+        dataset.incrementTargetCount(query.numTargets);
+        for (
+          let curDate = renderInfo.startDate.clone();
+          curDate <= renderInfo.endDate;
+          curDate.add(1, 'days')
         ) {
-          const queryValuePairs = dataMap
-            .get(DateTimeUtils.dateToString(curDate, renderInfo.dateFormat))
-            .filter((pair: IQueryValuePair) => {
-              return pair.query.equalTo(query);
-            });
-          if (queryValuePairs.length > 0) {
-            // Merge values of the same day same query
-            let value = null;
-            for (let indPair = 0; indPair < queryValuePairs.length; indPair++) {
-              const collected = queryValuePairs[indPair].value;
-              if (Number.isNumber(collected) && !Number.isNaN(collected)) {
-                if (value === null) {
-                  value = collected;
-                } else {
-                  value += collected;
+          // dataMap --> {date: [query: value, ...]}
+          if (
+            dataMap.has(
+              DateTimeUtils.dateToString(curDate, renderInfo.dateFormat)
+            )
+          ) {
+            const queryValuePairs = dataMap
+              .get(DateTimeUtils.dateToString(curDate, renderInfo.dateFormat))
+              .filter((pair: IQueryValuePair) => {
+                return pair.query.equalTo(query);
+              });
+            if (queryValuePairs.length > 0) {
+              // Merge values of the same day same query
+              let value = null;
+              for (
+                let indPair = 0;
+                indPair < queryValuePairs.length;
+                indPair++
+              ) {
+                const collected = queryValuePairs[indPair].value;
+                if (Number.isNumber(collected) && !Number.isNaN(collected)) {
+                  if (value === null) value = collected;
+                  else value += collected;
                 }
               }
+              if (value !== null) dataset.setValue(curDate, value);
             }
-            // console.log(hasValue);
-            // console.log(value);
-            if (value !== null) dataset.setValue(curDate, value);
           }
         }
       }
-    }
-    renderInfo.datasets = datasets;
-    // console.log(renderInfo.datasets);
+      renderInfo.datasets = datasets;
 
-    const rendered = Renderer.render(canvas, renderInfo);
-    if (typeof rendered === 'string') {
-      return this.renderErrorMessage(rendered, canvas, element);
-    }
+      Renderer.render(container, renderInfo);
 
-    element.appendChild(canvas);
+      element.appendChild(container);
+    } catch (e) {
+      this.renderErrorMessage(e, container, element);
+    }
   }
 
   addCodeBlock(type: ComponentType): void {
-    const currentView = this.workspace.activeLeaf.view;
-
-    if (!(currentView instanceof MarkdownView)) {
-      return;
-    }
+    const view = this.workspace.getActiveViewOfType(MarkdownView);
+    if (!(view instanceof MarkdownView)) return;
 
     let codeblockToInsert = '';
     switch (type) {
@@ -776,26 +568,19 @@ summary:
         break;
     }
 
-    if (codeblockToInsert !== '') {
-      const textInserted = this.insertOnNextLine(codeblockToInsert);
-      if (!textInserted) {
-      }
-    }
+    this.insertOnNextLine(codeblockToInsert);
   }
 
-  insertOnNextLine(text: string): boolean {
-    const editor = this.editor;
+  insertOnNextLine(text: string): void {
+    if (text === '' || undefined) return;
+    const { editor } = this;
     if (editor) {
       const cursor = editor.getCursor();
-      const lineNumber = cursor.line;
-      const line = editor.getLine(lineNumber);
+      const line = editor.getLine(cursor.line);
 
       cursor.ch = line.length;
       editor.setSelection(cursor);
       editor.replaceSelection('\n' + text);
-
-      return true;
     }
-    return false;
   }
 }

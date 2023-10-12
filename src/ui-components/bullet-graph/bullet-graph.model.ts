@@ -1,5 +1,6 @@
-import { ComponentType } from './enums';
-import { IComponent } from './types';
+import { Orientation } from 'src/enums';
+import { ComponentType } from '../../models/enums';
+import { IComponent } from '../../models/types';
 
 export class BulletGraph implements IComponent {
   title: string;
@@ -17,7 +18,7 @@ export class BulletGraph implements IComponent {
   constructor() {
     this.title = '';
     this.dataset = '0'; // dataset id or name
-    this.orientation = 'horizontal'; // or vertical
+    this.orientation = Orientation.HORIZONTAL; // or vertical
     this.value = ''; // Can possess template variable
     this.valueUnit = '';
     this.valueColor = '#69b3a2';

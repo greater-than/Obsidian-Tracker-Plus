@@ -1,7 +1,7 @@
-import { ComponentType } from './enums';
-import { IComponent } from './types';
+import { ComponentType } from '../../models/enums';
+import { IComponent } from '../../models/types';
 
-export class MonthInfo implements IComponent {
+export class Month implements IComponent {
   mode: string;
   dataset: number[];
   startWeekOn: string;
@@ -74,7 +74,7 @@ export class MonthInfo implements IComponent {
     this.selectedDataset = null; // selected index of dataset
   }
 
-  public get componentType() {
+  get componentType() {
     return ComponentType.Month;
   }
 }

@@ -3,7 +3,6 @@ import { Query } from '../models/query';
 import { RenderInfo } from '../models/render-info';
 import { DataMap, XValueMap } from '../models/types';
 import { DateTimeUtils, NumberUtils } from '../utils';
-import { TMoment, getMoment } from '../utils/date-time.utils';
 import Moment = moment.Moment;
 
 /**
@@ -18,35 +17,28 @@ import Moment = moment.Moment;
 export const extractDateUsingRegexWithValue = (
   text: string,
   pattern: string,
-  renderInfo: RenderInfo,
-  moment?: TMoment
+  renderInfo: RenderInfo
 ): Moment => {
-  let date = getMoment(moment)('');
-
   const regex = new RegExp(pattern, 'gm');
   let match;
   while ((match = regex.exec(text))) {
-    // console.log(match);
     if (
       typeof match.groups !== 'undefined' &&
       typeof match.groups.value !== 'undefined'
     ) {
       // must have group name 'value'
       let strDate = match.groups.value.trim();
-      // console.log(strDate);
       strDate = DateTimeUtils.getDateStringFromInputString(
         strDate,
         renderInfo.dateFormatPrefix,
         renderInfo.dateFormatSuffix
       );
 
-      date = DateTimeUtils.stringToDate(strDate, renderInfo.dateFormat);
-      if (date.isValid()) {
-        return date;
-      }
+      const date = DateTimeUtils.stringToDate(strDate, renderInfo.dateFormat);
+      if (date.isValid()) return date;
     }
   }
-  return date;
+  return window.moment('');
 };
 
 /**
@@ -70,28 +62,21 @@ export const extractDataUsingRegexWithMultipleValues = (
   xValueMap: XValueMap,
   renderInfo: RenderInfo
 ): boolean => {
-  // console.log("extractDataUsingRegexWithMultipleValues");
   const regex = new RegExp(strRegex, 'gm');
   let match;
   let measure = 0;
   let extracted = false;
   while ((match = regex.exec(text))) {
-    // console.log(match);
     if (!renderInfo.ignoreAttachedValue[query.id]) {
       if (
         typeof match.groups !== 'undefined' &&
         typeof match.groups.value !== 'undefined'
       ) {
         const values = match.groups.value.trim();
-        // console.log(values);
-        // console.log(query.getSeparator());
         const splitValues = values.split(query.getSeparator());
-        // console.log(splitValues);
         if (!splitValues) continue;
         if (splitValues.length === 1) {
-          // console.log("single-value");
           const toParse = splitValues[0].trim();
-          // console.log(toParse);
           const parsed = NumberUtils.parseFloatFromAny(
             toParse,
             renderInfo.textValueMap
@@ -114,13 +99,11 @@ export const extractDataUsingRegexWithMultipleValues = (
           splitValues.length > query.getAccessor() &&
           query.getAccessor() >= 0
         ) {
-          // console.log("multiple-values");
           const toParse = splitValues[query.getAccessor()].trim();
           const parsed = NumberUtils.parseFloatFromAny(
             toParse,
             renderInfo.textValueMap
           );
-          // console.log(parsed);
           if (parsed.value !== null) {
             if (parsed.type === ValueType.Time) {
               measure = parsed.value;
@@ -136,14 +119,12 @@ export const extractDataUsingRegexWithMultipleValues = (
         }
       } else {
         // no named groups, count occurrences
-        // console.log("count occurrences");
         measure += renderInfo.constValue[query.id];
         extracted = true;
         query.incrementTargets();
       }
     } else {
       // force to count occurrences
-      // console.log("forced count occurrences");
       measure += renderInfo.constValue[query.id];
       extracted = true;
       query.incrementTargets();

@@ -1,8 +1,7 @@
-import { ComponentType } from './enums';
-import { IComponent, ILegend } from './types';
+import { ComponentType } from '../../models/enums';
+import { Chart } from './chart.model';
 
-export class BaseChart implements IComponent, ILegend {
-  title: string;
+export abstract class CartesianChart extends Chart {
   xAxisLabel: string;
   xAxisColor: string;
   xAxisLabelColor: string;
@@ -19,15 +18,8 @@ export class BaseChart implements IComponent, ILegend {
   reverseYAxis: boolean[];
   allowInspectData: boolean;
 
-  // ILegend
-  showLegend: boolean;
-  legendPosition: string;
-  legendOrientation: string;
-  legendBgColor: string;
-  legendBorderColor: string;
-
   constructor() {
-    this.title = '';
+    super();
     this.xAxisLabel = 'Date';
     this.xAxisColor = '';
     this.xAxisLabelColor = '';
@@ -43,16 +35,7 @@ export class BaseChart implements IComponent, ILegend {
     this.yMax = []; // null, 2 elements
     this.reverseYAxis = []; // false, 2 elements
     this.allowInspectData = true;
-
-    // ILegend
-    this.showLegend = false;
-    this.legendPosition = ''; // top, bottom, left, right
-    this.legendOrientation = ''; // horizontal, vertical
-    this.legendBgColor = '';
-    this.legendBorderColor = '';
   }
 
-  public get componentType() {
-    return ComponentType.Unknown;
-  }
+  abstract get componentType(): ComponentType;
 }

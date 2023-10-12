@@ -1,7 +1,7 @@
-import { BaseChart } from './base-chart';
-import { ComponentType } from './enums';
+import { ComponentType } from '../../models/enums';
+import { CartesianChart } from './cartesian-chart.model';
 
-export class BarChart extends BaseChart {
+export class BarChart extends CartesianChart {
   barColor: string[];
   yAxisLocation: string[];
 
@@ -11,7 +11,7 @@ export class BarChart extends BaseChart {
     this.yAxisLocation = []; // left, for each target
   }
 
-  public get componentType() {
+  get componentType() {
     return ComponentType.BarChart;
   }
 }

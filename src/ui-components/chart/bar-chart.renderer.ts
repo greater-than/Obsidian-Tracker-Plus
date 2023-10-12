@@ -1,25 +1,25 @@
-import { BarChart } from '../../models/bar-chart';
+import { Dataset } from '../../models/dataset';
 import { RenderInfo } from '../../models/render-info';
+import { ChartElements } from '../../models/types';
+import { UiUtils } from '../../utils';
+import { createElements } from '../shared';
+import { BarChart } from './bar-chart.model';
 import {
-  createAreas,
-  renderBar,
   renderLegend,
   renderTitle,
   renderXAxis,
   renderYAxis,
-  setChartScale,
-} from './helper';
+} from './chart.helper';
+import { DataPoint } from './data-point.model';
 
 export const renderBarChart = (
-  canvas: HTMLElement,
+  container: HTMLElement,
   renderInfo: RenderInfo,
   component: BarChart
 ): string => {
-  // console.log("renderBarChart");
-  // console.log(renderInfo);
   if (!renderInfo || !component) return;
 
-  const elements = createAreas(canvas, renderInfo);
+  const elements = createElements(container, renderInfo);
 
   renderTitle(elements, renderInfo, component);
 
@@ -107,5 +107,88 @@ export const renderBarChart = (
     renderLegend(elements, renderInfo, component);
   }
 
-  setChartScale(canvas, elements, renderInfo);
+  UiUtils.setScale(container, elements, renderInfo);
+};
+
+export const renderBar = (
+  elements: ChartElements,
+  renderInfo: RenderInfo,
+  component: BarChart,
+  dataset: Dataset,
+  yAxisLocation: string,
+  currBarSet: number,
+  totalNumOfBarSets: number
+): void => {
+  if (!renderInfo || !component) return;
+
+  const barGap = 1;
+  const barSetWidth = renderInfo.dataAreaSize.width / dataset.values.length;
+  let barWidth = barSetWidth;
+  if (barSetWidth - barGap > 0) {
+    barWidth = barSetWidth - barGap;
+  }
+  barWidth = barWidth / totalNumOfBarSets;
+
+  // TODO Why is this here?
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const portionLeft = (currBarSet + 1) / totalNumOfBarSets;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let yScale: any = null;
+  if (yAxisLocation === 'left') {
+    yScale = elements.leftYScale;
+  } else if (yAxisLocation === 'right') {
+    yScale = elements.rightYScale;
+  }
+
+  const bars = elements.dataArea
+    .selectAll('bar')
+    .data(Array.from(dataset).filter((p: DataPoint) => p.value !== null))
+    .enter()
+    .append('rect')
+    .attr('x', (p: DataPoint, i: number) => {
+      if (i === 0) {
+        const portionVisible = currBarSet + 1 - totalNumOfBarSets / 2;
+        if (portionVisible < 1) {
+          return (
+            elements.xScale(p.date) -
+            barSetWidth / 2 +
+            currBarSet * barWidth +
+            portionVisible * barWidth
+          );
+        }
+      }
+      return elements.xScale(p.date) - barSetWidth / 2 + currBarSet * barWidth;
+    })
+    .attr('y', (p: DataPoint) => yScale(Math.max(p.value, 0)))
+    .attr('width', (p: DataPoint, i: number) => {
+      if (i === 0) {
+        const portionVisible = currBarSet + 1 - totalNumOfBarSets / 2;
+        if (portionVisible < 0) {
+          return 0;
+        } else if (portionVisible < 1) {
+          return barWidth * portionVisible;
+        }
+        return barWidth;
+      } else if (i === dataset.values.length - 1) {
+        const portionVisible = 1 - (currBarSet + 1 - totalNumOfBarSets / 2);
+        if (portionVisible < 0) {
+          return 0;
+        } else if (portionVisible < 1) {
+          return barWidth * portionVisible;
+        }
+        return barWidth;
+      }
+      return barWidth;
+    })
+    .attr('height', (p: DataPoint) => {
+      if (p.value !== null) {
+        return Math.abs(yScale(p.value) - yScale(0));
+      }
+    })
+    .attr('class', 'tracker-bar');
+
+  if (component.barColor[dataset.id]) {
+    bars.style('fill', component.barColor[dataset.id]);
+  }
 };

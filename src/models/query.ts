@@ -118,7 +118,7 @@ export class Query implements IQuery {
   }
 
   public getSeparator(isForFrontmatterTags: boolean = false): string {
-    return this._separator === ''
+    return this.separator === ''
       ? isForFrontmatterTags
         ? ','
         : '/'
