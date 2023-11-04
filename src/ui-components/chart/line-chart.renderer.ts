@@ -55,7 +55,7 @@ export const renderLineChart = (
   if (chartElements.leftYAxis && chartElements.leftYScale) {
     for (const datasetId of datasetOnLeftYAxis) {
       const dataset = renderInfo.datasets.getDatasetById(datasetId);
-      if (dataset.getQuery().usedAsXDataset) continue;
+      if (dataset.query.usedAsXDataset) continue;
 
       renderLine(chartElements, renderInfo, lineInfo, dataset, 'left');
 
@@ -77,7 +77,7 @@ export const renderLineChart = (
   if (chartElements.rightYAxis && chartElements.rightYScale) {
     for (const datasetId of datasetOnRightYAxis) {
       const dataset = renderInfo.datasets.getDatasetById(datasetId);
-      if (dataset.getQuery().usedAsXDataset) continue;
+      if (dataset.query.usedAsXDataset) continue;
 
       renderLine(chartElements, renderInfo, lineInfo, dataset, 'right');
 

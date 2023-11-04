@@ -58,7 +58,7 @@ export const renderBarChart = (
   if (chartElements.leftYAxis && chartElements.leftYScale) {
     for (const datasetId of datasetOnLeftYAxis) {
       const dataset = renderInfo.datasets.getDatasetById(datasetId);
-      if (dataset.getQuery().usedAsXDataset) continue;
+      if (dataset.query.usedAsXDataset) continue;
 
       renderBar(
         chartElements,
@@ -88,7 +88,7 @@ export const renderBarChart = (
   if (chartElements.rightYAxis && chartElements.rightYScale) {
     for (const datasetId of datasetOnRightYAxis) {
       const dataset = renderInfo.datasets.getDatasetById(datasetId);
-      if (dataset.getQuery().usedAsXDataset) continue;
+      if (dataset.query.usedAsXDataset) continue;
 
       renderBar(
         chartElements,

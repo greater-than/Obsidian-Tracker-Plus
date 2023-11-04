@@ -204,7 +204,7 @@ export const renderXAxis = (
   if (!renderInfo || !chartInfo) return;
 
   const datasets = renderInfo.datasets;
-  const xDomain = d3.extent(datasets.getDates());
+  const xDomain = d3.extent(datasets.dates);
   const xScale = d3
     .scaleTime()
     .domain(xDomain)
@@ -216,11 +216,11 @@ export const renderXAxis = (
   );
 
   const [tickValues, tickInterval] = getXTickValues(
-    datasets.getDates(),
+    datasets.dates,
     tickIntervalInDuration
   );
   const tickFormat = getXTickLabelFormat(
-    datasets.getDates(),
+    datasets.dates,
     chartInfo.xAxisTickLabelFormat
   );
 
@@ -311,13 +311,13 @@ export const renderYAxis = (
   let valueIsTime = false;
   for (const datasetId of datasetIds) {
     const dataset = datasets.getDatasetById(datasetId);
-    if (dataset.getQuery().usedAsXDataset) continue;
+    if (dataset.query.usedAsXDataset) continue;
 
-    if (yMinOfDatasets === null || dataset.getYMin() < yMinOfDatasets) {
-      yMinOfDatasets = dataset.getYMin();
+    if (yMinOfDatasets === null || dataset.yMin < yMinOfDatasets) {
+      yMinOfDatasets = dataset.yMin;
     }
-    if (yMaxOfDatasets === null || dataset.getYMax() > yMaxOfDatasets) {
-      yMaxOfDatasets = dataset.getYMax();
+    if (yMaxOfDatasets === null || dataset.yMax > yMaxOfDatasets) {
+      yMaxOfDatasets = dataset.yMax;
     }
 
     // Need all datasets have same settings for time value
@@ -588,7 +588,7 @@ export const renderLine = (
     yScale = chartElements.rightYScale;
   }
 
-  if (lineInfo.showLine[dataset.getId()]) {
+  if (lineInfo.showLine[dataset.id]) {
     const lineGen = d3
       .line<DataPoint>()
       .defined((p: DataPoint) => p.value !== null)
@@ -598,9 +598,9 @@ export const renderLine = (
     const line = chartElements.dataArea
       .append('path')
       .attr('class', 'tracker-line')
-      .style('stroke-width', lineInfo.lineWidth[dataset.getId()]);
+      .style('stroke-width', lineInfo.lineWidth[dataset.id]);
 
-    if (lineInfo.fillGap[dataset.getId()]) {
+    if (lineInfo.fillGap[dataset.id]) {
       line
         .datum(Array.from(dataset).filter((p) => p.value !== null))
         .attr('d', lineGen);
@@ -608,8 +608,8 @@ export const renderLine = (
       line.datum(dataset).attr('d', lineGen);
     }
 
-    if (lineInfo.lineColor[dataset.getId()]) {
-      line.style('stroke', lineInfo.lineColor[dataset.getId()]);
+    if (lineInfo.lineColor[dataset.id]) {
+      line.style('stroke', lineInfo.lineColor[dataset.id]);
     }
   }
 };
@@ -633,13 +633,13 @@ export const renderPoints = (
     yScale = chartElements.rightYScale;
   }
 
-  if (lineInfo.showPoint[dataset.getId()]) {
+  if (lineInfo.showPoint[dataset.id]) {
     const dots = chartElements.dataArea
       .selectAll('dot')
       .data(Array.from(dataset).filter((p: DataPoint) => p.value !== null))
       .enter()
       .append('circle')
-      .attr('r', lineInfo.pointSize[dataset.getId()])
+      .attr('r', lineInfo.pointSize[dataset.id])
       .attr('cx', (p: DataPoint) => chartElements.xScale(p.date))
       .attr('cy', (p: DataPoint) => yScale(p.value))
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -654,15 +654,15 @@ export const renderPoints = (
       })
       .attr('valueType', ValueType[dataset.valueType])
       .attr('class', 'tracker-dot');
-    if (lineInfo.pointColor[dataset.getId()]) {
-      dots.style('fill', lineInfo.pointColor[dataset.getId()]);
+    if (lineInfo.pointColor[dataset.id]) {
+      dots.style('fill', lineInfo.pointColor[dataset.id]);
 
       if (
-        lineInfo.pointBorderColor[dataset.getId()] &&
-        lineInfo.pointBorderWidth[dataset.getId()] > 0
+        lineInfo.pointBorderColor[dataset.id] &&
+        lineInfo.pointBorderWidth[dataset.id] > 0
       ) {
-        dots.style('stroke', lineInfo.pointBorderColor[dataset.getId()]);
-        dots.style('stroke-width', lineInfo.pointBorderWidth[dataset.getId()]);
+        dots.style('stroke', lineInfo.pointBorderColor[dataset.id]);
+        dots.style('stroke-width', lineInfo.pointBorderWidth[dataset.id]);
       }
     }
 
@@ -788,7 +788,7 @@ export const renderBar = (
   if (!renderInfo || !barInfo) return;
 
   const barGap = 1;
-  const barSetWidth = renderInfo.dataAreaSize.width / dataset.getLength();
+  const barSetWidth = renderInfo.dataAreaSize.width / dataset.values.length;
   let barWidth = barSetWidth;
   if (barSetWidth - barGap > 0) {
     barWidth = barSetWidth - barGap;
@@ -838,7 +838,7 @@ export const renderBar = (
           return barWidth * portionVisible;
         }
         return barWidth;
-      } else if (i === dataset.getLength() - 1) {
+      } else if (i === dataset.values.length - 1) {
         const portionVisible = 1 - (currBarSet + 1 - totalNumOfBarSets / 2);
         if (portionVisible < 0) {
           return 0;
@@ -856,8 +856,8 @@ export const renderBar = (
     })
     .attr('class', 'tracker-bar');
 
-  if (barInfo.barColor[dataset.getId()]) {
-    bars.style('fill', barInfo.barColor[dataset.getId()]);
+  if (barInfo.barColor[dataset.id]) {
+    bars.style('fill', barInfo.barColor[dataset.id]);
   }
 };
 
@@ -898,7 +898,7 @@ export const renderLegend = (
   const xDatasetIds = datasets.getXDatasetIds();
   // console.log(xDatasetIds);
   // Get names and their dimension
-  const names = datasets.getNames(); // xDataset name included
+  const names = datasets.names; // xDataset name included
   const nameSizes = names.map((n) => {
     return helper.measureTextSize(n, 'tracker-legend-label');
   });

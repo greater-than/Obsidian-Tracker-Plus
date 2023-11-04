@@ -59,10 +59,10 @@ const toNextDataset = (renderInfo: RenderInfo, monthInfo: Month): boolean => {
   if (monthInfo.selectedDataset === null) {
     for (const datasetId of datasetIds) {
       dataset = renderInfo.datasets.getDatasetById(datasetId);
-      if (dataset && !dataset.getQuery().usedAsXDataset) break;
+      if (dataset && !dataset.query.usedAsXDataset) break;
     }
     if (dataset) {
-      monthInfo.selectedDataset = dataset.getId();
+      monthInfo.selectedDataset = dataset.id;
       return true; // true if selected dataset changed
     }
   } else {
@@ -75,10 +75,10 @@ const toNextDataset = (renderInfo: RenderInfo, monthInfo: Month): boolean => {
         // search from start
         for (const datasetId of datasetIds) {
           dataset = renderInfo.datasets.getDatasetById(datasetId);
-          if (dataset && !dataset.getQuery().usedAsXDataset) break;
+          if (dataset && !dataset.query.usedAsXDataset) break;
         }
         if (dataset) {
-          monthInfo.selectedDataset = dataset.getId();
+          monthInfo.selectedDataset = dataset.id;
           return true; // true if selected dataset changed
         } else {
           return false;
@@ -88,7 +88,7 @@ const toNextDataset = (renderInfo: RenderInfo, monthInfo: Month): boolean => {
         const datasetId = datasetIds[curIndex];
         dataset = renderInfo.datasets.getDatasetById(datasetId);
         monthInfo.selectedDataset = datasetId;
-        if (dataset && !dataset.getQuery().usedAsXDataset) {
+        if (dataset && !dataset.query.usedAsXDataset) {
           return true;
         } else {
           toNextDataset(renderInfo, monthInfo);
@@ -189,7 +189,7 @@ const renderMonthHeader = (
   if (curDatasetId === null) return;
   const dataset = renderInfo.datasets.getDatasetById(curDatasetId);
   if (!dataset) return;
-  const datasetName = dataset.getName();
+  const datasetName = dataset.name;
 
   // TODO What are these for?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -524,11 +524,11 @@ function renderMonthDays(
   const streakHeight = 3;
 
   // Get min and max
-  let yMin = d3.min(dataset.getValues());
+  let yMin = d3.min(dataset.values);
   if (monthInfo.yMin[curDatasetIndex] !== null) {
     yMin = monthInfo.yMin[curDatasetIndex];
   }
-  let yMax = d3.max(dataset.getValues());
+  let yMax = d3.max(dataset.values);
   if (monthInfo.yMax[curDatasetIndex] !== null) {
     yMax = monthInfo.yMax[curDatasetIndex];
   }
@@ -551,8 +551,8 @@ function renderMonthDays(
   if (monthInfo.startWeekOn.toLowerCase() === 'mon') {
     endDate = endDate.add(1, 'days');
   }
-  const dataStartDate = dataset.getStartDate();
-  const dataEndDate = dataset.getEndDate();
+  const dataStartDate = dataset.startDate;
+  const dataEndDate = dataset.endDate;
   // console.log(monthStartDate.format("YYYY-MM-DD"));
   // console.log(startDate.format("YYYY-MM-DD"));
 
@@ -1094,7 +1094,7 @@ export const renderMonth = (
 
   let numAvailableDataset = 0;
   for (const dataset of renderInfo.datasets) {
-    if (!dataset.getQuery().usedAsXDataset) {
+    if (!dataset.query.usedAsXDataset) {
       numAvailableDataset++;
     }
   }
@@ -1125,7 +1125,7 @@ export const renderMonth = (
       }
     }
   } else {
-    monthDate = renderInfo.datasets.getDates().last();
+    monthDate = renderInfo.datasets.dates.last();
   }
   if (!monthDate) return;
 
