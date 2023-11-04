@@ -105,7 +105,7 @@ export class RenderInfo {
 
   public getQueryById(id: number) {
     for (const query of this.queries) {
-      if (query.getId() === id) {
+      if (query.id === id) {
         return query;
       }
     }

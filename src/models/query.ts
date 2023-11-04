@@ -1,30 +1,17 @@
 import { SearchType, ValueType } from './enums';
 
 export class Query {
-  private type: SearchType | null;
-  private target: string;
-  private parentTarget: string | null;
-  private separator: string; // multiple value separator
-  private id: number;
-  private accessor: number;
-  private accessor1: number;
-  private accessor2: number;
-  private numTargets: number;
-
-  valueType: ValueType;
-  usedAsXDataset: boolean;
-
   constructor(id: number, searchType: SearchType, searchTarget: string) {
-    this.type = searchType;
-    this.target = searchTarget;
-    this.separator = ''; // separator to separate multiple values
-    this.id = id;
-    this.accessor = -1;
-    this.accessor1 = -1;
-    this.accessor2 = -1;
+    this._type = searchType;
+    this._target = searchTarget;
+    this._separator = ''; // separator to separate multiple values
+    this._id = id;
+    this._accessor = -1;
+    this._accessor1 = -1;
+    this._accessor2 = -1;
     this.valueType = ValueType.Number;
     this.usedAsXDataset = false;
-    this.numTargets = 0;
+    this._numTargets = 0;
 
     if (searchType === SearchType.Table) {
       // searchTarget --> {{filePath}}[{{table}}][{{column}}]
@@ -44,12 +31,12 @@ export class Query {
                   accessor2 = parseFloat(match.groups.accessor2);
                 }
 
-                this.accessor = accessor;
-                this.accessor1 = accessor1;
+                this._accessor = accessor;
+                this._accessor1 = accessor1;
                 if (Number.isNumber(accessor2)) {
-                  this.accessor2 = accessor2;
+                  this._accessor2 = accessor2;
                 }
-                this.parentTarget = searchTarget.replace(regex, '');
+                this._parentTarget = searchTarget.replace(regex, '');
               }
               break;
             }
@@ -64,8 +51,8 @@ export class Query {
         if (typeof match.groups.accessor !== 'undefined') {
           const accessor = parseFloat(match.groups.accessor);
           if (Number.isNumber(accessor)) {
-            this.accessor = accessor;
-            this.parentTarget = searchTarget.replace(regex, '');
+            this._accessor = accessor;
+            this._parentTarget = searchTarget.replace(regex, '');
           }
           break;
         }
@@ -73,61 +60,77 @@ export class Query {
     }
   }
 
+  private _type: SearchType | null;
+  private _target: string;
+  private _parentTarget: string | null;
+  private _separator: string; // multiple value separator
+  private _id: number;
+  private _accessor: number;
+  private _accessor1: number;
+  private _accessor2: number;
+  private _numTargets: number;
+
+  valueType: ValueType;
+  usedAsXDataset: boolean;
+
+  //#region Properties
+
+  public get type() {
+    return this._type;
+  }
+
+  public get target() {
+    return this._target;
+  }
+
+  public get parentTarget() {
+    return this._parentTarget;
+  }
+
+  public get id() {
+    return this._id;
+  }
+
+  public get numTargets() {
+    return this._numTargets;
+  }
+  // #endregion
+
   public equalTo(other: Query): boolean {
-    if (this.type === other.type && this.target === other.target) {
+    if (this._type === other._type && this._target === other._target) {
       return true;
     }
     return false;
   }
 
-  public getType() {
-    return this.type;
-  }
-
-  public getTarget() {
-    return this.target;
-  }
-
-  public getParentTarget() {
-    return this.parentTarget;
-  }
-
-  public getId() {
-    return this.id;
-  }
-
   public getAccessor(index = 0) {
     switch (index) {
       case 0:
-        return this.accessor;
+        return this._accessor;
       case 1:
-        return this.accessor1;
+        return this._accessor1;
       case 2:
-        return this.accessor2;
+        return this._accessor2;
     }
 
     return null;
   }
 
   public setSeparator(sep: string) {
-    this.separator = sep;
+    this._separator = sep;
   }
 
   public getSeparator(isForFrontmatterTags: boolean = false) {
-    if (this.separator === '') {
+    if (this._separator === '') {
       if (isForFrontmatterTags) {
         return ',';
       }
       return '/';
     }
-    return this.separator;
+    return this._separator;
   }
 
-  public addNumTargets(num: number = 1) {
-    this.numTargets = this.numTargets + num;
-  }
-
-  public getNumTargets() {
-    return this.numTargets;
+  public incrementTargetCount(num: number = 1) {
+    this._numTargets = this._numTargets + num;
   }
 }

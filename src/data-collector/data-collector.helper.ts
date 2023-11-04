@@ -75,7 +75,7 @@ export const extractDataUsingRegexWithMultipleValues = (
   let extracted = false;
   while ((match = regex.exec(text))) {
     // console.log(match);
-    if (!renderInfo.ignoreAttachedValue[query.getId()]) {
+    if (!renderInfo.ignoreAttachedValue[query.id]) {
       if (
         typeof match.groups !== 'undefined' &&
         typeof match.groups.value !== 'undefined'
@@ -99,15 +99,15 @@ export const extractDataUsingRegexWithMultipleValues = (
               value = retParse.value;
               extracted = true;
               query.valueType = ValueType.Time;
-              query.addNumTargets();
+              query.incrementTargetCount();
             } else {
               if (
-                !renderInfo.ignoreZeroValue[query.getId()] ||
+                !renderInfo.ignoreZeroValue[query.id] ||
                 retParse.value !== 0
               ) {
                 value += retParse.value;
                 extracted = true;
-                query.addNumTargets();
+                query.incrementTargetCount();
               }
             }
           }
@@ -127,32 +127,32 @@ export const extractDataUsingRegexWithMultipleValues = (
               value = retParse.value;
               extracted = true;
               query.valueType = ValueType.Time;
-              query.addNumTargets();
+              query.incrementTargetCount();
             } else {
               value += retParse.value;
               extracted = true;
-              query.addNumTargets();
+              query.incrementTargetCount();
             }
           }
         }
       } else {
         // no named groups, count occurrences
         // console.log("count occurrences");
-        value += renderInfo.constValue[query.getId()];
+        value += renderInfo.constValue[query.id];
         extracted = true;
-        query.addNumTargets();
+        query.incrementTargetCount();
       }
     } else {
       // force to count occurrences
       // console.log("forced count occurrences");
-      value += renderInfo.constValue[query.getId()];
+      value += renderInfo.constValue[query.id];
       extracted = true;
-      query.addNumTargets();
+      query.incrementTargetCount();
     }
   }
 
   if (extracted) {
-    const xValue = valueMap.get(renderInfo.xDataset[query.getId()]);
+    const xValue = valueMap.get(renderInfo.xDataset[query.id]);
     dataMap.add(xValue, { query, value });
     return true;
   }

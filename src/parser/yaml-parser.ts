@@ -282,7 +282,7 @@ export const getRenderInfo = (
 
       if (
         queries.some((q) => {
-          return q.getId() === customDatasetId;
+          return q.id === customDatasetId;
         })
       ) {
         errorMessage = "Duplicated dataset id for key '" + key + "'";
@@ -1160,7 +1160,7 @@ export const getRenderInfo = (
     if (retDataset.length === 0) {
       // insert y dataset given
       for (const q of queries) {
-        retDataset.push(q.getId());
+        retDataset.push(q.id);
       }
     }
     month.dataset = retDataset;
@@ -1172,13 +1172,11 @@ export const getRenderInfo = (
       yamlMonth?.startWeekOn,
       month.startWeekOn
     );
-    // console.log(month.startWeekOn);
 
     // showCircle
     if (typeof yamlMonth?.showCircle === 'boolean') {
       month.showCircle = yamlMonth.showCircle;
     }
-    // console.log(month.showCircle);
 
     // threshold
     const retThreshold = getNumberArray('threshold', yamlMonth?.threshold);
@@ -1198,7 +1196,6 @@ export const getRenderInfo = (
         'The number of inputs of threshold and dataset not matched';
       return errorMessage;
     }
-    // console.log(month.threshold);
 
     // yMin
     const retYMin = getNumberArray('yMin', yamlMonth?.yMin);
@@ -1216,7 +1213,6 @@ export const getRenderInfo = (
         'The number of inputs of yMin and dataset not matched';
       return errorMessage;
     }
-    // console.log(month.yMin);
 
     // yMax
     const retYMax = getNumberArray('yMax', yamlMonth?.yMax);
@@ -1234,7 +1230,6 @@ export const getRenderInfo = (
         'The number of inputs of yMin and dataset not matched';
       return errorMessage;
     }
-    // console.log(month.yMax);
 
     // color
     month.color = getStringFromInput(yamlMonth?.color, month.color);
@@ -1244,7 +1239,6 @@ export const getRenderInfo = (
     if (typeof yamlMonth?.dimNotInMonth === 'boolean') {
       month.dimNotInMonth = yamlMonth.dimNotInMonth;
     }
-    // console.log(month.dimNotInMonth);
 
     // showStreak
     if (typeof yamlMonth?.showStreak === 'boolean') {
@@ -1262,13 +1256,11 @@ export const getRenderInfo = (
     if (typeof yamlMonth?.showSelectedValue === 'boolean') {
       month.showSelectedValue = yamlMonth.showSelectedValue;
     }
-    // console.log(month.showSelectedValue);
 
     // showSelectedRing
     if (typeof yamlMonth?.showSelectedRing === 'boolean') {
       month.showSelectedRing = yamlMonth.showSelectedRing;
     }
-    // console.log(month.showSelectedRing);
 
     // circleColor
     month.circleColor = getStringFromInput(
