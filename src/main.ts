@@ -10,13 +10,13 @@ import {
   normalizePath,
 } from 'obsidian';
 import * as collecting from './data-collector/data-collector';
-import * as dataCollectorHelper from './data-collector/data-collector.helper';
+import { DataMap } from './models/data-map';
 import { DatasetCollection } from './models/dataset';
 import { ComponentType, SearchType, ValueType } from './models/enums';
 import { ProcessInfo } from './models/process-info';
 import { RenderInfo } from './models/render-info';
 import { TableData } from './models/table-data';
-import { IQueryValuePair, TDataMap, TNumberValueMap } from './models/types';
+import { IQueryValuePair, TNumberValueMap } from './models/types';
 import { getRenderInfo } from './parser/yaml-parser';
 import * as renderer from './renderer';
 import * as rendering from './renderer';
@@ -298,7 +298,7 @@ export default class Tracker extends Plugin {
     // Use own settings panel for now
 
     // Collecting data to dataMap first
-    const dataMap: TDataMap = new Map(); // {strDate: [query: value, ...]}
+    const dataMap = new DataMap(); // {strDate: [query: value, ...]}
     const processInfo = new ProcessInfo();
     processInfo.fileTotal = files.length;
 
@@ -729,7 +729,7 @@ export default class Tracker extends Plugin {
 
   // TODO: remove this.app and move to collecting.ts
   async collectDataFromTable(
-    dataMap: TDataMap,
+    dataMap: DataMap,
     renderInfo: RenderInfo,
     processInfo: ProcessInfo
   ): Promise<void> {
@@ -939,11 +939,9 @@ export default class Tracker extends Plugin {
                 const value = retParse.value;
                 if (indLine < xValues.length && xValues[indLine]) {
                   processInfo.gotAnyValidYValue ||= true;
-                  dataCollectorHelper.addToDataMap(
-                    dataMap,
+                  dataMap.add(
                     helper.dateToStr(xValues[indLine], renderInfo.dateFormat),
-                    yDatasetQuery,
-                    value
+                    { query: yDatasetQuery, value }
                   );
                 }
               }
@@ -967,11 +965,9 @@ export default class Tracker extends Plugin {
                 value = retParse.value;
                 if (indLine < xValues.length && xValues[indLine]) {
                   processInfo.gotAnyValidYValue ||= true;
-                  dataCollectorHelper.addToDataMap(
-                    dataMap,
+                  dataMap.add(
                     helper.dateToStr(xValues[indLine], renderInfo.dateFormat),
-                    yDatasetQuery,
-                    value
+                    { query: yDatasetQuery, value }
                   );
                 }
               }

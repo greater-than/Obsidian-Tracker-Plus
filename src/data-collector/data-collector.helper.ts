@@ -1,7 +1,8 @@
+import { DataMap } from '../models/data-map';
 import { ValueType } from '../models/enums';
 import { Query } from '../models/query';
 import { RenderInfo } from '../models/render-info';
-import { IQueryValuePair, TDataMap, TNumberValueMap } from '../models/types';
+import { TNumberValueMap } from '../models/types';
 import * as helper from '../utils/helper';
 import Moment = moment.Moment;
 
@@ -63,14 +64,14 @@ export const extractDataUsingRegexWithMultipleValues = (
   text: string,
   pattern: string,
   query: Query,
-  dataMap: TDataMap,
+  dataMap: DataMap,
   valueMap: TNumberValueMap,
   renderInfo: RenderInfo
 ): boolean => {
   // console.log("extractDataUsingRegexWithMultipleValues");
   const regex = new RegExp(pattern, 'gm');
   let match;
-  let measure = 0;
+  let value = 0;
   let extracted = false;
   while ((match = regex.exec(text))) {
     // console.log(match);
@@ -95,7 +96,7 @@ export const extractDataUsingRegexWithMultipleValues = (
           );
           if (retParse.value !== null) {
             if (retParse.type === ValueType.Time) {
-              measure = retParse.value;
+              value = retParse.value;
               extracted = true;
               query.valueType = ValueType.Time;
               query.addNumTargets();
@@ -104,7 +105,7 @@ export const extractDataUsingRegexWithMultipleValues = (
                 !renderInfo.ignoreZeroValue[query.getId()] ||
                 retParse.value !== 0
               ) {
-                measure += retParse.value;
+                value += retParse.value;
                 extracted = true;
                 query.addNumTargets();
               }
@@ -123,12 +124,12 @@ export const extractDataUsingRegexWithMultipleValues = (
           //console.log(retParse);
           if (retParse.value !== null) {
             if (retParse.type === ValueType.Time) {
-              measure = retParse.value;
+              value = retParse.value;
               extracted = true;
               query.valueType = ValueType.Time;
               query.addNumTargets();
             } else {
-              measure += retParse.value;
+              value += retParse.value;
               extracted = true;
               query.addNumTargets();
             }
@@ -137,14 +138,14 @@ export const extractDataUsingRegexWithMultipleValues = (
       } else {
         // no named groups, count occurrences
         // console.log("count occurrences");
-        measure += renderInfo.constValue[query.getId()];
+        value += renderInfo.constValue[query.getId()];
         extracted = true;
         query.addNumTargets();
       }
     } else {
       // force to count occurrences
       // console.log("forced count occurrences");
-      measure += renderInfo.constValue[query.getId()];
+      value += renderInfo.constValue[query.getId()];
       extracted = true;
       query.addNumTargets();
     }
@@ -152,25 +153,9 @@ export const extractDataUsingRegexWithMultipleValues = (
 
   if (extracted) {
     const xValue = valueMap.get(renderInfo.xDataset[query.getId()]);
-    addToDataMap(dataMap, xValue, query, measure);
+    dataMap.add(xValue, { query, value });
     return true;
   }
 
   return false;
-};
-
-export const addToDataMap = (
-  dataMap: TDataMap,
-  date: string,
-  query: Query,
-  value: number | null
-) => {
-  if (!dataMap.has(date)) {
-    const queryValuePairs = new Array<IQueryValuePair>();
-    queryValuePairs.push({ query: query, value: value });
-    dataMap.set(date, queryValuePairs);
-  } else {
-    const targetValuePairs = dataMap.get(date);
-    targetValuePairs.push({ query: query, value: value });
-  }
 };

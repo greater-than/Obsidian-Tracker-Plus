@@ -1,26 +1,23 @@
 import { CachedMetadata, TFile } from 'obsidian';
+import { DataMap } from '../models/data-map';
 import { SearchType, ValueType } from '../models/enums';
 import { Query } from '../models/query';
 import { RenderInfo } from '../models/render-info';
-import { TDataMap, TNumberValueMap } from '../models/types';
+import { TNumberValueMap } from '../models/types';
 import * as helper from '../utils/helper';
+import { WordCharacters } from './constants';
 import {
-  addToDataMap,
   extractDataUsingRegexWithMultipleValues,
   extractDateUsingRegexWithValue,
 } from './data-collector.helper';
 import Moment = moment.Moment;
 
-// ref: https://www.rapidtables.com/code/text/unicode-characters.html
-const CurrencyCodes =
-  '\u0024\u20AC\u00A3\u00A5\u00A2\u20B9\u20A8\u20B1\u20A9\u0E3F\u20AB\u20AA';
-const AlphabetCodes = '\u03B1-\u03C9\u0391-\u03A9';
-const IntellectualPropertyCodes = '\u00A9\u00AE\u2117\u2122\u2120';
-const CJKCodes = '\u4E00-\u9FFF\u3400-\u4DBF\u3000\u3001-\u303F';
-const WordCharacters =
-  '\\w' + CurrencyCodes + AlphabetCodes + IntellectualPropertyCodes + CJKCodes;
-
-// fileBaseName is a string contains dateFormat only
+/**
+ * @summary Returns a Moment object from a note file name
+ * @param {TFile} file file.basename is a string that should contain dateFormat only
+ * @param {RenderInfo} renderInfo
+ * @returns {Moment}
+ */
 export const getDateFromFilename = (
   file: TFile,
   renderInfo: RenderInfo
@@ -279,7 +276,7 @@ export const collectDataFromFrontmatterTag = (
   fileCache: CachedMetadata,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: TDataMap,
+  dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
   // console.log("collectDataFromFrontmatterTag");
@@ -330,7 +327,7 @@ export const collectDataFromFrontmatterTag = (
         value = tagMeasure;
       }
       const xValue = xValueMap.get(renderInfo.xDataset[query.getId()]);
-      addToDataMap(dataMap, xValue, query, value);
+      dataMap.add(xValue, { query, value });
       return true;
     }
   }
@@ -343,7 +340,7 @@ export const collectDataFromFrontmatterKey = (
   fileCache: CachedMetadata,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: TDataMap,
+  dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
   // console.log("collectDataFromFrontmatterKey");
@@ -373,7 +370,7 @@ export const collectDataFromFrontmatterKey = (
         }
         query.addNumTargets();
         const xValue = xValueMap.get(renderInfo.xDataset[query.getId()]);
-        addToDataMap(dataMap, xValue, query, retParse.value);
+        dataMap.add(xValue, { query, value: retParse.value });
         return true;
       }
     } else if (
@@ -414,7 +411,7 @@ export const collectDataFromFrontmatterKey = (
           }
           query.addNumTargets();
           const xValue = xValueMap.get(renderInfo.xDataset[query.getId()]);
-          addToDataMap(dataMap, xValue, query, retParse.value);
+          dataMap.add(xValue, { query, value: retParse.value });
           return true;
         }
       }
@@ -429,7 +426,7 @@ export const collectDataFromWiki = (
   fileCache: CachedMetadata,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: TDataMap,
+  dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
   const links = fileCache.links;
@@ -487,7 +484,7 @@ export const collectDataFromInlineTag = (
   content: string,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: TDataMap,
+  dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
   // console.log(content);
@@ -521,7 +518,7 @@ export const collectDataFromText = (
   content: string,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: TDataMap,
+  dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
   // console.log("collectDataFromText");
@@ -544,7 +541,7 @@ export const collectDataFromFileMeta = (
   content: string,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: TDataMap,
+  dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
   // console.log("collectDataFromFileMeta");
@@ -559,32 +556,32 @@ export const collectDataFromFileMeta = (
       const ctime = file.stat.ctime; // unix time
       query.valueType = ValueType.Date;
       query.addNumTargets();
-      addToDataMap(dataMap, xValue, query, ctime);
+      dataMap.add(xValue, { query, value: ctime });
       return true;
     } else if (target === 'mDate') {
       const mtime = file.stat.mtime; // unix time
       query.valueType = ValueType.Date;
       query.addNumTargets();
-      addToDataMap(dataMap, xValue, query, mtime);
+      dataMap.add(xValue, { query, value: mtime });
       return true;
     } else if (target === 'size') {
       const size = file.stat.size; // number in
       query.addNumTargets();
-      addToDataMap(dataMap, xValue, query, size);
+      dataMap.add(xValue, { query, value: size });
       return true;
     } else if (target === 'numWords') {
       const numWords = helper.getWordCount(content);
-      addToDataMap(dataMap, xValue, query, numWords);
+      dataMap.add(xValue, { query, value: numWords });
       return true;
     } else if (target === 'numChars') {
       const numChars = helper.getCharacterCount(content);
       query.addNumTargets();
-      addToDataMap(dataMap, xValue, query, numChars);
+      dataMap.add(xValue, { query, value: numChars });
       return true;
     } else if (target === 'numSentences') {
       const numSentences = helper.getSentenceCount(content);
       query.addNumTargets();
-      addToDataMap(dataMap, xValue, query, numSentences);
+      dataMap.add(xValue, { query, value: numSentences });
       return true;
     } else if (target === 'name') {
       let targetMeasure = 0.0;
@@ -616,7 +613,7 @@ export const collectDataFromFileMeta = (
         value = targetMeasure;
       }
       if (value !== null) {
-        addToDataMap(dataMap, xValue, query, value);
+        dataMap.add(xValue, { query, value });
         return true;
       }
     }
@@ -630,7 +627,7 @@ export const collectDataFromDvField = (
   content: string,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: TDataMap,
+  dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
   let dvTarget = query.getTarget();
@@ -673,7 +670,7 @@ export const collectDataFromInlineDvField = (
   content: string,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: TDataMap,
+  dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
   let dvTarget = query.getTarget();
@@ -710,7 +707,7 @@ export const collectDataFromTask = (
   content: string,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: TDataMap,
+  dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
   // console.log("collectDataFromTask");
