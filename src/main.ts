@@ -17,7 +17,7 @@ import { ProcessInfo } from './models/process-info';
 import { RenderInfo } from './models/render-info';
 import { TableData } from './models/table-data';
 import { IQueryValuePair, TDataMap, TNumberValueMap } from './models/types';
-import { getRenderInfoFromYaml } from './parsing';
+import { getRenderInfo } from './parser/yaml-parser';
 import * as renderer from './renderer';
 import * as rendering from './renderer';
 import {
@@ -269,7 +269,7 @@ export default class Tracker extends Plugin {
     yamlText = yamlText.replace(/\t/gm, spaces);
 
     // Get render info
-    const retRenderInfo = getRenderInfoFromYaml(yamlText, this);
+    const retRenderInfo = getRenderInfo(yamlText, this);
     if (typeof retRenderInfo === 'string') {
       return this.renderErrorMessage(retRenderInfo, canvas, el);
     }
