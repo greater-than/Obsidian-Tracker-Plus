@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import * as expr from '../../expr';
+import * as expr from '../../expressions/resolver';
 import { Dataset } from '../../models/dataset';
 import { RenderInfo } from '../../models/render-info';
 import { ComponentElements } from '../../models/types';

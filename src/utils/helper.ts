@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
 import { Duration, Moment } from 'moment';
-import { ValueType } from 'src/models/enums';
-import { Size } from 'src/models/size';
-import { Transform } from 'src/models/transform';
-import { TTextValueMap } from 'src/models/types';
+import { ValueType } from '../models/enums';
+import { Size } from '../models/size';
+import { Transform } from '../models/transform';
+import { TTextValueMap } from '../models/types';
 
 // date and time
 const makeTimeFormat = (): string[] => {
