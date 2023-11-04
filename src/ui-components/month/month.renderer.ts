@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
-import { ValueType } from './models/enums';
-import { RenderInfo } from './models/render-info';
-import { ComponentElements } from './models/types';
-import { Month } from './ui-components/month/month.model';
-import * as helper from './utils/helper';
+import { ValueType } from '../../models/enums';
+import { RenderInfo } from '../../models/render-info';
+import { ComponentElements } from '../../models/types';
+import * as helper from '../../utils/helper';
+import { Month } from './month.model';
 import Moment = moment.Moment;
 
 let logToConsole = false;

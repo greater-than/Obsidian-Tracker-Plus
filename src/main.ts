@@ -17,7 +17,8 @@ import { RenderInfo } from './models/render-info';
 import { TableData } from './models/table-data';
 import { IQueryValuePair, TDataMap, TNumberValueMap } from './models/types';
 import { getRenderInfoFromYaml } from './parsing';
-import * as rendering from './rendering';
+import * as renderer from './renderer';
+import * as rendering from './renderer';
 import {
   DEFAULT_SETTINGS,
   TrackerSettingTab,
@@ -717,7 +718,7 @@ export default class Tracker extends Plugin {
     renderInfo.datasets = datasets;
     // console.log(renderInfo.datasets);
 
-    const retRender = rendering.render(canvas, renderInfo);
+    const retRender = renderer.renderTracker(canvas, renderInfo);
     if (typeof retRender === 'string') {
       return this.renderErrorMessage(retRender, canvas, el);
     }

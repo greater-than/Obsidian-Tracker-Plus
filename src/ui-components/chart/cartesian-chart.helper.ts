@@ -1,20 +1,16 @@
 import * as d3 from 'd3';
-import { Duration, Moment } from 'moment';
 import { sprintf } from 'sprintf-js';
-import * as bullet from './bullet';
-import * as heatmap from './heatmap';
-import { DataPoint } from './models/data-point.model';
-import { Dataset } from './models/dataset';
-import { ComponentType, ValueType } from './models/enums';
-import { RenderInfo } from './models/render-info';
-import { ComponentElements } from './models/types';
-import * as month from './month';
-import * as pie from './pie';
-import * as summary from './summary';
-import { BarChart } from './ui-components/chart/bar-chart.model';
-import { CartesianChart } from './ui-components/chart/cartesian-chart.model';
-import { LineChart } from './ui-components/chart/line-chart.model';
-import * as helper from './utils/helper';
+import { DataPoint } from '../../models/data-point.model';
+import { Dataset } from '../../models/dataset';
+import { ComponentType, ValueType } from '../../models/enums';
+import { RenderInfo } from '../../models/render-info';
+import { ComponentElements } from '../../models/types';
+import { BarChart } from '../../ui-components/chart/bar-chart.model';
+import { CartesianChart } from '../../ui-components/chart/cartesian-chart.model';
+import { LineChart } from '../../ui-components/chart/line-chart.model';
+import * as helper from '../../utils/helper';
+import Duration = moment.Duration;
+import Moment = moment.Moment;
 
 const getXTickValues = (
   dates: Moment[],
@@ -22,9 +18,7 @@ const getXTickValues = (
 ): [Array<Date>, d3.TimeInterval] => {
   // The input interval could be null,
   // generate tick values even if interval is null
-
   // console.log(interval);
-
   let tickValues: Array<Date> = [];
   let tickInterval = null;
 
@@ -106,10 +100,8 @@ const getYTickValues = (
 ): number[] => {
   // The input interval could be null,
   // generate tick values for time values even if interval is null
-
   // console.log(interval);
   // console.log(isTimeValue);
-
   const absExtent = Math.abs(yUpper - yLower);
   let tickValues: Array<number> = [];
 
@@ -154,7 +146,6 @@ const getYTickLabelFormat = (
   isTimeValue = false
 ): ((value: number) => string) => {
   // return a function convert value to time string
-
   if (!isTimeValue) {
     if (inTickLabelFormat) {
       const tickFormat = (value: number): string => {
@@ -189,12 +180,11 @@ const getYTickLabelFormat = (
         let format = tickTime.format('HH:mm');
         // console.log(`yLower/yUpper: ${yLower}/${yUpper}`)
         // console.log(`value/extent/inter:${value}/${absExtent}/${(value-yLower)/3600}`);
-
         // auto interleave if extent over 12 hours
         if (absExtent > 12 * 60 * 60) {
           const devHour = (value - yLower) / 3600;
           const interleave = devHour % 2;
-          if (value < yLower || value > yUpper || interleave < 1.0) {
+          if (value < yLower || value > yUpper || interleave < 1) {
             format = '';
           }
         }
@@ -205,82 +195,12 @@ const getYTickLabelFormat = (
   }
 };
 
-export const render = (canvas: HTMLElement, renderInfo: RenderInfo): string => {
-  // console.log("render");
-  // console.log(renderInfo.datasets);
-
-  // Data preprocessing
-  for (const dataset of renderInfo.datasets) {
-    if (dataset.getQuery().usedAsXDataset) continue;
-    // valueShift
-    const shiftAmount = renderInfo.valueShift[dataset.getId()];
-    if (shiftAmount !== null && shiftAmount !== 0) {
-      dataset.shift(
-        shiftAmount,
-        renderInfo.shiftOnlyValueLargerThan[dataset.getId()]
-      );
-    }
-    // penalty
-    if (renderInfo.penalty[dataset.getId()] !== null) {
-      dataset.setPenalty(renderInfo.penalty[dataset.getId()]);
-    }
-    // accum
-    if (renderInfo.accum[dataset.getId()]) {
-      dataset.accumulateValues();
-    }
-  }
-
-  for (const lineInfo of renderInfo.line) {
-    const ret = renderLineChart(canvas, renderInfo, lineInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
-  }
-  for (const barInfo of renderInfo.bar) {
-    const ret = renderBarChart(canvas, renderInfo, barInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
-  }
-  for (const pieInfo of renderInfo.pie) {
-    const ret = pie.renderPieChart(canvas, renderInfo, pieInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
-  }
-  for (const summaryInfo of renderInfo.summary) {
-    const ret = summary.renderSummary(canvas, renderInfo, summaryInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
-  }
-  for (const bulletInfo of renderInfo.bullet) {
-    const ret = bullet.renderBullet(canvas, renderInfo, bulletInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
-  }
-  for (const monthInfo of renderInfo.month) {
-    const ret = month.renderMonth(canvas, renderInfo, monthInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
-  }
-  for (const heatmapInfo of renderInfo.heatmap) {
-    const ret = heatmap.renderHeatmap(canvas, renderInfo, heatmapInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
-  }
-};
-
-const renderXAxis = (
+export const renderXAxis = (
   chartElements: ComponentElements,
   renderInfo: RenderInfo,
   chartInfo: CartesianChart
 ): void => {
   // console.log("renderXAxis");
-
   if (!renderInfo || !chartInfo) return;
 
   const datasets = renderInfo.datasets;
@@ -365,7 +285,7 @@ const renderXAxis = (
   helper.expandArea(chartElements.graphArea, 0, tickLength + tickLabelHeight);
 };
 
-const renderYAxis = (
+export const renderYAxis = (
   chartElements: ComponentElements,
   renderInfo: RenderInfo,
   chartInfo: CartesianChart,
@@ -376,7 +296,6 @@ const renderYAxis = (
   // console.log(datasets);
   // console.log(renderInfo);
   // console.log(datasetIds);
-
   if (!renderInfo || !chartInfo) return;
 
   const datasets = renderInfo.datasets;
@@ -413,7 +332,6 @@ const renderYAxis = (
   }
   // console.log(yMinOfDatasets);
   // console.log(yMaxOfDatasets);
-
   let yMin = null;
   if (yAxisLocation === 'left') {
     yMin = chartInfo.yMin[0];
@@ -464,11 +382,11 @@ const renderYAxis = (
   }
   // if it is bar chart, zero must be contained in the range
   if (chartInfo.componentType() === ComponentType.Bar) {
-    if (yUpper < 0.0) {
+    if (yUpper < 0) {
       yUpper = 0;
     }
-    if (yLower > 0.0) {
-      yLower = 0.0;
+    if (yLower > 0) {
+      yLower = 0;
     }
   }
   let domain = [yLower, yUpper];
@@ -606,7 +524,6 @@ const renderYAxis = (
     }
   }
   // console.log(maxTickLabelWidth);
-
   if (yAxisUnitText !== '') {
     yAxisLabelText += ' (' + yAxisUnitText + ')';
   }
@@ -616,12 +533,12 @@ const renderYAxis = (
     .append('text')
     .text(yAxisLabelText)
     .attr('transform', 'rotate(-90)')
-    .attr('x', (-1 * renderInfo.dataAreaSize.height) / 2.0)
+    .attr('x', (-1 * renderInfo.dataAreaSize.height) / 2)
     .attr('class', 'tracker-axis-label');
   if (yAxisLocation === 'left') {
     yAxisLabel.attr(
       'y',
-      -yTickLength - maxTickLabelWidth - yAxisLabelSize.height / 2.0
+      -yTickLength - maxTickLabelWidth - yAxisLabelSize.height / 2
     );
   } else {
     yAxisLabel.attr(
@@ -652,7 +569,7 @@ const renderYAxis = (
   }
 };
 
-const renderLine = (
+export const renderLine = (
   chartElements: ComponentElements,
   renderInfo: RenderInfo,
   lineInfo: LineChart,
@@ -661,7 +578,6 @@ const renderLine = (
 ): void => {
   // console.log(dataset);
   // console.log(renderInfo);
-
   if (!renderInfo || !lineInfo) return;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -698,7 +614,7 @@ const renderLine = (
   }
 };
 
-const renderPoints = (
+export const renderPoints = (
   chartElements: ComponentElements,
   renderInfo: RenderInfo,
   lineInfo: LineChart,
@@ -707,7 +623,6 @@ const renderPoints = (
 ): void => {
   // console.log(lineInfo);
   // console.log(dataset);
-
   if (!renderInfo || !lineInfo) return;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -744,7 +659,7 @@ const renderPoints = (
 
       if (
         lineInfo.pointBorderColor[dataset.getId()] &&
-        lineInfo.pointBorderWidth[dataset.getId()] > 0.0
+        lineInfo.pointBorderWidth[dataset.getId()] > 0
       ) {
         dots.style('stroke', lineInfo.pointBorderColor[dataset.getId()]);
         dots.style('stroke-width', lineInfo.pointBorderWidth[dataset.getId()]);
@@ -858,7 +773,7 @@ function renderTooltip(
     });
 }
 
-const renderBar = (
+export const renderBar = (
   chartElements: ComponentElements,
   renderInfo: RenderInfo,
   barInfo: BarChart,
@@ -870,7 +785,6 @@ const renderBar = (
   // console.log(dataset);
   // console.log(barInfo);
   // console.log("%d/%d", currBarSet, totalNumOfBarSets);
-
   if (!renderInfo || !barInfo) return;
 
   const barGap = 1;
@@ -900,35 +814,35 @@ const renderBar = (
     .append('rect')
     .attr('x', (p: DataPoint, i: number) => {
       if (i === 0) {
-        const portionVisible = currBarSet + 1 - totalNumOfBarSets / 2.0;
-        if (portionVisible < 1.0) {
+        const portionVisible = currBarSet + 1 - totalNumOfBarSets / 2;
+        if (portionVisible < 1) {
           return (
             chartElements.xScale(p.date) -
-            barSetWidth / 2.0 +
+            barSetWidth / 2 +
             currBarSet * barWidth +
             portionVisible * barWidth
           );
         }
       }
       return (
-        chartElements.xScale(p.date) - barSetWidth / 2.0 + currBarSet * barWidth
+        chartElements.xScale(p.date) - barSetWidth / 2 + currBarSet * barWidth
       );
     })
     .attr('y', (p: DataPoint) => yScale(Math.max(p.value, 0)))
     .attr('width', (p: DataPoint, i: number) => {
       if (i === 0) {
-        const portionVisible = currBarSet + 1 - totalNumOfBarSets / 2.0;
-        if (portionVisible < 0.0) {
-          return 0.0;
-        } else if (portionVisible < 1.0) {
+        const portionVisible = currBarSet + 1 - totalNumOfBarSets / 2;
+        if (portionVisible < 0) {
+          return 0;
+        } else if (portionVisible < 1) {
           return barWidth * portionVisible;
         }
         return barWidth;
       } else if (i === dataset.getLength() - 1) {
-        const portionVisible = 1.0 - (currBarSet + 1 - totalNumOfBarSets / 2.0);
-        if (portionVisible < 0.0) {
-          return 0.0;
-        } else if (portionVisible < 1.0) {
+        const portionVisible = 1 - (currBarSet + 1 - totalNumOfBarSets / 2);
+        if (portionVisible < 0) {
+          return 0;
+        } else if (portionVisible < 1) {
           return barWidth * portionVisible;
         }
         return barWidth;
@@ -947,14 +861,13 @@ const renderBar = (
   }
 };
 
-const renderLegend = (
+export const renderLegend = (
   chartElements: ComponentElements,
   renderInfo: RenderInfo,
   chartInfo: CartesianChart
 ): void => {
   // console.log(chartInfo.legendPosition);
   // console.log(chartInfo.legendOrientation);
-
   // Get chart elements
   const svg = chartElements.svg;
   // TODO Why is this here?
@@ -967,16 +880,16 @@ const renderLegend = (
   const rightYAxis = chartElements.rightYAxis;
 
   // Get element width and height
-  let titleHeight = 0.0;
+  let titleHeight = 0;
   if (title) {
     titleHeight = parseFloat(title.attr('height'));
   }
   const xAxisHeight = parseFloat(xAxis.attr('height'));
-  let leftYAxisWidth = 0.0;
+  let leftYAxisWidth = 0;
   if (leftYAxis) {
     leftYAxisWidth = parseFloat(leftYAxis.attr('width'));
   }
-  let rightYAxisWidth = 0.0;
+  let rightYAxisWidth = 0;
   if (rightYAxis) {
     rightYAxisWidth = parseFloat(rightYAxis.attr('width'));
   }
@@ -984,14 +897,13 @@ const renderLegend = (
   const datasets = renderInfo.datasets;
   const xDatasetIds = datasets.getXDatasetIds();
   // console.log(xDatasetIds);
-
   // Get names and their dimension
   const names = datasets.getNames(); // xDataset name included
   const nameSizes = names.map((n) => {
     return helper.measureTextSize(n, 'tracker-legend-label');
   });
   let indMaxName = 0;
-  let maxNameWidth = 0.0;
+  let maxNameWidth = 0;
   for (let ind = 0; ind < names.length; ind++) {
     if (xDatasetIds.includes(ind)) continue;
     if (nameSizes[ind].width > maxNameWidth) {
@@ -1026,14 +938,13 @@ const renderLegend = (
   // );
   // console.log(`xSpacing:${xSpacing}, numNames: ${numNames}, markerWidth: ${markerWidth}`);
   // console.log(`legendWidth: ${legendWidth}, legendHeight: ${legendHeight}`);
-
   // Calculate legendX and legendY
-  let legendX = 0.0; // relative to graphArea
-  let legendY = 0.0;
+  let legendX = 0; // relative to graphArea
+  let legendY = 0;
   if (chartInfo.legendPosition === 'top') {
     // below title
     legendX =
-      leftYAxisWidth + renderInfo.dataAreaSize.width / 2.0 - legendWidth / 2.0;
+      leftYAxisWidth + renderInfo.dataAreaSize.width / 2 - legendWidth / 2;
     legendY = titleHeight;
     // Expand svg
     helper.expandArea(svg, 0, legendHeight + ySpacing);
@@ -1042,7 +953,7 @@ const renderLegend = (
   } else if (chartInfo.legendPosition === 'bottom') {
     // bellow x-axis label
     legendX =
-      leftYAxisWidth + renderInfo.dataAreaSize.width / 2.0 - legendWidth / 2.0;
+      leftYAxisWidth + renderInfo.dataAreaSize.width / 2 - legendWidth / 2;
     legendY =
       titleHeight + renderInfo.dataAreaSize.height + xAxisHeight + ySpacing;
     // Expand svg
@@ -1050,7 +961,7 @@ const renderLegend = (
   } else if (chartInfo.legendPosition === 'left') {
     legendX = 0;
     legendY =
-      titleHeight + renderInfo.dataAreaSize.height / 2.0 - legendHeight / 2.0;
+      titleHeight + renderInfo.dataAreaSize.height / 2 - legendHeight / 2;
     // Expand svg
     helper.expandArea(svg, legendWidth + xSpacing, 0);
     // Move dataArea right
@@ -1062,20 +973,18 @@ const renderLegend = (
       rightYAxisWidth +
       xSpacing;
     legendY =
-      titleHeight + renderInfo.dataAreaSize.height / 2.0 - legendHeight / 2.0;
+      titleHeight + renderInfo.dataAreaSize.height / 2 - legendHeight / 2;
     // Expand svg
     helper.expandArea(svg, legendWidth + xSpacing, 0);
   } else {
     return;
   }
   // console.log(`legendX: ${legendX}, legendY: ${legendY}`);
-
   const legend = chartElements.graphArea
     .append('g')
     .attr('id', 'legend')
     .attr('transform', 'translate(' + legendX + ',' + legendY + ')');
   // console.log('legendX: %d, legendY: %d', legendX, legendY);
-
   const legendBg = legend
     .append('rect')
     .attr('class', 'tracker-legend')
@@ -1128,7 +1037,7 @@ const renderLegend = (
         .data(names)
         .enter()
         .append('circle')
-        .attr('cx', firstMarkerX + markerWidth / 2.0)
+        .attr('cx', firstMarkerX + markerWidth / 2)
         .attr('cy', (name: string, i: number) => {
           const numElemsExcluded = xDatasetIds.filter((id) => {
             return id < i;
@@ -1141,7 +1050,7 @@ const renderLegend = (
           if ((chartInfo as LineChart).showPoint[i]) {
             return (chartInfo as LineChart).pointSize[i];
           }
-          return 0.0;
+          return 0;
         })
         .style('fill', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
@@ -1160,7 +1069,7 @@ const renderLegend = (
             return id < i;
           }).length;
           i = i - numElemsExcluded;
-          return firstMarkerY + i * ySpacing - nameHeight / 2.0;
+          return firstMarkerY + i * ySpacing - nameHeight / 2;
         })
         .attr('width', markerWidth)
         .attr('height', nameHeight)
@@ -1248,16 +1157,16 @@ const renderLegend = (
         .enter()
         .append('circle')
         .attr('cx', (name: string, i: number) => {
-          let posX = xSpacing + markerWidth / 2.0;
+          let posX = xSpacing + markerWidth / 2;
           for (const [ind, size] of nameSizes.entries()) {
             if (xDatasetIds.includes(ind)) continue;
             if (ind < i) {
               posX +=
-                markerWidth / 2.0 +
+                markerWidth / 2 +
                 xSpacing +
                 size.width +
                 xSpacing +
-                markerWidth / 2.0;
+                markerWidth / 2;
             } else {
               break;
             }
@@ -1270,7 +1179,7 @@ const renderLegend = (
           if ((chartInfo as LineChart).showPoint[i]) {
             return (chartInfo as LineChart).pointSize[i];
           }
-          return 0.0;
+          return 0;
         })
         .style('fill', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
@@ -1299,7 +1208,7 @@ const renderLegend = (
           }
           return posX;
         })
-        .attr('y', firstMarkerY - nameHeight / 2.0)
+        .attr('y', firstMarkerY - nameHeight / 2)
         .attr('width', markerWidth)
         .attr('height', nameHeight)
         .style('fill', (name: string, i: number) => {
@@ -1348,14 +1257,13 @@ const renderLegend = (
   }
 };
 
-const renderTitle = (
+export const renderTitle = (
   chartElements: ComponentElements,
   renderInfo: RenderInfo,
   chartInfo: CartesianChart
 ): void => {
   // console.log("renderTitle")
   // under graphArea
-
   if (!renderInfo || !chartInfo) return;
 
   if (!chartInfo.title) return;
@@ -1369,9 +1277,9 @@ const renderTitle = (
     .attr(
       'transform',
       'translate(' +
-        renderInfo.dataAreaSize.width / 2.0 +
+        renderInfo.dataAreaSize.width / 2 +
         ',' +
-        titleSize.height / 2.0 +
+        titleSize.height / 2 +
         ')'
     )
     .attr('height', titleSize.height) // for later use
@@ -1388,7 +1296,7 @@ const renderTitle = (
   return;
 };
 
-const setChartScale = (
+export const setChartScale = (
   _canvas: HTMLElement,
   chartElements: ComponentElements,
   renderInfo: RenderInfo
@@ -1414,7 +1322,7 @@ const setChartScale = (
   }
 };
 
-const createAreas = (
+export const createAreas = (
   canvas: HTMLElement,
   renderInfo: RenderInfo
 ): ComponentElements => {
@@ -1459,205 +1367,4 @@ const createAreas = (
   chartElements['dataArea'] = dataArea;
 
   return chartElements;
-};
-
-const renderLineChart = (
-  canvas: HTMLElement,
-  renderInfo: RenderInfo,
-  lineInfo: LineChart
-): string => {
-  // console.log("renderLineChart");
-  // console.log(renderInfo);
-
-  if (!renderInfo || !lineInfo) return;
-
-  const chartElements = createAreas(canvas, renderInfo);
-
-  renderTitle(chartElements, renderInfo, lineInfo);
-
-  renderXAxis(chartElements, renderInfo, lineInfo);
-  // console.log(chartElements.xAxis);
-  // console.log(chartElements.xScale);
-
-  const datasetOnLeftYAxis = [];
-  const datasetOnRightYAxis = [];
-  const xDatasetIds = renderInfo.datasets.getXDatasetIds();
-  for (let ind = 0; ind < lineInfo.yAxisLocation.length; ind++) {
-    if (xDatasetIds.includes(ind)) continue;
-    const yAxisLocation = lineInfo.yAxisLocation[ind];
-    if (yAxisLocation.toLowerCase() === 'left') {
-      datasetOnLeftYAxis.push(ind);
-    } else if (yAxisLocation.toLocaleLowerCase() === 'right') {
-      datasetOnRightYAxis.push(ind);
-    }
-  }
-
-  const retRenderLeftYAxis = renderYAxis(
-    chartElements,
-    renderInfo,
-    lineInfo,
-    'left',
-    datasetOnLeftYAxis
-  );
-  if (typeof retRenderLeftYAxis === 'string') {
-    return retRenderLeftYAxis;
-  }
-
-  if (chartElements.leftYAxis && chartElements.leftYScale) {
-    for (const datasetId of datasetOnLeftYAxis) {
-      const dataset = renderInfo.datasets.getDatasetById(datasetId);
-      if (dataset.getQuery().usedAsXDataset) continue;
-
-      renderLine(chartElements, renderInfo, lineInfo, dataset, 'left');
-
-      renderPoints(chartElements, renderInfo, lineInfo, dataset, 'left');
-    }
-  }
-
-  const retRenderRightYAxis = renderYAxis(
-    chartElements,
-    renderInfo,
-    lineInfo,
-    'right',
-    datasetOnRightYAxis
-  );
-  if (typeof retRenderRightYAxis === 'string') {
-    return retRenderRightYAxis;
-  }
-
-  if (chartElements.rightYAxis && chartElements.rightYScale) {
-    for (const datasetId of datasetOnRightYAxis) {
-      const dataset = renderInfo.datasets.getDatasetById(datasetId);
-      if (dataset.getQuery().usedAsXDataset) continue;
-
-      renderLine(chartElements, renderInfo, lineInfo, dataset, 'right');
-
-      renderPoints(chartElements, renderInfo, lineInfo, dataset, 'right');
-    }
-  }
-
-  if (lineInfo.showLegend) {
-    renderLegend(chartElements, renderInfo, lineInfo);
-  }
-
-  setChartScale(canvas, chartElements, renderInfo);
-};
-
-const renderBarChart = (
-  canvas: HTMLElement,
-  renderInfo: RenderInfo,
-  barInfo: BarChart
-): string => {
-  // console.log("renderBarChart");
-  // console.log(renderInfo);
-  if (!renderInfo || !barInfo) return;
-
-  const chartElements = createAreas(canvas, renderInfo);
-
-  renderTitle(chartElements, renderInfo, barInfo);
-
-  renderXAxis(chartElements, renderInfo, barInfo);
-
-  const datasetOnLeftYAxis = [];
-  const datasetOnRightYAxis = [];
-  const xDatasetIds = renderInfo.datasets.getXDatasetIds();
-  for (let ind = 0; ind < barInfo.yAxisLocation.length; ind++) {
-    if (xDatasetIds.includes(ind)) continue;
-    const yAxisLocation = barInfo.yAxisLocation[ind];
-    if (yAxisLocation.toLowerCase() === 'left') {
-      datasetOnLeftYAxis.push(ind);
-    } else if (yAxisLocation.toLocaleLowerCase() === 'right') {
-      // right
-      datasetOnRightYAxis.push(ind);
-    }
-  }
-
-  const retRenderLeftYAxis = renderYAxis(
-    chartElements,
-    renderInfo,
-    barInfo,
-    'left',
-    datasetOnLeftYAxis
-  );
-  if (typeof retRenderLeftYAxis === 'string') {
-    return retRenderLeftYAxis;
-  }
-
-  const totalNumOfBarSets =
-    datasetOnLeftYAxis.length + datasetOnRightYAxis.length;
-  let currBarSet = 0;
-
-  if (chartElements.leftYAxis && chartElements.leftYScale) {
-    for (const datasetId of datasetOnLeftYAxis) {
-      const dataset = renderInfo.datasets.getDatasetById(datasetId);
-      if (dataset.getQuery().usedAsXDataset) continue;
-
-      renderBar(
-        chartElements,
-        renderInfo,
-        barInfo,
-        dataset,
-        'left',
-        currBarSet,
-        totalNumOfBarSets
-      );
-
-      currBarSet++;
-    }
-  }
-
-  const retRenderRightYAxis = renderYAxis(
-    chartElements,
-    renderInfo,
-    barInfo,
-    'right',
-    datasetOnRightYAxis
-  );
-  if (typeof retRenderRightYAxis === 'string') {
-    return retRenderRightYAxis;
-  }
-
-  if (chartElements.rightYAxis && chartElements.rightYScale) {
-    for (const datasetId of datasetOnRightYAxis) {
-      const dataset = renderInfo.datasets.getDatasetById(datasetId);
-      if (dataset.getQuery().usedAsXDataset) continue;
-
-      renderBar(
-        chartElements,
-        renderInfo,
-        barInfo,
-        dataset,
-        'right',
-        currBarSet,
-        totalNumOfBarSets
-      );
-
-      currBarSet++;
-    }
-  }
-
-  if (barInfo.showLegend) {
-    renderLegend(chartElements, renderInfo, barInfo);
-  }
-
-  setChartScale(canvas, chartElements, renderInfo);
-};
-
-export const renderErrorMessage = (
-  canvas: HTMLElement,
-  errorMessage: string
-): void => {
-  // TODO Remove graph not completed
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const graph = d3.select(canvas).select('#svg').remove();
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const svg = d3
-    .select(canvas)
-    .append('div')
-    .text(errorMessage)
-    .style('background-color', 'white')
-    .style('margin-bottom', '20px')
-    .style('padding', '10px')
-    .style('color', 'red');
 };

@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
-import * as expr from './expr';
-import { RenderInfo } from './models/render-info';
-import { ComponentElements } from './models/types';
-import { PieChart } from './ui-components/chart/pie-chart.model';
-import * as helper from './utils/helper';
+import * as expr from '../../expr';
+import { RenderInfo } from '../../models/render-info';
+import { ComponentElements } from '../../models/types';
+import * as helper from '../../utils/helper';
+import { PieChart } from './pie-chart.model';
 
 const setChartScale = (
   _canvas: HTMLElement,
