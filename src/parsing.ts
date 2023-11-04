@@ -1,21 +1,19 @@
 import { TFolder, normalizePath, parseYaml } from 'obsidian';
-import {
-  AspectRatio,
-  BarInfo,
-  BulletInfo,
-  CommonChartInfo,
-  CustomDatasetInfo,
-  HeatmapInfo,
-  LineInfo,
-  Margin,
-  MonthInfo,
-  PieInfo,
-  Query,
-  RenderInfo,
-  SearchType,
-  SummaryInfo,
-} from './data';
 import Tracker from './main';
+import { AspectRatio } from './models/aspect-ratio';
+import { CustomDatasetInfo } from './models/custom-dataset';
+import { SearchType } from './models/enums';
+import { Margin } from './models/margin';
+import { Query } from './models/query';
+import { RenderInfo } from './models/render-info';
+import { BarChart } from './ui-components/chart/bar-chart.model';
+import { CartesianChart } from './ui-components/chart/cartesian-chart.model';
+import { LineChart } from './ui-components/chart/line-chart.model';
+import { PieChart } from './ui-components/chart/pie-chart.model';
+import { BulletGraph } from './ui-components/graph/bullet-graph.model';
+import { Heatmap } from './ui-components/heatmap/heatmap.model';
+import { Month } from './ui-components/month/month.model';
+import { Summary } from './ui-components/summary/summary.model';
 import * as helper from './utils/helper';
 
 const strToBool = (str: string): boolean | null => {
@@ -660,7 +658,7 @@ const getStringArray = (name: string, input: any): Array<string> | string => {
 const parseCommonChartInfo = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   yaml: any,
-  renderInfo: CommonChartInfo
+  renderInfo: CartesianChart
 ): string => {
   // console.log("parseCommonChartInfo");
 
@@ -1614,7 +1612,7 @@ export const getRenderInfoFromYaml = (
 
   // line related parameters
   for (const lineKey of yamlLineKeys) {
-    const line = new LineInfo();
+    const line = new LineChart();
     const yamlLine = yaml[lineKey];
 
     const keysOfLineInfo = getAvailableKeysOfClass(line);
@@ -1783,7 +1781,7 @@ export const getRenderInfoFromYaml = (
 
   // bar related parameters
   for (const barKey of yamlBarKeys) {
-    const bar = new BarInfo();
+    const bar = new BarChart();
     const yamlBar = yaml[barKey];
 
     const keysOfBarInfo = getAvailableKeysOfClass(bar);
@@ -1838,7 +1836,7 @@ export const getRenderInfoFromYaml = (
 
   // pie related parameters
   for (const pieKey of yamlPieKeys) {
-    const pie = new PieInfo();
+    const pie = new PieChart();
     const yamlPie = yaml[pieKey];
 
     const keysOfPieInfo = getAvailableKeysOfClass(pie);
@@ -1988,7 +1986,7 @@ export const getRenderInfoFromYaml = (
 
   // summary related parameters
   for (const summaryKey of yamlSummaryKeys) {
-    const summary = new SummaryInfo();
+    const summary = new Summary();
     const yamlSummary = yaml[summaryKey];
 
     const keysOfSummaryInfo = getAvailableKeysOfClass(summary);
@@ -2016,7 +2014,7 @@ export const getRenderInfoFromYaml = (
 
   // Month related parameters
   for (const monthKey of yamlMonthKeys) {
-    const month = new MonthInfo();
+    const month = new Month();
     const yamlMonth = yaml[monthKey];
 
     const keysOfMonthInfo = getAvailableKeysOfClass(month);
@@ -2240,7 +2238,7 @@ export const getRenderInfoFromYaml = (
 
   // Heatmap related parameters
   for (const heatmapKey of yamlHeatmapKeys) {
-    const heatmap = new HeatmapInfo();
+    const heatmap = new Heatmap();
     const yamlHeatmap = yaml[heatmapKey];
 
     const keysOfHeatmapInfo = getAvailableKeysOfClass(heatmap);
@@ -2260,7 +2258,7 @@ export const getRenderInfoFromYaml = (
 
   // Bullet related parameters
   for (const bulletKey of yamlBulletKeys) {
-    const bullet = new BulletInfo();
+    const bullet = new BulletGraph();
     const yamlBullet = yaml[bulletKey];
 
     const keysOfBulletInfo = getAvailableKeysOfClass(bullet);

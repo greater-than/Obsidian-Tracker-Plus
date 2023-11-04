@@ -1,13 +1,8 @@
 import { CachedMetadata, TFile } from 'obsidian';
-import {
-  DataMap,
-  Query,
-  QueryValuePair,
-  RenderInfo,
-  SearchType,
-  ValueType,
-  XValueMap,
-} from './data';
+import { SearchType, ValueType } from './models/enums';
+import { Query } from './models/query';
+import { RenderInfo } from './models/render-info';
+import { IQueryValuePair, TDataMap, TNumberValueMap } from './models/types';
 import * as helper from './utils/helper';
 import Moment = moment.Moment;
 
@@ -313,13 +308,13 @@ export const getDateFromTask = (
 };
 
 export const addToDataMap = (
-  dataMap: DataMap,
+  dataMap: TDataMap,
   date: string,
   query: Query,
   value: number | null
 ) => {
   if (!dataMap.has(date)) {
-    const queryValuePairs = new Array<QueryValuePair>();
+    const queryValuePairs = new Array<IQueryValuePair>();
     queryValuePairs.push({ query: query, value: value });
     dataMap.set(date, queryValuePairs);
   } else {
@@ -336,8 +331,8 @@ const extractDataUsingRegexWithMultipleValues = (
   text: string,
   strRegex: string,
   query: Query,
-  dataMap: DataMap,
-  xValueMap: XValueMap,
+  dataMap: TDataMap,
+  xValueMap: TNumberValueMap,
   renderInfo: RenderInfo
 ): boolean => {
   // console.log("extractDataUsingRegexWithMultipleValues");
@@ -438,8 +433,8 @@ export const collectDataFromFrontmatterTag = (
   fileCache: CachedMetadata,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: DataMap,
-  xValueMap: XValueMap
+  dataMap: TDataMap,
+  xValueMap: TNumberValueMap
 ): boolean => {
   // console.log("collectDataFromFrontmatterTag");
   // console.log(query);
@@ -502,8 +497,8 @@ export const collectDataFromFrontmatterKey = (
   fileCache: CachedMetadata,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: DataMap,
-  xValueMap: XValueMap
+  dataMap: TDataMap,
+  xValueMap: TNumberValueMap
 ): boolean => {
   // console.log("collectDataFromFrontmatterKey");
 
@@ -588,8 +583,8 @@ export const collectDataFromWiki = (
   fileCache: CachedMetadata,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: DataMap,
-  xValueMap: XValueMap
+  dataMap: TDataMap,
+  xValueMap: TNumberValueMap
 ): boolean => {
   const links = fileCache.links;
   if (!links) return false;
@@ -646,8 +641,8 @@ export const collectDataFromInlineTag = (
   content: string,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: DataMap,
-  xValueMap: XValueMap
+  dataMap: TDataMap,
+  xValueMap: TNumberValueMap
 ): boolean => {
   // console.log(content);
   // Test this in Regex101
@@ -680,8 +675,8 @@ export const collectDataFromText = (
   content: string,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: DataMap,
-  xValueMap: XValueMap
+  dataMap: TDataMap,
+  xValueMap: TNumberValueMap
 ): boolean => {
   // console.log("collectDataFromText");
 
@@ -703,8 +698,8 @@ export const collectDataFromFileMeta = (
   content: string,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: DataMap,
-  xValueMap: XValueMap
+  dataMap: TDataMap,
+  xValueMap: TNumberValueMap
 ): boolean => {
   // console.log("collectDataFromFileMeta");
 
@@ -789,8 +784,8 @@ export const collectDataFromDvField = (
   content: string,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: DataMap,
-  xValueMap: XValueMap
+  dataMap: TDataMap,
+  xValueMap: TNumberValueMap
 ): boolean => {
   let dvTarget = query.getTarget();
   if (query.getParentTarget()) {
@@ -832,8 +827,8 @@ export const collectDataFromInlineDvField = (
   content: string,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: DataMap,
-  xValueMap: XValueMap
+  dataMap: TDataMap,
+  xValueMap: TNumberValueMap
 ): boolean => {
   let dvTarget = query.getTarget();
   if (query.getParentTarget()) {
@@ -869,8 +864,8 @@ export const collectDataFromTask = (
   content: string,
   query: Query,
   renderInfo: RenderInfo,
-  dataMap: DataMap,
-  xValueMap: XValueMap
+  dataMap: TDataMap,
+  xValueMap: TNumberValueMap
 ): boolean => {
   // console.log("collectDataFromTask");
   const searchType = query.getType();

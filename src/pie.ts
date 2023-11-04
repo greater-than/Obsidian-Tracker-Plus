@@ -1,11 +1,13 @@
 import * as d3 from 'd3';
-import { ChartElements, PieInfo, RenderInfo } from './data';
 import * as expr from './expr';
+import { RenderInfo } from './models/render-info';
+import { ComponentElements } from './models/types';
+import { PieChart } from './ui-components/chart/pie-chart.model';
 import * as helper from './utils/helper';
 
 const setChartScale = (
   _canvas: HTMLElement,
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo
 ): void => {
   const canvas = d3.select(_canvas);
@@ -30,12 +32,12 @@ const setChartScale = (
 };
 
 const createAreas = (
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   canvas: HTMLElement,
   renderInfo: RenderInfo,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _pieInfo: PieInfo
-): ChartElements => {
+  _pieInfo: PieChart
+): ComponentElements => {
   // clean areas
   d3.select(canvas).select('#svg').remove();
   const props = Object.getOwnPropertyNames(chartElements);
@@ -89,9 +91,9 @@ const createAreas = (
 
 const renderTitle = (
   _canvas: HTMLElement,
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  pieInfo: PieInfo
+  pieInfo: PieChart
 ) => {
   // console.log("renderTitle");
   // under graphArea
@@ -130,9 +132,9 @@ const renderTitle = (
 
 const renderLegend = (
   _canvas: HTMLElement,
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  pieInfo: PieInfo
+  pieInfo: PieChart
 ): void => {
   // console.log("renderLegend");
   // console.log(piInfo.legendPosition);
@@ -345,9 +347,9 @@ const renderLegend = (
 
 const renderPie = (
   _canvas: HTMLElement,
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  pieInfo: PieInfo
+  pieInfo: PieChart
 ): string => {
   // console.log("renderPie");
   // console.log(renderInfo);
@@ -611,7 +613,7 @@ const renderPie = (
 export const renderPieChart = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  pieInfo: PieInfo
+  pieInfo: PieChart
 ) => {
   // console.log("renderPieChart");
   // console.log(renderInfo);
@@ -619,7 +621,7 @@ export const renderPieChart = (
 
   // return "Under construction";
 
-  let chartElements: ChartElements = {};
+  let chartElements: ComponentElements = {};
   chartElements = createAreas(chartElements, canvas, renderInfo, pieInfo);
 
   // Set default dataColor if no dataColor provided

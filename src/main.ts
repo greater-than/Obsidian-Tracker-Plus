@@ -10,18 +10,12 @@ import {
   normalizePath,
 } from 'obsidian';
 import * as collecting from './collecting';
-import {
-  CollectingProcessInfo,
-  DataMap,
-  Datasets,
-  GraphType,
-  QueryValuePair,
-  RenderInfo,
-  SearchType,
-  TableData,
-  ValueType,
-  XValueMap,
-} from './data';
+import { DatasetCollection } from './models/dataset';
+import { ComponentType, SearchType, ValueType } from './models/enums';
+import { ProcessInfo } from './models/process-info';
+import { RenderInfo } from './models/render-info';
+import { TableData } from './models/table-data';
+import { IQueryValuePair, TDataMap, TNumberValueMap } from './models/types';
 import { getRenderInfoFromYaml } from './parsing';
 import * as rendering from './rendering';
 import {
@@ -64,19 +58,19 @@ export default class Tracker extends Plugin {
     this.addCommand({
       id: 'add-line-chart-tracker',
       name: 'Add Line Chart Tracker',
-      callback: () => this.addCodeBlock(GraphType.Line),
+      callback: () => this.addCodeBlock(ComponentType.Line),
     });
 
     this.addCommand({
       id: 'add-bar-chart-tracker',
       name: 'Add Bar Chart Tracker',
-      callback: () => this.addCodeBlock(GraphType.Bar),
+      callback: () => this.addCodeBlock(ComponentType.Bar),
     });
 
     this.addCommand({
       id: 'add-summary-tracker',
       name: 'Add Summary Tracker',
-      callback: () => this.addCodeBlock(GraphType.Summary),
+      callback: () => this.addCodeBlock(ComponentType.Summary),
     });
   }
 
@@ -302,8 +296,8 @@ export default class Tracker extends Plugin {
     // Use own settings panel for now
 
     // Collecting data to dataMap first
-    const dataMap: DataMap = new Map(); // {strDate: [query: value, ...]}
-    const processInfo = new CollectingProcessInfo();
+    const dataMap: TDataMap = new Map(); // {strDate: [query: value, ...]}
+    const processInfo = new ProcessInfo();
     processInfo.fileTotal = files.length;
 
     // Collect data from files, each file has one data point for each query
@@ -362,7 +356,7 @@ export default class Tracker extends Plugin {
       }
 
       // Get xValue and add it into xValueMap for later use
-      const xValueMap: XValueMap = new Map(); // queryId: xValue for this file
+      const xValueMap: TNumberValueMap = new Map(); // queryId: xValue for this file
       let skipThisFile = false;
       // console.log(renderInfo.xDataset);
       for (const xDatasetId of renderInfo.xDataset) {
@@ -673,7 +667,10 @@ export default class Tracker extends Plugin {
     }
 
     // Reshape data for rendering
-    const datasets = new Datasets(renderInfo.startDate, renderInfo.endDate);
+    const datasets = new DatasetCollection(
+      renderInfo.startDate,
+      renderInfo.endDate
+    );
     for (const query of renderInfo.queries) {
       // We still create a dataset for xDataset,
       // to keep the sequence and order of targets
@@ -692,7 +689,7 @@ export default class Tracker extends Plugin {
         if (dataMap.has(helper.dateToStr(curDate, renderInfo.dateFormat))) {
           const queryValuePairs = dataMap
             .get(helper.dateToStr(curDate, renderInfo.dateFormat))
-            .filter((pair: QueryValuePair) => {
+            .filter((pair: IQueryValuePair) => {
               return pair.query.equalTo(query);
             });
           if (queryValuePairs.length > 0) {
@@ -730,9 +727,9 @@ export default class Tracker extends Plugin {
 
   // TODO: remove this.app and move to collecting.ts
   async collectDataFromTable(
-    dataMap: DataMap,
+    dataMap: TDataMap,
     renderInfo: RenderInfo,
-    processInfo: CollectingProcessInfo
+    processInfo: ProcessInfo
   ): Promise<void> {
     // console.log("collectDataFromTable");
 
@@ -761,16 +758,16 @@ export default class Tracker extends Plugin {
       );
       if (table) {
         if (isX) {
-          table.xDataset = query;
+          table.xQuery = query;
         } else {
-          table.yDatasets.push(query);
+          table.yQueries.push(query);
         }
       } else {
         const tableData = new TableData(filePath, tableIndex);
         if (isX) {
-          tableData.xDataset = query;
+          tableData.xQuery = query;
         } else {
-          tableData.yDatasets.push(query);
+          tableData.yQueries.push(query);
         }
         tables.push(tableData);
       }
@@ -784,12 +781,12 @@ export default class Tracker extends Plugin {
 
     for (const tableData of tables) {
       //extract xDataset from query
-      const xDatasetQuery = tableData.xDataset;
+      const xDatasetQuery = tableData.xQuery;
       if (!xDatasetQuery) {
         // missing xDataset
         continue;
       }
-      const yDatasetQueries = tableData.yDatasets;
+      const yDatasetQueries = tableData.yQueries;
       let filePath = xDatasetQuery.getParentTarget();
       const tableIndex = xDatasetQuery.getAccessor();
 
@@ -989,7 +986,7 @@ export default class Tracker extends Plugin {
     return this.app.workspace.getActiveViewOfType(MarkdownView).editor;
   }
 
-  addCodeBlock(outputType: GraphType): void {
+  addCodeBlock(outputType: ComponentType): void {
     const currentView = this.app.workspace.activeLeaf.view;
 
     if (!(currentView instanceof MarkdownView)) {
@@ -998,7 +995,7 @@ export default class Tracker extends Plugin {
 
     let codeblockToInsert = '';
     switch (outputType) {
-      case GraphType.Line:
+      case ComponentType.Line:
         codeblockToInsert = `\`\`\` tracker
 searchType: tag
 searchTarget: tagName
@@ -1011,7 +1008,7 @@ line:
     yAxisLabel: Value
 \`\`\``;
         break;
-      case GraphType.Bar:
+      case ComponentType.Bar:
         codeblockToInsert = `\`\`\` tracker
 searchType: tag
 searchTarget: tagName
@@ -1024,7 +1021,7 @@ bar:
     yAxisLabel: Value
 \`\`\``;
         break;
-      case GraphType.Summary:
+      case ComponentType.Summary:
         codeblockToInsert = `\`\`\` tracker
 searchType: tag
 searchTarget: tagName

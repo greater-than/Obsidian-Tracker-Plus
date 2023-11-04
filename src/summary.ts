@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
-import { RenderInfo, SummaryInfo } from './data';
 import * as expr from './expr';
+import { RenderInfo } from './models/render-info';
+import { Summary } from './ui-components/summary/summary.model';
 
 // TODO ???
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -9,7 +10,7 @@ const checkSummaryTemplateValid = (_summaryTemplate: string): boolean => true;
 export const renderSummary = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  summaryInfo: SummaryInfo
+  summaryInfo: Summary
 ): string => {
   // console.log("renderSummary");
   // console.log(renderInfo);

@@ -1,7 +1,8 @@
 import * as d3 from 'd3';
 import jsep from 'jsep';
 import { sprintf } from 'sprintf-js';
-import { Dataset, RenderInfo } from './data';
+import { Dataset } from './models/dataset';
+import { RenderInfo } from './models/render-info';
 import * as helper from './utils/helper';
 import Moment = moment.Moment;
 
@@ -487,13 +488,13 @@ const fnMapUnaryOp: FnMapUnaryOp = {
     if (typeof u === 'number') {
       return -1 * u;
     } else if (u instanceof Dataset) {
-      const tmpDataset = u.cloneToTmpDataset();
+      const tmpDataset = u.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = -1 * value;
         }
       });
-      tmpDataset.recalculateMinMax();
+      tmpDataset.recalculateYMinMax();
       return tmpDataset;
     }
     return "Error: unknown operation for '-'";
@@ -502,7 +503,7 @@ const fnMapUnaryOp: FnMapUnaryOp = {
     if (typeof u === 'number') {
       return u;
     } else if (u instanceof Dataset) {
-      const tmpDataset = u.cloneToTmpDataset();
+      const tmpDataset = u.clone();
       return tmpDataset;
     }
     return "Error: unknown operation for '+'";
@@ -516,7 +517,7 @@ const fnMapBinaryOp: FnMapBinaryOp = {
       return l + r;
     } else if (typeof l === 'number' && r instanceof Dataset) {
       // return Dataset
-      const tmpDataset = r.cloneToTmpDataset();
+      const tmpDataset = r.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = l + value;
@@ -524,11 +525,11 @@ const fnMapBinaryOp: FnMapBinaryOp = {
           array[index] = null;
         }
       });
-      tmpDataset.recalculateMinMax();
+      tmpDataset.recalculateYMinMax();
       return tmpDataset;
     } else if (l instanceof Dataset && typeof r === 'number') {
       // return Dataset
-      const tmpDataset = l.cloneToTmpDataset();
+      const tmpDataset = l.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value + r;
@@ -536,11 +537,11 @@ const fnMapBinaryOp: FnMapBinaryOp = {
           array[index] = null;
         }
       });
-      tmpDataset.recalculateMinMax();
+      tmpDataset.recalculateYMinMax();
       return tmpDataset;
     } else if (l instanceof Dataset && r instanceof Dataset) {
       // return Dataset
-      const tmpDataset = l.cloneToTmpDataset();
+      const tmpDataset = l.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value + r.getValues()[index];
@@ -548,7 +549,7 @@ const fnMapBinaryOp: FnMapBinaryOp = {
           array[index] = null;
         }
       });
-      tmpDataset.recalculateMinMax();
+      tmpDataset.recalculateYMinMax();
       return tmpDataset;
     }
     return "Error: unknown operation for '+'";
@@ -559,7 +560,7 @@ const fnMapBinaryOp: FnMapBinaryOp = {
       return l - r;
     } else if (typeof l === 'number' && r instanceof Dataset) {
       // return Dataset
-      const tmpDataset = r.cloneToTmpDataset();
+      const tmpDataset = r.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = l - value;
@@ -567,11 +568,11 @@ const fnMapBinaryOp: FnMapBinaryOp = {
           array[index] = null;
         }
       });
-      tmpDataset.recalculateMinMax();
+      tmpDataset.recalculateYMinMax();
       return tmpDataset;
     } else if (l instanceof Dataset && typeof r === 'number') {
       // return Dataset
-      const tmpDataset = l.cloneToTmpDataset();
+      const tmpDataset = l.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value - r;
@@ -582,7 +583,7 @@ const fnMapBinaryOp: FnMapBinaryOp = {
       return tmpDataset;
     } else if (l instanceof Dataset && r instanceof Dataset) {
       // return Dataset
-      const tmpDataset = l.cloneToTmpDataset();
+      const tmpDataset = l.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value - r.getValues()[index];
@@ -590,7 +591,7 @@ const fnMapBinaryOp: FnMapBinaryOp = {
           array[index] = null;
         }
       });
-      tmpDataset.recalculateMinMax();
+      tmpDataset.recalculateYMinMax();
       return tmpDataset;
     }
     return "Error: unknown operation for '-'";
@@ -601,7 +602,7 @@ const fnMapBinaryOp: FnMapBinaryOp = {
       return l * r;
     } else if (typeof l === 'number' && r instanceof Dataset) {
       // return Dataset
-      const tmpDataset = r.cloneToTmpDataset();
+      const tmpDataset = r.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = l * value;
@@ -609,11 +610,11 @@ const fnMapBinaryOp: FnMapBinaryOp = {
           array[index] = null;
         }
       });
-      tmpDataset.recalculateMinMax();
+      tmpDataset.recalculateYMinMax();
       return tmpDataset;
     } else if (l instanceof Dataset && typeof r === 'number') {
       // return Dataset
-      const tmpDataset = l.cloneToTmpDataset();
+      const tmpDataset = l.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value * r;
@@ -621,11 +622,11 @@ const fnMapBinaryOp: FnMapBinaryOp = {
           array[index] = null;
         }
       });
-      tmpDataset.recalculateMinMax();
+      tmpDataset.recalculateYMinMax();
       return tmpDataset;
     } else if (l instanceof Dataset && r instanceof Dataset) {
       // return Dataset
-      const tmpDataset = l.cloneToTmpDataset();
+      const tmpDataset = l.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value * r.getValues()[index];
@@ -633,7 +634,7 @@ const fnMapBinaryOp: FnMapBinaryOp = {
           array[index] = null;
         }
       });
-      tmpDataset.recalculateMinMax();
+      tmpDataset.recalculateYMinMax();
       return tmpDataset;
     }
     return "Error: unknown operation for '*'";
@@ -647,7 +648,7 @@ const fnMapBinaryOp: FnMapBinaryOp = {
       return l / r;
     } else if (typeof l === 'number' && r instanceof Dataset) {
       // return Dataset
-      const tmpDataset = r.cloneToTmpDataset();
+      const tmpDataset = r.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = l / value;
@@ -655,11 +656,11 @@ const fnMapBinaryOp: FnMapBinaryOp = {
           array[index] = null;
         }
       });
-      tmpDataset.recalculateMinMax();
+      tmpDataset.recalculateYMinMax();
       return tmpDataset;
     } else if (l instanceof Dataset && typeof r === 'number') {
       // return Dataset
-      const tmpDataset = l.cloneToTmpDataset();
+      const tmpDataset = l.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value / r;
@@ -667,11 +668,11 @@ const fnMapBinaryOp: FnMapBinaryOp = {
           array[index] = null;
         }
       });
-      tmpDataset.recalculateMinMax();
+      tmpDataset.recalculateYMinMax();
       return tmpDataset;
     } else if (l instanceof Dataset && r instanceof Dataset) {
       // return Dataset
-      const tmpDataset = l.cloneToTmpDataset();
+      const tmpDataset = l.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value / r.getValues()[index];
@@ -679,7 +680,7 @@ const fnMapBinaryOp: FnMapBinaryOp = {
           array[index] = null;
         }
       });
-      tmpDataset.recalculateMinMax();
+      tmpDataset.recalculateYMinMax();
       return tmpDataset;
     }
     return "Error: unknown operation for '/'";
@@ -693,7 +694,7 @@ const fnMapBinaryOp: FnMapBinaryOp = {
       return l % r;
     } else if (typeof l === 'number' && r instanceof Dataset) {
       // return Dataset
-      const tmpDataset = r.cloneToTmpDataset();
+      const tmpDataset = r.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = l % value;
@@ -701,11 +702,11 @@ const fnMapBinaryOp: FnMapBinaryOp = {
           array[index] = null;
         }
       });
-      tmpDataset.recalculateMinMax();
+      tmpDataset.recalculateYMinMax();
       return tmpDataset;
     } else if (l instanceof Dataset && typeof r === 'number') {
       // return Dataset
-      const tmpDataset = l.cloneToTmpDataset();
+      const tmpDataset = l.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value % r;
@@ -713,11 +714,11 @@ const fnMapBinaryOp: FnMapBinaryOp = {
           array[index] = null;
         }
       });
-      tmpDataset.recalculateMinMax();
+      tmpDataset.recalculateYMinMax();
       return tmpDataset;
     } else if (l instanceof Dataset && r instanceof Dataset) {
       // return Dataset
-      const tmpDataset = l.cloneToTmpDataset();
+      const tmpDataset = l.clone();
       tmpDataset.getValues().forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value % r.getValues()[index];
@@ -725,7 +726,7 @@ const fnMapBinaryOp: FnMapBinaryOp = {
           array[index] = null;
         }
       });
-      tmpDataset.recalculateMinMax();
+      tmpDataset.recalculateYMinMax();
       return tmpDataset;
     }
     return "Error: unknown operation for '%'";
@@ -742,11 +743,11 @@ const fnMapDatasetToDataset: FnMapDatasetToDataset = {
     const yMax = dataset.getYMax();
     // console.log(`yMin/yMax: ${yMin}/${yMax}`);
     if (yMin !== null && yMax !== null && yMax > yMin) {
-      const normalized = dataset.cloneToTmpDataset();
+      const normalized = dataset.clone();
       normalized.getValues().forEach((value, index, array) => {
         array[index] = (value - yMin) / (yMax - yMin);
       });
-      normalized.recalculateMinMax();
+      normalized.recalculateYMinMax();
       return normalized;
     }
     return "Error: invalid data range for function 'normalize'";
@@ -759,14 +760,14 @@ const fnMapDatasetToDataset: FnMapDatasetToDataset = {
     if (args && args.length > 0) {
       const missingValue = args[0];
       // console.log(missingValue);
-      const newDataset = dataset.cloneToTmpDataset();
+      const newDataset = dataset.clone();
       if (Number.isNumber(missingValue) && !Number.isNaN(missingValue)) {
         newDataset.getValues().forEach((value, index, array) => {
           if (value === null) {
             array[index] = missingValue as number;
           }
         });
-        newDataset.recalculateMinMax();
+        newDataset.recalculateYMinMax();
         return newDataset;
       }
       return "Error: invalid arguments for function 'setMissingValues'";

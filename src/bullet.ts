@@ -1,14 +1,17 @@
 import * as d3 from 'd3';
-import { BulletInfo, ChartElements, Dataset, RenderInfo } from './data';
 import * as expr from './expr';
+import { Dataset } from './models/dataset';
+import { RenderInfo } from './models/render-info';
+import { ComponentElements } from './models/types';
+import { BulletGraph } from './ui-components/graph/bullet-graph.model';
 import * as helper from './utils/helper';
 
 const createAreas = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  bulletInfo: BulletInfo
-): ChartElements => {
-  const chartElements: ChartElements = {};
+  bulletInfo: BulletGraph
+): ComponentElements => {
+  const chartElements: ComponentElements = {};
   // whole area for plotting, includes margins
 
   if (!renderInfo || !bulletInfo) return;
@@ -56,7 +59,7 @@ const createAreas = (
 
 const setChartScale = (
   _canvas: HTMLElement,
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo
 ): void => {
   const canvas = d3.select(_canvas);
@@ -81,9 +84,9 @@ const setChartScale = (
 };
 
 const renderTitle = (
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  bulletInfo: BulletInfo
+  bulletInfo: BulletGraph
 ): void => {
   // console.log("renderTitle");
   // under graphArea
@@ -198,9 +201,9 @@ const renderTitle = (
 
 // Render ticks, tick labels
 const renderAxis = (
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  bulletInfo: BulletInfo,
+  bulletInfo: BulletGraph,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ) => {
@@ -304,9 +307,9 @@ const renderAxis = (
 
 // Render quantitative range, poor/average/good/...
 const renderBackPanel = (
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  bulletInfo: BulletInfo,
+  bulletInfo: BulletGraph,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ): void => {
@@ -374,9 +377,9 @@ const renderBackPanel = (
 
 // Render bar for actual value
 const renderBar = (
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  bulletInfo: BulletInfo,
+  bulletInfo: BulletGraph,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ): string => {
@@ -426,9 +429,9 @@ const renderBar = (
 
 // Render mark line for target value
 const renderMark = (
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  bulletInfo: BulletInfo,
+  bulletInfo: BulletGraph,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ): void => {
@@ -470,7 +473,7 @@ const renderMark = (
 export const renderBullet = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  bulletInfo: BulletInfo
+  bulletInfo: BulletGraph
 ): string => {
   // console.log("renderBullet");
   // console.log(renderInfo);

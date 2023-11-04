@@ -1,5 +1,8 @@
 import * as d3 from 'd3';
-import { ChartElements, MonthInfo, RenderInfo, ValueType } from './data';
+import { ValueType } from './models/enums';
+import { RenderInfo } from './models/render-info';
+import { ComponentElements } from './models/types';
+import { Month } from './ui-components/month/month.model';
 import * as helper from './utils/helper';
 import Moment = moment.Moment;
 
@@ -24,7 +27,7 @@ interface DayInfo {
 
 const setChartScale = (
   _canvas: HTMLElement,
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo
 ): void => {
   const canvas = d3.select(_canvas);
@@ -48,10 +51,7 @@ const setChartScale = (
   }
 };
 
-const toNextDataset = (
-  renderInfo: RenderInfo,
-  monthInfo: MonthInfo
-): boolean => {
+const toNextDataset = (renderInfo: RenderInfo, monthInfo: Month): boolean => {
   const datasetIds = monthInfo.dataset;
   if (datasetIds.length === 0) return false; // false if selected dataset not changed
 
@@ -101,12 +101,12 @@ const toNextDataset = (
 };
 
 const createAreas = (
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   canvas: HTMLElement,
   renderInfo: RenderInfo,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _monthInfo: MonthInfo
-): ChartElements => {
+  _monthInfo: Month
+): ComponentElements => {
   // clean areas
   d3.select(canvas).select('#svg').remove();
   const props = Object.getOwnPropertyNames(chartElements);
@@ -158,7 +158,7 @@ const createAreas = (
   return chartElements;
 };
 
-const clearSelection = (chartElements: ChartElements, monthInfo: MonthInfo) => {
+const clearSelection = (chartElements: ComponentElements, monthInfo: Month) => {
   const circles = chartElements.svg.selectAll('circle');
   // console.log(circles);
   for (const circle of circles) {
@@ -176,9 +176,9 @@ const clearSelection = (chartElements: ChartElements, monthInfo: MonthInfo) => {
 
 const renderMonthHeader = (
   canvas: HTMLElement,
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  monthInfo: MonthInfo,
+  monthInfo: Month,
   curMonthDate: Moment
 ): void => {
   // console.log("renderMonthHeader")
@@ -483,9 +483,9 @@ const renderMonthHeader = (
 
 function renderMonthDays(
   _canvas: HTMLElement,
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  monthInfo: MonthInfo,
+  monthInfo: Month,
   curMonthDate: Moment
 ): string {
   // console.log("renderMonthDays");
@@ -1059,9 +1059,9 @@ function renderMonthDays(
 
 const refresh = (
   canvas: HTMLElement,
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  monthInfo: MonthInfo,
+  monthInfo: Month,
   curMonthDate: Moment
 ): void => {
   // console.log("refresh");
@@ -1079,7 +1079,7 @@ const refresh = (
 export const renderMonth = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  monthInfo: MonthInfo
+  monthInfo: Month
 ): string => {
   // console.log("renderMonth");
   // console.log(renderInfo);
@@ -1106,7 +1106,7 @@ export const renderMonth = (
     return 'No available dataset found';
   }
 
-  let chartElements: ChartElements = {};
+  let chartElements: ComponentElements = {};
   chartElements = createAreas(chartElements, canvas, renderInfo, monthInfo);
 
   let monthDate: Moment = null;
