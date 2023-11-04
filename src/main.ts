@@ -9,7 +9,8 @@ import {
   TFolder,
   normalizePath,
 } from 'obsidian';
-import * as collecting from './collecting';
+import * as collecting from './data-collector/data-collector';
+import * as dataCollectorHelper from './data-collector/data-collector.helper';
 import { DatasetCollection } from './models/dataset';
 import { ComponentType, SearchType, ValueType } from './models/enums';
 import { ProcessInfo } from './models/process-info';
@@ -938,7 +939,7 @@ export default class Tracker extends Plugin {
                 const value = retParse.value;
                 if (indLine < xValues.length && xValues[indLine]) {
                   processInfo.gotAnyValidYValue ||= true;
-                  collecting.addToDataMap(
+                  dataCollectorHelper.addToDataMap(
                     dataMap,
                     helper.dateToStr(xValues[indLine], renderInfo.dateFormat),
                     yDatasetQuery,
@@ -966,7 +967,7 @@ export default class Tracker extends Plugin {
                 value = retParse.value;
                 if (indLine < xValues.length && xValues[indLine]) {
                   processInfo.gotAnyValidYValue ||= true;
-                  collecting.addToDataMap(
+                  dataCollectorHelper.addToDataMap(
                     dataMap,
                     helper.dateToStr(xValues[indLine], renderInfo.dateFormat),
                     yDatasetQuery,
