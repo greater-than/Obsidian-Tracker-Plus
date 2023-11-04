@@ -1,10 +1,8 @@
-import moment, {
-  Duration,
-  DurationInputArg2,
-  ISO_8601,
-  Moment,
-  MomentFormatSpecification,
-} from 'moment';
+import moment, { ISO_8601 } from 'moment';
+import Duration = moment.Duration;
+import DurationInputArg2 = moment.DurationInputArg2;
+import Moment = moment.Moment;
+import MomentFormatSpecification = moment.MomentFormatSpecification;
 
 export type TMoment = (() => Moment) & typeof moment;
 
