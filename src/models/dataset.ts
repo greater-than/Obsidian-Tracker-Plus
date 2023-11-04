@@ -6,206 +6,204 @@ import { RenderInfo } from './render-info';
 
 export class Dataset implements IterableIterator<DataPoint> {
   constructor(parent: DatasetCollection, query: Query) {
-    this.name = 'untitled';
-    this.query = query;
-    this.values = [];
-    this.parent = parent;
-    this.id = -1;
-    this.yMin = null;
-    this.yMax = null;
-    this.startDate = null;
-    this.endDate = null;
-    this.numTargets = 0;
+    this._parent = parent;
+    this._query = query;
 
-    this.isTmpDataset = false;
-
+    this._name = 'untitled';
+    this._values = [];
+    this._id = -1;
+    this._yMin = null;
+    this._yMax = null;
+    this._startDate = null;
+    this._endDate = null;
+    this._numTargets = 0;
+    this._isClone = false;
     this.valueType = query?.valueType;
 
-    for (let ind = 0; ind < parent.getDates().length; ind++) {
-      this.values.push(null);
+    for (let ind = 0; ind < parent.dates.length; ind++) {
+      this._values.push(null);
     }
   }
 
   // Array of DataPoints
-  private name: string;
-  private query: Query;
-  private values: number[];
-  private parent: DatasetCollection;
-  private id: number;
-  private yMin: number;
-  private yMax: number;
-  private startDate: Moment;
-  private endDate: Moment;
-  private numTargets: number;
+  private _name: string;
+  private _query: Query;
+  private _values: number[];
+  private _parent: DatasetCollection;
+  private _id: number;
+  private _yMin: number;
+  private _yMax: number;
+  private _startDate: Moment;
+  private _endDate: Moment;
+  private _numTargets: number;
+  private _isClone: boolean;
 
-  private isTmpDataset: boolean;
+  // IterableIterator
+  private _currentIndex = 0;
 
   valueType: ValueType;
 
-  private currentIndex = 0; // IterableIterator
-
   public clone() {
-    if (!this.isTmpDataset) {
-      const tmpDataset = new Dataset(this.parent, null);
-      tmpDataset.name = 'tmp';
-      tmpDataset.values = [...this.values];
-      tmpDataset.yMin = this.yMin;
-      tmpDataset.yMax = this.yMax;
-      tmpDataset.startDate = this.startDate.clone();
-      tmpDataset.endDate = this.endDate.clone();
-      tmpDataset.numTargets = this.numTargets;
-      tmpDataset.isTmpDataset = true;
+    if (!this._isClone) {
+      const tmpDataset = new Dataset(this._parent, null);
+      tmpDataset._name = 'tmp';
+      tmpDataset._values = [...this._values];
+      tmpDataset._yMin = this._yMin;
+      tmpDataset._yMax = this._yMax;
+      tmpDataset._startDate = this._startDate.clone();
+      tmpDataset._endDate = this._endDate.clone();
+      tmpDataset._numTargets = this._numTargets;
+      tmpDataset._isClone = true;
       tmpDataset.valueType = this.valueType;
       return tmpDataset;
     }
     return this; // already tmp dataset
   }
 
-  public getName() {
-    return this.name;
+  // #region Properties
+  public get name() {
+    return this._name;
   }
 
-  public setName(name: string) {
-    this.name = name;
+  public set name(name: string) {
+    this._name = name;
   }
 
-  public getId() {
-    return this.id;
+  public get id() {
+    return this._id;
   }
 
-  public setId(id: number) {
-    this.id = id;
+  public set id(id: number) {
+    this._id = id;
   }
 
-  public addNumTargets(num: number) {
-    this.numTargets = this.numTargets + num;
+  public get targetCount() {
+    return this._numTargets;
   }
 
-  public getNumTargets() {
-    return this.numTargets;
+  public get yMin() {
+    return this._yMin;
+  }
+
+  public get yMax() {
+    return this._yMax;
+  }
+
+  public get startDate() {
+    return this._startDate;
+  }
+
+  public get endDate() {
+    return this._endDate;
+  }
+
+  public get query(): Query {
+    return this._query;
+  }
+
+  public get values() {
+    return this._values;
+  }
+
+  // #endregion
+
+  public incrementTargetCount(num: number) {
+    this._numTargets = this._numTargets + num;
   }
 
   public getValue(date: Moment, dayShift: number = 0) {
-    const ind = this.parent.getIndexOfDate(date) + Math.floor(dayShift);
-    if (ind >= 0 && ind < this.values.length) {
-      return this.values[ind];
+    const ind = this._parent.getIndexOfDate(date) + Math.floor(dayShift);
+    if (ind >= 0 && ind < this._values.length) {
+      return this._values[ind];
     }
     return null;
   }
 
   public setValue(date: Moment, value: number) {
-    const ind = this.parent.getIndexOfDate(date);
+    const ind = this._parent.getIndexOfDate(date);
     // console.log(ind);
-    if (ind >= 0 && ind < this.values.length) {
+    if (ind >= 0 && ind < this._values.length) {
       // Set value
-      this.values[ind] = value;
+      this._values[ind] = value;
 
       // Update yMin and yMax
-      if (this.yMin === null || value < this.yMin) {
-        this.yMin = value;
+      if (this._yMin === null || value < this._yMin) {
+        this._yMin = value;
       }
-      if (this.yMax === null || value > this.yMax) {
-        this.yMax = value;
+      if (this._yMax === null || value > this._yMax) {
+        this._yMax = value;
       }
 
       // Update startDate and endDate
-      if (this.startDate === null || date < this.startDate) {
-        this.startDate = date.clone();
+      if (this._startDate === null || date < this._startDate) {
+        this._startDate = date.clone();
       }
-      if (this.endDate === null || date > this.endDate) {
-        this.endDate = date.clone();
+      if (this._endDate === null || date > this._endDate) {
+        this._endDate = date.clone();
       }
     }
   }
 
   public recalculateYMinMax() {
-    this.yMin = Math.min(...this.values);
-    this.yMax = Math.max(...this.values);
+    this._yMin = Math.min(...this._values);
+    this._yMax = Math.max(...this._values);
   }
 
-  public getYMin() {
-    return this.yMin;
-  }
-
-  public getYMax() {
-    return this.yMax;
-  }
-
-  public getStartDate() {
-    return this.startDate;
-  }
-
-  public getEndDate() {
-    return this.endDate;
-  }
-
-  public shift(shiftAmount: number, doLargerThan: number) {
+  public shiftYValues(shiftAmount: number, threshold: number) {
     let anyShifted = false;
-    for (let ind = 0; ind < this.values.length; ind++) {
-      if (this.values[ind] !== null) {
-        if (doLargerThan === null) {
-          this.values[ind] = this.values[ind] + shiftAmount;
+    for (let ind = 0; ind < this._values.length; ind++) {
+      if (this._values[ind] !== null) {
+        if (threshold === null) {
+          this._values[ind] = this._values[ind] + shiftAmount;
           anyShifted = true;
         } else {
-          if (this.values[ind] >= doLargerThan) {
-            this.values[ind] = this.values[ind] + shiftAmount;
+          if (this._values[ind] >= threshold) {
+            this._values[ind] = this._values[ind] + shiftAmount;
             anyShifted = true;
           }
         }
       }
     }
     if (anyShifted) {
-      this.yMin = this.yMin + shiftAmount;
-      this.yMax = this.yMax + shiftAmount;
+      this._yMin = this._yMin + shiftAmount;
+      this._yMax = this._yMax + shiftAmount;
     }
   }
 
-  public setPenalty(penalty: number) {
-    for (let ind = 0; ind < this.values.length; ind++) {
-      if (this.values[ind] === null) {
-        this.values[ind] = penalty;
-        if (penalty < this.yMin) {
-          this.yMin = penalty;
+  public setYPenalty(penalty: number) {
+    for (let ind = 0; ind < this._values.length; ind++) {
+      if (this._values[ind] === null) {
+        this._values[ind] = penalty;
+        if (penalty < this._yMin) {
+          this._yMin = penalty;
         }
-        if (penalty > this.yMax) {
-          this.yMax = penalty;
+        if (penalty > this._yMax) {
+          this._yMax = penalty;
         }
       }
     }
-  }
-
-  public getQuery(): Query {
-    return this.query;
   }
 
   public accumulateValues() {
     let accumValue = 0;
-    for (let ind = 0; ind < this.values.length; ind++) {
-      if (this.values[ind] !== null) {
-        accumValue += this.values[ind];
+    for (let ind = 0; ind < this._values.length; ind++) {
+      if (this._values[ind] !== null) {
+        accumValue += this._values[ind];
       }
-      this.values[ind] = accumValue;
-      if (accumValue < this.yMin) {
-        this.yMin = accumValue;
+      this._values[ind] = accumValue;
+      if (accumValue < this._yMin) {
+        this._yMin = accumValue;
       }
-      if (accumValue > this.yMax) {
-        this.yMax = accumValue;
+      if (accumValue > this._yMax) {
+        this._yMax = accumValue;
       }
     }
   }
 
-  public getValues() {
-    return this.values;
-  }
-
-  public getLength() {
-    return this.values.length;
-  }
-
   public getLengthNotNull() {
     let countNotNull = 0;
-    for (let ind = 0; ind < this.values.length; ind++) {
-      if (this.values[ind] !== null) {
+    for (let ind = 0; ind < this._values.length; ind++) {
+      if (this._values[ind] !== null) {
         countNotNull++;
       }
     }
@@ -213,18 +211,18 @@ export class Dataset implements IterableIterator<DataPoint> {
   }
 
   next(): IteratorResult<DataPoint> {
-    if (this.currentIndex < this.values.length) {
-      const ind = this.currentIndex++;
+    if (this._currentIndex < this._values.length) {
+      const ind = this._currentIndex++;
       const dataPoint = new DataPoint(
-        this.parent.getDates()[ind],
-        this.values[ind]
+        this._parent.dates[ind],
+        this._values[ind]
       );
       return {
         done: false,
         value: dataPoint,
       };
     } else {
-      this.currentIndex = 0;
+      this._currentIndex = 0;
       return { done: true, value: null };
     }
   }
@@ -235,11 +233,10 @@ export class Dataset implements IterableIterator<DataPoint> {
 }
 export class DatasetCollection implements IterableIterator<Dataset> {
   constructor(startDate: Moment, endDate: Moment) {
-    this.dates = [];
-    this.datasets = [];
+    this._dates = [];
+    this._datasets = [];
 
     const cData = startDate.creationData();
-    // console.log(cData);
     const dateFormat = cData.format.toString();
     for (
       let curDate = startDate.clone();
@@ -251,25 +248,37 @@ export class DatasetCollection implements IterableIterator<Dataset> {
         dateFormat,
         true
       );
-      this.dates.push(newDate);
+      this._dates.push(newDate);
     }
-    // console.log(this.dates);
   }
 
   // Iterable of Dataset
-  private dates: Moment[];
-  private datasets: Dataset[];
+  private _dates: Moment[];
+  private _datasets: Dataset[];
 
-  private currentIndex = 0; // IterableIterator
+  // IterableIterator
+  private _currentIndex = 0;
+
+  public get dates() {
+    return this._dates;
+  }
+
+  public get names() {
+    const names = [];
+    for (const dataset of this._datasets) {
+      names.push(dataset.name);
+    }
+    return names;
+  }
 
   public createDataset(query: Query, renderInfo: RenderInfo) {
     const dataset = new Dataset(this, query);
-    dataset.setId(query.getId());
+    dataset.id = query.getId();
     if (renderInfo) {
-      dataset.setName(renderInfo.datasetName[query.getId()]);
+      dataset.name = renderInfo.datasetName[query.getId()];
     }
 
-    this.datasets.push(dataset);
+    this._datasets.push(dataset);
 
     return dataset;
   }
@@ -277,8 +286,8 @@ export class DatasetCollection implements IterableIterator<Dataset> {
   public getIndexOfDate(date: Moment) {
     const cData = date.creationData();
     const dateFormat = cData.format.toString();
-    for (let ind = 0; ind < this.dates.length; ind++) {
-      if (this.dates[ind].format(dateFormat) === date.format(dateFormat)) {
+    for (let ind = 0; ind < this._dates.length; ind++) {
+      if (this._dates[ind].format(dateFormat) === date.format(dateFormat)) {
         return ind;
       }
     }
@@ -286,8 +295,8 @@ export class DatasetCollection implements IterableIterator<Dataset> {
   }
 
   public getDatasetByQuery(query: Query) {
-    for (const dataset of this.datasets) {
-      if (dataset.getQuery().equalTo(query)) {
+    for (const dataset of this._datasets) {
+      if (dataset.query.equalTo(query)) {
         return dataset;
       }
     }
@@ -295,8 +304,8 @@ export class DatasetCollection implements IterableIterator<Dataset> {
   }
 
   public getDatasetById(id: number) {
-    for (const dataset of this.datasets) {
-      if (dataset.getId() === id) {
+    for (const dataset of this._datasets) {
+      if (dataset.id === id) {
         return dataset;
       }
     }
@@ -306,9 +315,9 @@ export class DatasetCollection implements IterableIterator<Dataset> {
 
   public getXDatasetIds() {
     const ids: Array<number> = [];
-    for (const dataset of this.datasets) {
-      if (dataset.getQuery().usedAsXDataset) {
-        const id = dataset.getQuery().getId();
+    for (const dataset of this._datasets) {
+      if (dataset.query.usedAsXDataset) {
+        const id = dataset.query.getId();
         if (!ids.includes(id) && id !== -1) {
           ids.push(id);
         }
@@ -317,26 +326,14 @@ export class DatasetCollection implements IterableIterator<Dataset> {
     return ids;
   }
 
-  public getDates() {
-    return this.dates;
-  }
-
-  public getNames() {
-    const names = [];
-    for (const dataset of this.datasets) {
-      names.push(dataset.getName());
-    }
-    return names;
-  }
-
   next(): IteratorResult<Dataset> {
-    if (this.currentIndex < this.datasets.length) {
+    if (this._currentIndex < this._datasets.length) {
       return {
         done: false,
-        value: this.datasets[this.currentIndex++],
+        value: this._datasets[this._currentIndex++],
       };
     } else {
-      this.currentIndex = 0;
+      this._currentIndex = 0;
       return {
         done: true,
         value: null,

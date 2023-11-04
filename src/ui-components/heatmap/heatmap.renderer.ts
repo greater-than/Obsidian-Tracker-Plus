@@ -100,11 +100,11 @@ const renderHeatmapDays = (
   const dotRadius = (cellSize / 2.0) * 0.6;
 
   // Get min and max, null values will be treated as zero here
-  let yMin = d3.min(dataset.getValues());
+  let yMin = d3.min(dataset.values);
   if (heatmapInfo.yMin !== null) {
     yMin = heatmapInfo.yMin;
   }
-  let yMax = d3.max(dataset.getValues());
+  let yMax = d3.max(dataset.values);
   if (heatmapInfo.yMax !== null) {
     yMax = heatmapInfo.yMax;
   }
@@ -112,12 +112,12 @@ const renderHeatmapDays = (
 
   // Prepare data for graph
   const daysInHeatmapView: Array<DayInfo> = [];
-  const dataStartDate = dataset.getStartDate().clone();
+  const dataStartDate = dataset.startDate.clone();
   let startDate = dataStartDate.clone().subtract(dataStartDate.day(), 'days');
   if (heatmapInfo.startWeekOn.toLowerCase() === 'mon') {
     startDate = startDate.add(1, 'days');
   }
-  const dataEndDate = dataset.getEndDate().clone();
+  const dataEndDate = dataset.endDate.clone();
   let endDate = dataEndDate.clone().add(7 - dataEndDate.day() - 1, 'days');
   if (heatmapInfo.startWeekOn.toLowerCase() === 'mon') {
     endDate = endDate.add(1, 'days');
@@ -244,7 +244,7 @@ export const renderHeatmap = (
 
   // TODO Why is this here?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const lastDataMonthDate = renderInfo.datasets.getDates().last();
+  const lastDataMonthDate = renderInfo.datasets.dates.last();
 
   const datasetId = parseFloat(heatmapInfo.dataset);
   const dataset = renderInfo.datasets.getDatasetById(datasetId);

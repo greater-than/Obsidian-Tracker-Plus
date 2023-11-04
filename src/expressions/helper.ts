@@ -19,7 +19,7 @@ export const isDivisorValid = (divisor: any): boolean => {
     if (divisor === 0) return false;
   } else if (divisor instanceof Dataset) {
     if (
-      divisor.getValues().some((v) => {
+      divisor.values.some((v) => {
         return v === 0;
       })
     ) {
@@ -55,13 +55,13 @@ export const DatasetToValue: IDatasetToValue = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   min: (dataset, _renderInfo) => {
     // return number
-    return d3.min(dataset.getValues());
+    return d3.min(dataset.values);
   },
   // the latest date with min value
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   minDate: (dataset, _renderInfo): Moment | string => {
     // return Moment
-    const min = d3.min(dataset.getValues());
+    const min = d3.min(dataset.values);
     if (Number.isNumber(min)) {
       const arrayDataset = Array.from(dataset);
       for (const dataPoint of arrayDataset.reverse()) {
@@ -76,13 +76,13 @@ export const DatasetToValue: IDatasetToValue = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   max: (dataset, _renderInfo): number => {
     // return number
-    return d3.max(dataset.getValues());
+    return d3.max(dataset.values);
   },
   // the latest date with max value
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   maxDate: (dataset, _renderInfo): Moment | string => {
     // return Moment
-    const max = d3.max(dataset.getValues());
+    const max = d3.max(dataset.values);
     if (Number.isNumber(max)) {
       const arrayDataset = Array.from(dataset);
       for (const dataPoint of arrayDataset.reverse()) {
@@ -98,7 +98,7 @@ export const DatasetToValue: IDatasetToValue = {
   startDate: (dataset, renderInfo): Moment => {
     // return Moment
     if (dataset) {
-      const startDate = dataset.getStartDate();
+      const startDate = dataset.startDate;
       if (startDate && startDate.isValid()) {
         return startDate;
       }
@@ -110,7 +110,7 @@ export const DatasetToValue: IDatasetToValue = {
   endDate: (dataset, renderInfo): Moment => {
     // return Moment
     if (dataset) {
-      const endDate = dataset.getEndDate();
+      const endDate = dataset.endDate;
       if (endDate && endDate.isValid()) {
         return endDate;
       }
@@ -121,7 +121,7 @@ export const DatasetToValue: IDatasetToValue = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   sum: (dataset, _renderInfo): number => {
     // return number
-    return d3.sum(dataset.getValues());
+    return d3.sum(dataset.values);
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   count: (_dataset, _renderInfo): string => {
@@ -131,7 +131,7 @@ export const DatasetToValue: IDatasetToValue = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   numTargets: (dataset, _renderInfo): number => {
     // return number
-    return dataset.getNumTargets();
+    return dataset.targetCount;
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   days: (_dataset, _renderInfo): string => {
@@ -140,7 +140,7 @@ export const DatasetToValue: IDatasetToValue = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   numDays: (dataset, _renderInfo): number => {
     // return number
-    return dataset.getLength();
+    return dataset.values.length;
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   numDaysHavingData: (dataset, _renderInfo): number => {
@@ -443,13 +443,13 @@ export const DatasetToValue: IDatasetToValue = {
     if (!isDivisorValid(countNotNull)) {
       return 'Error: divide by zero in expression';
     }
-    const sum = d3.sum(dataset.getValues());
+    const sum = d3.sum(dataset.values);
     return sum / countNotNull;
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  median: (dataset, _renderInfo): number => d3.median(dataset.getValues()),
+  median: (dataset, _renderInfo): number => d3.median(dataset.values),
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  variance: (dataset, _renderInfo): number => d3.variance(dataset.getValues()),
+  variance: (dataset, _renderInfo): number => d3.variance(dataset.values),
 };
 
 export const UnaryOperation: IUnaryOperation = {
@@ -458,7 +458,7 @@ export const UnaryOperation: IUnaryOperation = {
       return -1 * u;
     } else if (u instanceof Dataset) {
       const tmpDataset = u.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = -1 * value;
         }
@@ -487,7 +487,7 @@ export const BinaryOperation: IBinaryOperation = {
     } else if (typeof l === 'number' && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = r.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = l + value;
         } else {
@@ -499,7 +499,7 @@ export const BinaryOperation: IBinaryOperation = {
     } else if (l instanceof Dataset && typeof r === 'number') {
       // return Dataset
       const tmpDataset = l.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value + r;
         } else {
@@ -511,9 +511,9 @@ export const BinaryOperation: IBinaryOperation = {
     } else if (l instanceof Dataset && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = l.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
-          array[index] = value + r.getValues()[index];
+          array[index] = value + r.values[index];
         } else {
           array[index] = null;
         }
@@ -530,7 +530,7 @@ export const BinaryOperation: IBinaryOperation = {
     } else if (typeof l === 'number' && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = r.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = l - value;
         } else {
@@ -542,7 +542,7 @@ export const BinaryOperation: IBinaryOperation = {
     } else if (l instanceof Dataset && typeof r === 'number') {
       // return Dataset
       const tmpDataset = l.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value - r;
         } else {
@@ -553,9 +553,9 @@ export const BinaryOperation: IBinaryOperation = {
     } else if (l instanceof Dataset && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = l.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
-          array[index] = value - r.getValues()[index];
+          array[index] = value - r.values[index];
         } else {
           array[index] = null;
         }
@@ -572,7 +572,7 @@ export const BinaryOperation: IBinaryOperation = {
     } else if (typeof l === 'number' && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = r.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = l * value;
         } else {
@@ -584,7 +584,7 @@ export const BinaryOperation: IBinaryOperation = {
     } else if (l instanceof Dataset && typeof r === 'number') {
       // return Dataset
       const tmpDataset = l.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value * r;
         } else {
@@ -596,9 +596,9 @@ export const BinaryOperation: IBinaryOperation = {
     } else if (l instanceof Dataset && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = l.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
-          array[index] = value * r.getValues()[index];
+          array[index] = value * r.values[index];
         } else {
           array[index] = null;
         }
@@ -618,7 +618,7 @@ export const BinaryOperation: IBinaryOperation = {
     } else if (typeof l === 'number' && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = r.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = l / value;
         } else {
@@ -630,7 +630,7 @@ export const BinaryOperation: IBinaryOperation = {
     } else if (l instanceof Dataset && typeof r === 'number') {
       // return Dataset
       const tmpDataset = l.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value / r;
         } else {
@@ -642,9 +642,9 @@ export const BinaryOperation: IBinaryOperation = {
     } else if (l instanceof Dataset && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = l.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
-          array[index] = value / r.getValues()[index];
+          array[index] = value / r.values[index];
         } else {
           array[index] = null;
         }
@@ -664,7 +664,7 @@ export const BinaryOperation: IBinaryOperation = {
     } else if (typeof l === 'number' && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = r.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = l % value;
         } else {
@@ -676,7 +676,7 @@ export const BinaryOperation: IBinaryOperation = {
     } else if (l instanceof Dataset && typeof r === 'number') {
       // return Dataset
       const tmpDataset = l.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
           array[index] = value % r;
         } else {
@@ -688,9 +688,9 @@ export const BinaryOperation: IBinaryOperation = {
     } else if (l instanceof Dataset && r instanceof Dataset) {
       // return Dataset
       const tmpDataset = l.clone();
-      tmpDataset.getValues().forEach((value, index, array) => {
+      tmpDataset.values.forEach((value, index, array) => {
         if (array[index] !== null) {
-          array[index] = value % r.getValues()[index];
+          array[index] = value % r.values[index];
         } else {
           array[index] = null;
         }
@@ -708,12 +708,12 @@ export const DatasetToDataset: IDatasetToDataset = {
   normalize: (dataset, _args, _renderInfo): Dataset | string => {
     // console.log("normalize");
     // console.log(dataset);
-    const yMin = dataset.getYMin();
-    const yMax = dataset.getYMax();
+    const yMin = dataset.yMin;
+    const yMax = dataset.yMax;
     // console.log(`yMin/yMax: ${yMin}/${yMax}`);
     if (yMin !== null && yMax !== null && yMax > yMin) {
       const normalized = dataset.clone();
-      normalized.getValues().forEach((value, index, array) => {
+      normalized.values.forEach((value, index, array) => {
         array[index] = (value - yMin) / (yMax - yMin);
       });
       normalized.recalculateYMinMax();
@@ -731,7 +731,7 @@ export const DatasetToDataset: IDatasetToDataset = {
       // console.log(missingValue);
       const newDataset = dataset.clone();
       if (Number.isNumber(missingValue) && !Number.isNaN(missingValue)) {
-        newDataset.getValues().forEach((value, index, array) => {
+        newDataset.values.forEach((value, index, array) => {
           if (value === null) {
             array[index] = missingValue as number;
           }
@@ -826,7 +826,7 @@ export const evaluate = (
           // Use first non-X dataset
           let dataset = null;
           for (const ds of renderInfo.datasets) {
-            if (!dataset && !ds.getQuery().usedAsXDataset) {
+            if (!dataset && !ds.query.usedAsXDataset) {
               dataset = ds;
               // if breaks here, the index of Datasets not reset???
             }

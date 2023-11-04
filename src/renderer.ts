@@ -16,21 +16,21 @@ export const renderTracker = (
   // console.log(renderInfo.datasets);
   // Data preprocessing
   for (const dataset of renderInfo.datasets) {
-    if (dataset.getQuery().usedAsXDataset) continue;
+    if (dataset.query.usedAsXDataset) continue;
     // valueShift
-    const shiftAmount = renderInfo.valueShift[dataset.getId()];
+    const shiftAmount = renderInfo.valueShift[dataset.id];
     if (shiftAmount !== null && shiftAmount !== 0) {
-      dataset.shift(
+      dataset.shiftYValues(
         shiftAmount,
-        renderInfo.shiftOnlyValueLargerThan[dataset.getId()]
+        renderInfo.shiftOnlyValueLargerThan[dataset.id]
       );
     }
     // penalty
-    if (renderInfo.penalty[dataset.getId()] !== null) {
-      dataset.setPenalty(renderInfo.penalty[dataset.getId()]);
+    if (renderInfo.penalty[dataset.id] !== null) {
+      dataset.setYPenalty(renderInfo.penalty[dataset.id]);
     }
     // accum
-    if (renderInfo.accum[dataset.getId()]) {
+    if (renderInfo.accum[dataset.id]) {
       dataset.accumulateValues();
     }
   }
