@@ -2,21 +2,18 @@ import * as d3 from 'd3';
 import { Duration, Moment } from 'moment';
 import { sprintf } from 'sprintf-js';
 import * as bullet from './bullet';
-import {
-  BarInfo,
-  ChartElements,
-  CommonChartInfo,
-  DataPoint,
-  Dataset,
-  GraphType,
-  LineInfo,
-  RenderInfo,
-  ValueType,
-} from './data';
 import * as heatmap from './heatmap';
+import { DataPoint } from './models/data-point.model';
+import { Dataset } from './models/dataset';
+import { ComponentType, ValueType } from './models/enums';
+import { RenderInfo } from './models/render-info';
+import { ComponentElements } from './models/types';
 import * as month from './month';
 import * as pie from './pie';
 import * as summary from './summary';
+import { BarChart } from './ui-components/chart/bar-chart.model';
+import { CartesianChart } from './ui-components/chart/cartesian-chart.model';
+import { LineChart } from './ui-components/chart/line-chart.model';
 import * as helper from './utils/helper';
 
 const getXTickValues = (
@@ -278,9 +275,9 @@ export const render = (canvas: HTMLElement, renderInfo: RenderInfo): string => {
 };
 
 const renderXAxis = (
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  chartInfo: CommonChartInfo
+  chartInfo: CartesianChart
 ): void => {
   // console.log("renderXAxis");
 
@@ -369,9 +366,9 @@ const renderXAxis = (
 };
 
 const renderYAxis = (
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  chartInfo: CommonChartInfo,
+  chartInfo: CartesianChart,
   yAxisLocation: string,
   datasetIds: Array<number>
 ): string => {
@@ -466,7 +463,7 @@ const renderYAxis = (
     yUpper = yMax + yExtent * 0.2;
   }
   // if it is bar chart, zero must be contained in the range
-  if (chartInfo.GetGraphType() === GraphType.Bar) {
+  if (chartInfo.componentType() === ComponentType.Bar) {
     if (yUpper < 0.0) {
       yUpper = 0;
     }
@@ -656,9 +653,9 @@ const renderYAxis = (
 };
 
 const renderLine = (
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  lineInfo: LineInfo,
+  lineInfo: LineChart,
   dataset: Dataset,
   yAxisLocation: string
 ): void => {
@@ -702,9 +699,9 @@ const renderLine = (
 };
 
 const renderPoints = (
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  lineInfo: LineInfo,
+  lineInfo: LineChart,
   dataset: Dataset,
   yAxisLocation: string
 ): void => {
@@ -763,7 +760,7 @@ const renderPoints = (
 function renderTooltip(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   targetElements: any,
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo
 ): void {
   const tooltip = chartElements.dataArea.append('svg').style('opacity', 0);
@@ -862,9 +859,9 @@ function renderTooltip(
 }
 
 const renderBar = (
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  barInfo: BarInfo,
+  barInfo: BarChart,
   dataset: Dataset,
   yAxisLocation: string,
   currBarSet: number,
@@ -951,9 +948,9 @@ const renderBar = (
 };
 
 const renderLegend = (
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  chartInfo: CommonChartInfo
+  chartInfo: CartesianChart
 ): void => {
   // console.log(chartInfo.legendPosition);
   // console.log(chartInfo.legendOrientation);
@@ -1097,7 +1094,7 @@ const renderLegend = (
   const firstLabelY = firstMarkerY;
 
   if (chartInfo.legendOrientation === 'vertical') {
-    if (chartInfo.GetGraphType() === GraphType.Line) {
+    if (chartInfo.componentType() === ComponentType.Line) {
       // lines
       legend
         .selectAll('markers')
@@ -1122,7 +1119,7 @@ const renderLegend = (
         })
         .style('stroke', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          return (chartInfo as LineInfo).lineColor[i];
+          return (chartInfo as LineChart).lineColor[i];
         });
 
       // points
@@ -1141,16 +1138,16 @@ const renderLegend = (
         })
         .attr('r', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          if ((chartInfo as LineInfo).showPoint[i]) {
-            return (chartInfo as LineInfo).pointSize[i];
+          if ((chartInfo as LineChart).showPoint[i]) {
+            return (chartInfo as LineChart).pointSize[i];
           }
           return 0.0;
         })
         .style('fill', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          return (chartInfo as LineInfo).pointColor[i];
+          return (chartInfo as LineChart).pointColor[i];
         });
-    } else if (chartInfo.GetGraphType() === GraphType.Bar) {
+    } else if (chartInfo.componentType() === ComponentType.Bar) {
       // bars
       legend
         .selectAll('markers')
@@ -1169,7 +1166,7 @@ const renderLegend = (
         .attr('height', nameHeight)
         .style('fill', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          return (chartInfo as BarInfo).barColor[i];
+          return (chartInfo as BarChart).barColor[i];
         });
     }
 
@@ -1194,19 +1191,19 @@ const renderLegend = (
       .style('alignment-baseline', 'middle')
       .attr('class', 'tracker-legend-label');
 
-    if (chartInfo.GetGraphType() === GraphType.Line) {
+    if (chartInfo.componentType() === ComponentType.Line) {
       nameLabels.style('fill', (name: string, i: number) => {
         if (xDatasetIds.includes(i)) return;
-        return (chartInfo as LineInfo).lineColor[i];
+        return (chartInfo as LineChart).lineColor[i];
       });
-    } else if (chartInfo.GetGraphType() === GraphType.Bar) {
+    } else if (chartInfo.componentType() === ComponentType.Bar) {
       nameLabels.style('fill', (name: string, i: number) => {
         if (xDatasetIds.includes(i)) return;
-        return (chartInfo as BarInfo).barColor[i];
+        return (chartInfo as BarChart).barColor[i];
       });
     }
   } else if (chartInfo.legendOrientation === 'horizontal') {
-    if (chartInfo.GetGraphType() === GraphType.Line) {
+    if (chartInfo.componentType() === ComponentType.Line) {
       // lines
       legend
         .selectAll('markers')
@@ -1241,7 +1238,7 @@ const renderLegend = (
         .attr('y2', firstMarkerY)
         .style('stroke', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          return (chartInfo as LineInfo).lineColor[i];
+          return (chartInfo as LineChart).lineColor[i];
         });
 
       // points
@@ -1270,16 +1267,16 @@ const renderLegend = (
         .attr('cy', firstMarkerY)
         .attr('r', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          if ((chartInfo as LineInfo).showPoint[i]) {
-            return (chartInfo as LineInfo).pointSize[i];
+          if ((chartInfo as LineChart).showPoint[i]) {
+            return (chartInfo as LineChart).pointSize[i];
           }
           return 0.0;
         })
         .style('fill', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          return (chartInfo as LineInfo).pointColor[i];
+          return (chartInfo as LineChart).pointColor[i];
         });
-    } else if (chartInfo.GetGraphType() === GraphType.Bar) {
+    } else if (chartInfo.componentType() === ComponentType.Bar) {
       // bars
       legend
         .selectAll('markers')
@@ -1307,7 +1304,7 @@ const renderLegend = (
         .attr('height', nameHeight)
         .style('fill', (name: string, i: number) => {
           if (xDatasetIds.includes(i)) return;
-          return (chartInfo as BarInfo).barColor[i];
+          return (chartInfo as BarChart).barColor[i];
         });
     }
 
@@ -1337,24 +1334,24 @@ const renderLegend = (
       .style('alignment-baseline', 'middle')
       .attr('class', 'tracker-legend-label');
 
-    if (chartInfo.GetGraphType() === GraphType.Line) {
+    if (chartInfo.componentType() === ComponentType.Line) {
       nameLabels.style('fill', (name: string, i: number) => {
         if (xDatasetIds.includes(i)) return;
-        return (chartInfo as LineInfo).lineColor[i];
+        return (chartInfo as LineChart).lineColor[i];
       });
-    } else if (chartInfo.GetGraphType() === GraphType.Bar) {
+    } else if (chartInfo.componentType() === ComponentType.Bar) {
       nameLabels.style('fill', (name: string, i: number) => {
         if (xDatasetIds.includes(i)) return;
-        return (chartInfo as BarInfo).barColor[i];
+        return (chartInfo as BarChart).barColor[i];
       });
     }
   }
 };
 
 const renderTitle = (
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  chartInfo: CommonChartInfo
+  chartInfo: CartesianChart
 ): void => {
   // console.log("renderTitle")
   // under graphArea
@@ -1393,7 +1390,7 @@ const renderTitle = (
 
 const setChartScale = (
   _canvas: HTMLElement,
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo
 ): void => {
   const canvas = d3.select(_canvas);
@@ -1420,8 +1417,8 @@ const setChartScale = (
 const createAreas = (
   canvas: HTMLElement,
   renderInfo: RenderInfo
-): ChartElements => {
-  const chartElements: ChartElements = {};
+): ComponentElements => {
+  const chartElements: ComponentElements = {};
   // whole area for plotting, includes margins
   const svg = d3
     .select(canvas)
@@ -1467,7 +1464,7 @@ const createAreas = (
 const renderLineChart = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  lineInfo: LineInfo
+  lineInfo: LineChart
 ): string => {
   // console.log("renderLineChart");
   // console.log(renderInfo);
@@ -1549,7 +1546,7 @@ const renderLineChart = (
 const renderBarChart = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  barInfo: BarInfo
+  barInfo: BarChart
 ): string => {
   // console.log("renderBarChart");
   // console.log(renderInfo);

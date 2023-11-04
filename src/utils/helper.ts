@@ -1,6 +1,9 @@
 import * as d3 from 'd3';
 import { Duration, Moment } from 'moment';
-import { Size, TextValueMap, Transform, ValueType } from '../data';
+import { ValueType } from 'src/models/enums';
+import { Size } from 'src/models/size';
+import { Transform } from 'src/models/transform';
+import { TTextValueMap } from 'src/models/types';
 
 // date and time
 const makeTimeFormat = (): string[] => {
@@ -355,7 +358,7 @@ export const replaceImgTagByAlt = (input: string): string => {
 export const parseFloatFromAny = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   toParse: any,
-  textValueMap: TextValueMap = null
+  textValueMap: TTextValueMap = null
 ): { type: ValueType.Number | ValueType.Time; value: number } => {
   // console.log("parseFloatFromAny");
   // console.log(toParse);

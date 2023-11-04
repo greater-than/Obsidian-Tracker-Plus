@@ -1,5 +1,8 @@
 import * as d3 from 'd3';
-import { ChartElements, Dataset, HeatmapInfo, RenderInfo } from './data';
+import { Dataset } from './models/dataset';
+import { RenderInfo } from './models/render-info';
+import { ComponentElements } from './models/types';
+import { Heatmap } from './ui-components/heatmap/heatmap.model';
 import * as helper from './utils/helper';
 
 interface DayInfo {
@@ -11,12 +14,12 @@ interface DayInfo {
 }
 
 const createAreas = (
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   canvas: HTMLElement,
   renderInfo: RenderInfo,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _heatmapInfo: HeatmapInfo
-): ChartElements => {
+  _heatmapInfo: Heatmap
+): ComponentElements => {
   // clean areas
   d3.select(canvas).select('#svg').remove();
   const props = Object.getOwnPropertyNames(chartElements);
@@ -70,9 +73,9 @@ const createAreas = (
 
 const renderHeatmapHeader = (
   _canvas: HTMLElement,
-  _chartElements: ChartElements,
+  _chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  heatmapInfo: HeatmapInfo,
+  heatmapInfo: Heatmap,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ): void => {
@@ -84,9 +87,9 @@ const renderHeatmapHeader = (
 
 const renderHeatmapDays = (
   _canvas: HTMLElement,
-  chartElements: ChartElements,
+  chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  heatmapInfo: HeatmapInfo,
+  heatmapInfo: Heatmap,
   dataset: Dataset
 ) => {
   // console.log("renderHeatmapDays");
@@ -224,7 +227,7 @@ const renderHeatmapDays = (
 export const renderHeatmap = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  heatmapInfo: HeatmapInfo
+  heatmapInfo: Heatmap
 ) => {
   // console.log("renderHeatmap");
   // console.log(renderInfo);
@@ -232,7 +235,7 @@ export const renderHeatmap = (
 
   return 'Under construction';
 
-  let chartElements: ChartElements = {};
+  let chartElements: ComponentElements = {};
   chartElements = createAreas(chartElements, canvas, renderInfo, heatmapInfo);
 
   // TODO Why is this here?
