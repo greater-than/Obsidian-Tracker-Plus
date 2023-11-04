@@ -12,7 +12,7 @@ import * as helper from '../../utils/helper';
 import Duration = moment.Duration;
 import Moment = moment.Moment;
 
-const getXTickValues = (
+export const getXTickValues = (
   dates: Moment[],
   interval: Duration
 ): [Array<Date>, d3.TimeInterval] => {
@@ -56,7 +56,7 @@ const getXTickValues = (
   return [tickValues, tickInterval];
 };
 
-const getXTickLabelFormat = (
+export const getXTickLabelFormat = (
   dates: Moment[],
   inTickLabelFormat: string
 ): ((date: Date) => string) => {
@@ -92,7 +92,7 @@ const getXTickLabelFormat = (
   }
 };
 
-const getYTickValues = (
+export const getYTickValues = (
   yLower: number,
   yUpper: number,
   interval: number | Duration,
@@ -139,7 +139,7 @@ const getYTickValues = (
   return tickValues;
 };
 
-const getYTickLabelFormat = (
+export const getYTickLabelFormat = (
   yLower: number,
   yUpper: number,
   inTickLabelFormat: string,
@@ -672,7 +672,7 @@ export const renderPoints = (
   }
 };
 
-function renderTooltip(
+export function renderTooltip(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   targetElements: any,
   chartElements: ComponentElements,
