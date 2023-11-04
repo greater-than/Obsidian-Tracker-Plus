@@ -673,7 +673,7 @@ export default class Tracker extends Plugin {
         const dataset = datasets.createDataset(query, renderInfo);
         // Add number of targets to the dataset
         // Number of targets has been accumulated while collecting data
-        dataset.incrementTargetCount(query.numTargets());
+        dataset.incrementTargetCount(query.numTargets);
         for (
           let curDate = renderInfo.startDate.clone();
           curDate <= renderInfo.endDate;

@@ -73,12 +73,7 @@ export class Query {
   valueType: ValueType;
   usedAsXDataset: boolean;
 
-  public equalTo(other: Query): boolean {
-    if (this._type === other._type && this._target === other._target) {
-      return true;
-    }
-    return false;
-  }
+  //#region Properties
 
   public get type() {
     return this._type;
@@ -94,6 +89,18 @@ export class Query {
 
   public get id() {
     return this._id;
+  }
+
+  public get numTargets() {
+    return this._numTargets;
+  }
+  // #endregion
+
+  public equalTo(other: Query): boolean {
+    if (this._type === other._type && this._target === other._target) {
+      return true;
+    }
+    return false;
   }
 
   public getAccessor(index = 0) {
@@ -125,9 +132,5 @@ export class Query {
 
   public incrementTargetCount(num: number = 1) {
     this._numTargets = this._numTargets + num;
-  }
-
-  public numTargets() {
-    return this._numTargets;
   }
 }
