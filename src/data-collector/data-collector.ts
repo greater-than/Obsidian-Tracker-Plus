@@ -54,8 +54,8 @@ export const getDateFromFrontmatter = (
 
   const frontMatter = fileCache.frontmatter;
   if (frontMatter) {
-    if (helper.deepValue(frontMatter, query.getTarget())) {
-      let strDate = helper.deepValue(frontMatter, query.getTarget());
+    if (helper.deepValue(frontMatter, query.target)) {
+      let strDate = helper.deepValue(frontMatter, query.target);
 
       // We only support single value for now
       if (typeof strDate === 'string') {
@@ -89,9 +89,9 @@ export const getDateFromTag = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const date = window.moment('');
 
-  let tagName = query.getTarget();
-  if (query.getParentTarget()) {
-    tagName = query.getParentTarget(); // use parent tag name for multiple values
+  let tagName = query.target;
+  if (query.parentTarget) {
+    tagName = query.parentTarget; // use parent tag name for multiple values
   }
   // console.log(tagName);
 
@@ -118,7 +118,7 @@ export const getDateFromText = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const date = window.moment('');
 
-  const strRegex = query.getTarget();
+  const strRegex = query.target;
   // console.log(strTextRegex);
 
   return extractDateUsingRegexWithValue(content, strRegex, renderInfo);
@@ -138,9 +138,9 @@ export const getDateFromDvField = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const date = window.moment('');
 
-  let dvTarget = query.getTarget();
-  if (query.getParentTarget()) {
-    dvTarget = query.getParentTarget(); // use parent tag name for multiple values
+  let dvTarget = query.target;
+  if (query.parentTarget) {
+    dvTarget = query.parentTarget; // use parent tag name for multiple values
   }
   // Dataview ask user to add dashes for spaces as search target
   // So a dash may stands for a real dash or a space
@@ -173,8 +173,8 @@ export const getDateFromWiki = (
   const links = fileCache.links;
   if (!links) return date;
 
-  const searchTarget = query.getTarget();
-  const searchType = query.getType();
+  const searchTarget = query.target;
+  const searchType = query.type;
 
   for (const link of links) {
     if (!link) continue;
@@ -224,7 +224,7 @@ export const getDateFromFileMeta = (
   if (file && file instanceof TFile) {
     // console.log(file.stat);
 
-    const target = query.getTarget();
+    const target = query.target;
     if (target === 'cDate') {
       const ctime = file.stat.ctime; // unix time
       date = helper.getDateFromUnixTime(ctime, renderInfo.dateFormat);
@@ -253,10 +253,10 @@ export const getDateFromTask = (
   // Why is this here?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const date = window.moment('');
-  const searchType = query.getType();
+  const searchType = query.type;
   // console.log(searchType);
 
-  let strRegex = query.getTarget();
+  let strRegex = query.target;
   if (searchType === SearchType.Task) {
     strRegex = '\\[[\\sx]\\]\\s' + strRegex;
   } else if (searchType === SearchType.TaskDone) {
@@ -305,16 +305,16 @@ export const collectDataFromFrontmatterTag = (
     // console.log(query.getTarget());
 
     for (const tag of frontMatterTags) {
-      if (tag === query.getTarget()) {
+      if (tag === query.target) {
         // simple tag
-        tagMeasure = tagMeasure + renderInfo.constValue[query.getId()];
+        tagMeasure = tagMeasure + renderInfo.constValue[query.id];
         tagExist = true;
-        query.addNumTargets();
-      } else if (tag.startsWith(query.getTarget() + '/')) {
+        query.incrementTargetCount();
+      } else if (tag.startsWith(query.target + '/')) {
         // nested tag
-        tagMeasure = tagMeasure + renderInfo.constValue[query.getId()];
+        tagMeasure = tagMeasure + renderInfo.constValue[query.id];
         tagExist = true;
-        query.addNumTargets();
+        query.incrementTargetCount();
       } else {
         continue;
       }
@@ -326,7 +326,7 @@ export const collectDataFromFrontmatterTag = (
       if (tagExist) {
         value = tagMeasure;
       }
-      const xValue = xValueMap.get(renderInfo.xDataset[query.getId()]);
+      const xValue = xValueMap.get(renderInfo.xDataset[query.id]);
       dataMap.add(xValue, { query, value });
       return true;
     }
@@ -349,7 +349,7 @@ export const collectDataFromFrontmatterKey = (
   if (frontMatter) {
     // console.log(frontMatter);
     // console.log(query.getTarget());
-    const deepValue = helper.deepValue(frontMatter, query.getTarget());
+    const deepValue = helper.deepValue(frontMatter, query.target);
     // console.log(deepValue);
     if (deepValue) {
       const retParse = helper.parseFloatFromAny(
@@ -368,14 +368,14 @@ export const collectDataFromFrontmatterKey = (
         if (retParse.type === ValueType.Time) {
           query.valueType = ValueType.Time;
         }
-        query.addNumTargets();
-        const xValue = xValueMap.get(renderInfo.xDataset[query.getId()]);
+        query.incrementTargetCount();
+        const xValue = xValueMap.get(renderInfo.xDataset[query.id]);
         dataMap.add(xValue, { query, value: retParse.value });
         return true;
       }
     } else if (
-      query.getParentTarget() &&
-      helper.deepValue(frontMatter, query.getParentTarget())
+      query.parentTarget &&
+      helper.deepValue(frontMatter, query.parentTarget)
     ) {
       // console.log("multiple values");
       // console.log(query.getTarget());
@@ -384,7 +384,7 @@ export const collectDataFromFrontmatterKey = (
       // console.log(
       //     frontMatter[query.getParentTarget()]
       // );
-      const toParse = helper.deepValue(frontMatter, query.getParentTarget());
+      const toParse = helper.deepValue(frontMatter, query.parentTarget);
       let splitted = null;
       if (Array.isArray(toParse)) {
         splitted = toParse.map((p) => {
@@ -409,8 +409,8 @@ export const collectDataFromFrontmatterKey = (
           if (retParse.type === ValueType.Time) {
             query.valueType = ValueType.Time;
           }
-          query.addNumTargets();
-          const xValue = xValueMap.get(renderInfo.xDataset[query.getId()]);
+          query.incrementTargetCount();
+          const xValue = xValueMap.get(renderInfo.xDataset[query.id]);
           dataMap.add(xValue, { query, value: retParse.value });
           return true;
         }
@@ -432,8 +432,8 @@ export const collectDataFromWiki = (
   const links = fileCache.links;
   if (!links) return false;
 
-  const searchTarget = query.getTarget();
-  const searchType = query.getType();
+  const searchTarget = query.target;
+  const searchType = query.type;
 
   let textToSearch = '';
   const strRegex = searchTarget;
@@ -490,9 +490,9 @@ export const collectDataFromInlineTag = (
   // console.log(content);
   // Test this in Regex101
   // (^|\s)#tagName(\/[\w-]+)*(:(?<value>[\d\.\/-]*)[a-zA-Z]*)?([\\.!,\\?;~-]*)?(\s|$)
-  let tagName = query.getTarget();
-  if (query.getParentTarget()) {
-    tagName = query.getParentTarget(); // use parent tag name for multiple values
+  let tagName = query.target;
+  if (query.parentTarget) {
+    tagName = query.parentTarget; // use parent tag name for multiple values
   }
   if (tagName.length > 1 && tagName.startsWith('#')) {
     tagName = tagName.substring(1);
@@ -523,7 +523,7 @@ export const collectDataFromText = (
 ): boolean => {
   // console.log("collectDataFromText");
 
-  const strRegex = query.getTarget();
+  const strRegex = query.target;
   // console.log(strRegex);
 
   return extractDataUsingRegexWithMultipleValues(
@@ -549,24 +549,24 @@ export const collectDataFromFileMeta = (
   if (file && file instanceof TFile) {
     // console.log(file.stat);
 
-    const target = query.getTarget();
-    const xValue = xValueMap.get(renderInfo.xDataset[query.getId()]);
+    const target = query.target;
+    const xValue = xValueMap.get(renderInfo.xDataset[query.id]);
 
     if (target === 'cDate') {
       const ctime = file.stat.ctime; // unix time
       query.valueType = ValueType.Date;
-      query.addNumTargets();
+      query.incrementTargetCount();
       dataMap.add(xValue, { query, value: ctime });
       return true;
     } else if (target === 'mDate') {
       const mtime = file.stat.mtime; // unix time
       query.valueType = ValueType.Date;
-      query.addNumTargets();
+      query.incrementTargetCount();
       dataMap.add(xValue, { query, value: mtime });
       return true;
     } else if (target === 'size') {
       const size = file.stat.size; // number in
-      query.addNumTargets();
+      query.incrementTargetCount();
       dataMap.add(xValue, { query, value: size });
       return true;
     } else if (target === 'numWords') {
@@ -575,12 +575,12 @@ export const collectDataFromFileMeta = (
       return true;
     } else if (target === 'numChars') {
       const numChars = helper.getCharacterCount(content);
-      query.addNumTargets();
+      query.incrementTargetCount();
       dataMap.add(xValue, { query, value: numChars });
       return true;
     } else if (target === 'numSentences') {
       const numSentences = helper.getSentenceCount(content);
-      query.addNumTargets();
+      query.incrementTargetCount();
       dataMap.add(xValue, { query, value: numSentences });
       return true;
     } else if (target === 'name') {
@@ -595,15 +595,12 @@ export const collectDataFromFileMeta = (
           targetMeasure = retParse.value;
           targetExist = true;
           query.valueType = ValueType.Time;
-          query.addNumTargets();
+          query.incrementTargetCount();
         } else {
-          if (
-            !renderInfo.ignoreZeroValue[query.getId()] ||
-            retParse.value !== 0
-          ) {
+          if (!renderInfo.ignoreZeroValue[query.id] || retParse.value !== 0) {
             targetMeasure += retParse.value;
             targetExist = true;
-            query.addNumTargets();
+            query.incrementTargetCount();
           }
         }
       }
@@ -630,9 +627,9 @@ export const collectDataFromDvField = (
   dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
-  let dvTarget = query.getTarget();
-  if (query.getParentTarget()) {
-    dvTarget = query.getParentTarget(); // use parent tag name for multiple values
+  let dvTarget = query.target;
+  if (query.parentTarget) {
+    dvTarget = query.parentTarget; // use parent tag name for multiple values
   }
   // Dataview ask user to add dashes for spaces as search target
   // So a dash may stands for a real dash or a space
@@ -673,9 +670,9 @@ export const collectDataFromInlineDvField = (
   dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
-  let dvTarget = query.getTarget();
-  if (query.getParentTarget()) {
-    dvTarget = query.getParentTarget(); // use parent tag name for multiple values
+  let dvTarget = query.target;
+  if (query.parentTarget) {
+    dvTarget = query.parentTarget; // use parent tag name for multiple values
   }
   // Dataview ask user to add dashes for spaces as search target
   // So a dash may stands for a real dash or a space
@@ -711,10 +708,10 @@ export const collectDataFromTask = (
   xValueMap: TNumberValueMap
 ): boolean => {
   // console.log("collectDataFromTask");
-  const searchType = query.getType();
+  const searchType = query.type;
   // console.log(searchType);
 
-  let strRegex = query.getTarget();
+  let strRegex = query.target;
   if (searchType === SearchType.Task) {
     strRegex = '\\[[\\sx]\\]\\s' + strRegex;
   } else if (searchType === SearchType.TaskDone) {

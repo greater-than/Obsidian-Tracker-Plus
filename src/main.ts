@@ -134,7 +134,6 @@ export default class Tracker extends Plugin {
     const fileMultiplierAfterLink = renderInfo.fileMultiplierAfterLink;
 
     // Include files in folder
-    // console.log(useSpecifiedFilesOnly);
     if (!useSpecifiedFilesOnly) {
       const folder = this.app.vault.getAbstractFileByPath(
         normalizePath(folderToSearch)
@@ -148,14 +147,12 @@ export default class Tracker extends Plugin {
     }
 
     // Include specified file
-    // console.log(specifiedFiles);
     for (const filePath of specifiedFiles) {
       let path = filePath;
       if (!path.endsWith('.md')) {
         path += '.md';
       }
       path = normalizePath(path);
-      // console.log(path);
 
       const file = this.app.vault.getAbstractFileByPath(path);
       // console.log(file);
@@ -163,11 +160,8 @@ export default class Tracker extends Plugin {
         files.push(file);
       }
     }
-    // console.log(files);
 
     // Include files in pointed by links in file
-    // console.log(filesContainsLinkedFiles);
-    // console.log(fileMultiplierAfterLink);
     let linkedFileMultiplier = 1;
     let searchFileMultiplierAfterLink = true;
     if (fileMultiplierAfterLink === '') {
@@ -304,11 +298,11 @@ export default class Tracker extends Plugin {
         // Get fileCache and content
         let fileCache: CachedMetadata = null;
         const needFileCache = renderInfo.queries.some((q) => {
-          const type = q.getType();
+          const type = q.type;
 
           // Why is this here?
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const target = q.getTarget();
+          const target = q.target;
 
           if (
             type === SearchType.Frontmatter ||
@@ -327,8 +321,8 @@ export default class Tracker extends Plugin {
 
         let content: string = null;
         const needContent = renderInfo.queries.some((q) => {
-          const type = q.getType();
-          const target = q.getTarget();
+          const type = q.type;
+          const target = q.target;
           if (
             type === SearchType.Tag ||
             type === SearchType.Text ||
@@ -368,7 +362,7 @@ export default class Tracker extends Plugin {
             } else {
               const xDatasetQuery = renderInfo.queries[xDatasetId];
               // console.log(xDatasetQuery);
-              switch (xDatasetQuery.getType()) {
+              switch (xDatasetQuery.type) {
                 case SearchType.Frontmatter:
                   xDate = collecting.getDateFromFrontmatter(
                     fileCache,
@@ -466,7 +460,7 @@ export default class Tracker extends Plugin {
 
         // Loop over queries
         const yDatasetQueries = renderInfo.queries.filter((q) => {
-          return q.getType() !== SearchType.Table && !q.usedAsXDataset;
+          return q.type !== SearchType.Table && !q.usedAsXDataset;
         });
         // console.log(yDatasetQueries);
 
@@ -477,7 +471,7 @@ export default class Tracker extends Plugin {
           // console.log(query);
 
           // console.log("Search frontmatter tags");
-          if (fileCache && query.getType() === SearchType.Tag) {
+          if (fileCache && query.type === SearchType.Tag) {
             // Add frontmatter tags, allow simple tag only
             const gotAnyValue = collecting.collectDataFromFrontmatterTag(
               fileCache,
@@ -492,8 +486,8 @@ export default class Tracker extends Plugin {
           // console.log("Search frontmatter keys");
           if (
             fileCache &&
-            query.getType() === SearchType.Frontmatter &&
-            query.getTarget() !== 'tags'
+            query.type === SearchType.Frontmatter &&
+            query.target !== 'tags'
           ) {
             const gotAnyValue = collecting.collectDataFromFrontmatterKey(
               fileCache,
@@ -508,9 +502,9 @@ export default class Tracker extends Plugin {
           // console.log("Search wiki links");
           if (
             fileCache &&
-            (query.getType() === SearchType.Wiki ||
-              query.getType() === SearchType.WikiLink ||
-              query.getType() === SearchType.WikiDisplay)
+            (query.type === SearchType.Wiki ||
+              query.type === SearchType.WikiLink ||
+              query.type === SearchType.WikiDisplay)
           ) {
             const gotAnyValue = collecting.collectDataFromWiki(
               fileCache,
@@ -523,7 +517,7 @@ export default class Tracker extends Plugin {
           }
 
           // console.log("Search inline tags");
-          if (content && query.getType() === SearchType.Tag) {
+          if (content && query.type === SearchType.Tag) {
             const gotAnyValue = collecting.collectDataFromInlineTag(
               content,
               query,
@@ -535,7 +529,7 @@ export default class Tracker extends Plugin {
           } // Search inline tags
 
           // console.log("Search Text");
-          if (content && query.getType() === SearchType.Text) {
+          if (content && query.type === SearchType.Text) {
             const gotAnyValue = collecting.collectDataFromText(
               content,
               query,
@@ -547,7 +541,7 @@ export default class Tracker extends Plugin {
           } // Search text
 
           // console.log("Search FileMeta");
-          if (query.getType() === SearchType.FileMeta) {
+          if (query.type === SearchType.FileMeta) {
             const gotAnyValue = collecting.collectDataFromFileMeta(
               file,
               content,
@@ -560,7 +554,7 @@ export default class Tracker extends Plugin {
           } // Search FileMeta
 
           // console.log("Search dvField");
-          if (content && query.getType() === SearchType.dvField) {
+          if (content && query.type === SearchType.dvField) {
             const gotAnyValue = collecting.collectDataFromDvField(
               content,
               query,
@@ -574,9 +568,9 @@ export default class Tracker extends Plugin {
           // console.log("Search Task");
           if (
             content &&
-            (query.getType() === SearchType.Task ||
-              query.getType() === SearchType.TaskDone ||
-              query.getType() === SearchType.TaskNotDone)
+            (query.type === SearchType.Task ||
+              query.type === SearchType.TaskDone ||
+              query.type === SearchType.TaskNotDone)
           ) {
             const gotAnyValue = collecting.collectDataFromTask(
               content,
@@ -679,7 +673,7 @@ export default class Tracker extends Plugin {
         const dataset = datasets.createDataset(query, renderInfo);
         // Add number of targets to the dataset
         // Number of targets has been accumulated while collecting data
-        dataset.incrementTargetCount(query.getNumTargets());
+        dataset.incrementTargetCount(query.numTargets());
         for (
           let curDate = renderInfo.startDate.clone();
           curDate <= renderInfo.endDate;
@@ -744,14 +738,14 @@ export default class Tracker extends Plugin {
     // console.log("collectDataFromTable");
 
     const tableQueries = renderInfo.queries.filter(
-      (q) => q.getType() === SearchType.Table
+      (q) => q.type === SearchType.Table
     );
     // console.log(tableQueries);
     // Separate queries by tables and xDatasets/yDatasets
     const tables: Array<TableData> = [];
     let tableFileNotFound = false;
     for (const query of tableQueries) {
-      const filePath = query.getParentTarget();
+      const filePath = query.parentTarget;
       const file = this.app.vault.getAbstractFileByPath(
         normalizePath(filePath + '.md')
       );
@@ -797,7 +791,7 @@ export default class Tracker extends Plugin {
         continue;
       }
       const yDatasetQueries = tableData.yQueries;
-      let filePath = xDatasetQuery.getParentTarget();
+      let filePath = xDatasetQuery.parentTarget;
       const tableIndex = xDatasetQuery.getAccessor();
 
       // Get table text

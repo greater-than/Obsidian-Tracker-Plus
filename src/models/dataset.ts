@@ -273,9 +273,9 @@ export class DatasetCollection implements IterableIterator<Dataset> {
 
   public createDataset(query: Query, renderInfo: RenderInfo) {
     const dataset = new Dataset(this, query);
-    dataset.id = query.getId();
+    dataset.id = query.id;
     if (renderInfo) {
-      dataset.name = renderInfo.datasetName[query.getId()];
+      dataset.name = renderInfo.datasetName[query.id];
     }
 
     this._datasets.push(dataset);
@@ -317,7 +317,7 @@ export class DatasetCollection implements IterableIterator<Dataset> {
     const ids: Array<number> = [];
     for (const dataset of this._datasets) {
       if (dataset.query.usedAsXDataset) {
-        const id = dataset.query.getId();
+        const id = dataset.query.id;
         if (!ids.includes(id) && id !== -1) {
           ids.push(id);
         }
