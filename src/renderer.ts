@@ -97,3 +97,40 @@ export const renderErrorMessage = (
     .style('padding', '10px')
     .style('color', 'red');
 };
+
+export interface DebugOptions {
+  logError: boolean; // Logs the error to the console
+  clearLog: boolean; // Clears the log each time an error is written to the console
+}
+
+/**
+ * Removes the 'svg' element and appends an error message to the provided container
+ * @param {HTMLElement} container
+ * @param {Error} error
+ * @param {DebugOptions} options
+ */
+export const renderError = (
+  container: HTMLElement,
+  error: Error,
+  options: DebugOptions = { logError: true, clearLog: true }
+): void => {
+  // TODO Remove graph not completed
+  d3.select(container).select('#svg').remove();
+
+  d3.select(container)
+    .append('div')
+    .text(`${error.message}`)
+    .style('background-color', 'white')
+    .style('margin-bottom', '20px')
+    .style('padding', '10px')
+    .style('color', 'red');
+
+  // TODO implement env vars for debug options
+  // TRACKER_LOG_ERROR=true|false
+  // TRACKER_CLEAR_CONSOLE=true|false
+
+  if (options?.logError) {
+    if (options?.clearLog) console.clear();
+    console.error(error.stack);
+  }
+};
