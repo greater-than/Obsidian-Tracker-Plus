@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
-import { Dataset } from './models/dataset';
-import { RenderInfo } from './models/render-info';
-import { ComponentElements } from './models/types';
-import { Heatmap } from './ui-components/heatmap/heatmap.model';
-import * as helper from './utils/helper';
+import { Dataset } from '../../models/dataset';
+import { RenderInfo } from '../../models/render-info';
+import { ComponentElements } from '../../models/types';
+import * as helper from '../../utils/helper';
+import { Heatmap } from './heatmap.model';
 
 interface DayInfo {
   date: string;

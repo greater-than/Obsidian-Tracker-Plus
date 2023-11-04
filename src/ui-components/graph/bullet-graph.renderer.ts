@@ -1,10 +1,10 @@
 import * as d3 from 'd3';
-import * as expr from './expr';
-import { Dataset } from './models/dataset';
-import { RenderInfo } from './models/render-info';
-import { ComponentElements } from './models/types';
-import { BulletGraph } from './ui-components/graph/bullet-graph.model';
-import * as helper from './utils/helper';
+import * as expr from '../../expr';
+import { Dataset } from '../../models/dataset';
+import { RenderInfo } from '../../models/render-info';
+import { ComponentElements } from '../../models/types';
+import * as helper from '../../utils/helper';
+import { BulletGraph } from './bullet-graph.model';
 
 const createAreas = (
   canvas: HTMLElement,
@@ -470,7 +470,7 @@ const renderMark = (
 };
 
 // Bullet graph https://en.wikipedia.org/wiki/Bullet_graph
-export const renderBullet = (
+export const renderBulletGraph = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
   bulletInfo: BulletGraph
