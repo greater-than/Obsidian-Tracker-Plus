@@ -13,7 +13,7 @@ import { Moment } from 'moment';
 import { IExprResolved } from './types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const checkDivisor = (divisor: any): boolean => {
+export const isDivisorValid = (divisor: any): boolean => {
   // console.log("checking divisor");
   if (typeof divisor === 'number') {
     if (divisor === 0) return false;
@@ -28,8 +28,9 @@ const checkDivisor = (divisor: any): boolean => {
   }
   return true;
 };
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const checkBinaryOperantType = (left: any, right: any): string => {
+export const validateBinaryOperands = (left: any, right: any): string => {
   if (typeof left === 'string') return left;
   if (typeof right === 'string') return right;
   if (
@@ -48,7 +49,8 @@ const checkBinaryOperantType = (left: any, right: any): string => {
   }
   return '';
 };
-const DatasetToValue: IDatasetToValue = {
+
+export const DatasetToValue: IDatasetToValue = {
   // min value of a dataset
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   min: (dataset, _renderInfo) => {
@@ -438,7 +440,7 @@ const DatasetToValue: IDatasetToValue = {
   average: (dataset, _renderInfo): number | string => {
     // return number
     const countNotNull = dataset.getLengthNotNull();
-    if (!checkDivisor(countNotNull)) {
+    if (!isDivisorValid(countNotNull)) {
       return 'Error: divide by zero in expression';
     }
     const sum = d3.sum(dataset.getValues());
@@ -449,7 +451,8 @@ const DatasetToValue: IDatasetToValue = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   variance: (dataset, _renderInfo): number => d3.variance(dataset.getValues()),
 };
-const UnaryOperation: IUnaryOperation = {
+
+export const UnaryOperation: IUnaryOperation = {
   '-': (u): number | Dataset | string => {
     if (typeof u === 'number') {
       return -1 * u;
@@ -475,7 +478,8 @@ const UnaryOperation: IUnaryOperation = {
     return "Error: unknown operation for '+'";
   },
 };
-const BinaryOperation: IBinaryOperation = {
+
+export const BinaryOperation: IBinaryOperation = {
   '+': (l, r): number | Dataset | string => {
     if (typeof l === 'number' && typeof r === 'number') {
       // return number
@@ -605,7 +609,7 @@ const BinaryOperation: IBinaryOperation = {
     return "Error: unknown operation for '*'";
   },
   '/': (l, r): number | Dataset | string => {
-    if (!checkDivisor(r)) {
+    if (!isDivisorValid(r)) {
       return 'Error: divide by zero in expression';
     }
     if (typeof l === 'number' && typeof r === 'number') {
@@ -651,7 +655,7 @@ const BinaryOperation: IBinaryOperation = {
     return "Error: unknown operation for '/'";
   },
   '%': (l, r): number | Dataset | string => {
-    if (!checkDivisor(r)) {
+    if (!isDivisorValid(r)) {
       return 'Error: divide by zero in expression';
     }
     if (typeof l === 'number' && typeof r === 'number') {
@@ -697,7 +701,8 @@ const BinaryOperation: IBinaryOperation = {
     return "Error: unknown operation for '%'";
   },
 };
-const DatasetToDataset: IDatasetToDataset = {
+
+export const DatasetToDataset: IDatasetToDataset = {
   // min value of a dataset
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   normalize: (dataset, _args, _renderInfo): Dataset | string => {
@@ -739,11 +744,16 @@ const DatasetToDataset: IDatasetToDataset = {
     return "Error: invalid arguments for function 'setMissingValues";
   },
 };
-const getDatasetById = (datasetId: number, renderInfo: RenderInfo): Dataset =>
-  renderInfo.datasets.getDatasetById(datasetId);
+
+export const getDatasetById = (
+  datasetId: number,
+  renderInfo: RenderInfo
+): Dataset => renderInfo.datasets.getDatasetById(datasetId);
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const evaluateArray = (arr: any, renderInfo: RenderInfo): any =>
+export const evaluateArray = (arr: any, renderInfo: RenderInfo): any =>
   arr.map((expr: jsep.Expression) => evaluate(expr, renderInfo));
+
 export const evaluate = (
   expr: jsep.Expression,
   renderInfo: RenderInfo
@@ -777,7 +787,7 @@ export const evaluate = (
       const binaryExpr = expr as jsep.BinaryExpression;
       const leftValue = evaluate(binaryExpr.left, renderInfo);
       const rightValue = evaluate(binaryExpr.right, renderInfo);
-      const retCheck = checkBinaryOperantType(leftValue, rightValue);
+      const retCheck = validateBinaryOperands(leftValue, rightValue);
       if (typeof retCheck === 'string' && retCheck.startsWith('Error:')) {
         return retCheck;
       }
@@ -869,6 +879,7 @@ export const evaluate = (
   }
   return 'Error: unknown expression';
 };
+
 export const resolve = (
   text: string,
   renderInfo: RenderInfo

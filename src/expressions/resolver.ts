@@ -1,6 +1,6 @@
 import { sprintf } from 'sprintf-js';
 import { RenderInfo } from '../models/render-info';
-import * as helper from '../utils/helper';
+import { dateToString } from '../utils/date-time.utils';
 import { resolve } from './helper';
 import { IExprResolved } from './types';
 import Moment = moment.Moment;
@@ -15,37 +15,21 @@ export const resolveTemplate = (
   template: string,
   renderInfo: RenderInfo
 ): string => {
-  const retResolve = resolve(template, renderInfo);
-  if (typeof retResolve === 'string') {
-    return retResolve; // error message
+  const expressions = resolve(template, renderInfo);
+  if (typeof expressions === 'string') return expressions; // error message
+
+  for (const expr of expressions) {
+    const { source, value, format } = expr;
+    let formatted = '';
+    if (typeof value === 'number')
+      formatted = format ? sprintf('%' + format, value) : value.toFixed(1);
+    else if (window.moment.isMoment(value))
+      formatted = format
+        ? dateToString(value, format)
+        : dateToString(value, renderInfo.dateFormat);
+
+    if (formatted) template = template.split(source).join(formatted);
   }
-  const exprMap = retResolve as Array<IExprResolved>;
-
-  for (const exprResolved of exprMap) {
-    const source = exprResolved.source;
-    const value = exprResolved.value;
-    const format = exprResolved.format;
-    let strValue = '';
-    if (typeof value === 'number') {
-      if (format) {
-        strValue = sprintf('%' + format, value);
-      } else {
-        strValue = value.toFixed(1);
-      }
-    } else if (window.moment.isMoment(value)) {
-      if (format) {
-        strValue = helper.dateToStr(value, format);
-      } else {
-        strValue = helper.dateToStr(value, renderInfo.dateFormat);
-      }
-    }
-
-    if (strValue) {
-      // console.log(exprResolved);
-      template = template.split(source).join(strValue);
-    }
-  }
-
   return template;
 };
 
@@ -59,24 +43,19 @@ export const resolveValue = (
   text: string,
   renderInfo: RenderInfo
 ): number | Moment | string => {
-  // console.log(template);
   text = text.trim();
 
   // input is pure number
-  if (/^([\-]?[0-9]+[\.][0-9]+|[\-]?[0-9]+)$/.test(text)) {
+  if (/^([\-]?[0-9]+[\.][0-9]+|[\-]?[0-9]+)$/.test(text))
     return parseFloat(text);
-  }
 
   // template
   const retResolve = resolve(text, renderInfo);
-  if (typeof retResolve === 'string') {
-    return retResolve; // error message
-  }
+  if (typeof retResolve === 'string') return retResolve; // error message
+
   const exprMap = retResolve as Array<IExprResolved>;
 
-  if (exprMap.length > 0) {
-    return exprMap[0].value; // only first value will be return
-  }
+  if (exprMap.length > 0) return exprMap[0].value; // only first value will be return
 
   return 'Error: failed to resolve values';
 };

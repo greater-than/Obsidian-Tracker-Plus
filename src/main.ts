@@ -54,7 +54,7 @@ export default class Tracker extends Plugin {
 
     this.registerMarkdownCodeBlockProcessor(
       'tracker',
-      this.postProcessor.bind(this)
+      this.processCodeBlock.bind(this)
     );
 
     this.addCommand({
@@ -248,483 +248,491 @@ export default class Tracker extends Plugin {
         }
       }
     }
-
-    // console.log(files);
   }
 
-  async postProcessor(
+  async processCodeBlock(
     source: string,
-    el: HTMLElement,
+    element: HTMLElement,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _ctx: MarkdownPostProcessorContext
   ): Promise<void> {
-    // console.log("postprocess");
-    const canvas = document.createElement('div');
-
-    let yamlText = source.trim();
-
-    // Replace all tabs by spaces
-    const tabSize = this.app.vault.getConfig('tabSize');
-    const spaces = Array(tabSize).fill(' ').join('');
-    yamlText = yamlText.replace(/\t/gm, spaces);
-
-    // Get render info
-    const retRenderInfo = getRenderInfo(yamlText, this);
-    if (typeof retRenderInfo === 'string') {
-      return this.renderErrorMessage(retRenderInfo, canvas, el);
-    }
-    const renderInfo = retRenderInfo as RenderInfo;
-    // console.log(renderInfo);
-
-    // Get files
-    const files: TFile[] = [];
+    const container = document.createElement('div');
     try {
-      await this.getFiles(files, renderInfo);
-    } catch (e) {
-      return this.renderErrorMessage(e.message, canvas, el);
-    }
-    if (files.length === 0) {
-      return this.renderErrorMessage(
-        'No markdown files found in folder',
-        canvas,
-        el
-      );
-    }
-    // console.log(files);
+      let yamlText = source.trim();
 
-    // let dailyNotesSettings = getDailyNoteSettings();
-    // console.log(dailyNotesSettings);
-    // I always got YYYY-MM-DD from dailyNotesSettings.format
-    // Use own settings panel for now
+      // Replace all tabs by spaces
+      const tabSize = this.app.vault.getConfig('tabSize');
+      const spaces = Array(tabSize).fill(' ').join('');
+      yamlText = yamlText.replace(/\t/gm, spaces);
 
-    // Collecting data to dataMap first
-    const dataMap = new DataMap(); // {strDate: [query: value, ...]}
-    const processInfo = new ProcessInfo();
-    processInfo.fileTotal = files.length;
-
-    // Collect data from files, each file has one data point for each query
-    const loopFilePromises = files.map(async (file) => {
-      // console.log(file.basename);
-      // Get fileCache and content
-      let fileCache: CachedMetadata = null;
-      const needFileCache = renderInfo.queries.some((q) => {
-        const type = q.getType();
-
-        // Why is this here?
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const target = q.getTarget();
-
-        if (
-          type === SearchType.Frontmatter ||
-          type === SearchType.Tag ||
-          type === SearchType.Wiki ||
-          type === SearchType.WikiLink ||
-          type === SearchType.WikiDisplay
-        ) {
-          return true;
-        }
-        return false;
-      });
-      if (needFileCache) {
-        fileCache = this.app.metadataCache.getFileCache(file);
+      // Get render info
+      const retRenderInfo = getRenderInfo(yamlText, this);
+      if (typeof retRenderInfo === 'string') {
+        return this.renderErrorMessage(retRenderInfo, container, element);
       }
+      const renderInfo = retRenderInfo as RenderInfo;
 
-      let content: string = null;
-      const needContent = renderInfo.queries.some((q) => {
-        const type = q.getType();
-        const target = q.getTarget();
-        if (
-          type === SearchType.Tag ||
-          type === SearchType.Text ||
-          type === SearchType.dvField ||
-          type === SearchType.Task ||
-          type === SearchType.TaskDone ||
-          type === SearchType.TaskNotDone
-        ) {
-          return true;
-        } else if (type === SearchType.FileMeta) {
+      // Get files
+      const files: TFile[] = [];
+      try {
+        await this.getFiles(files, renderInfo);
+      } catch (e) {
+        return this.renderErrorMessage(e.message, container, element);
+      }
+      if (files.length === 0) {
+        return this.renderErrorMessage(
+          'No markdown files found in folder',
+          container,
+          element
+        );
+      }
+      // console.log(files);
+
+      // let dailyNotesSettings = getDailyNoteSettings();
+      // console.log(dailyNotesSettings);
+      // I always got YYYY-MM-DD from dailyNotesSettings.format
+      // Use own settings panel for now
+
+      // Collecting data to dataMap first
+      const dataMap = new DataMap(); // {strDate: [query: value, ...]}
+      const processInfo = new ProcessInfo();
+      processInfo.fileTotal = files.length;
+
+      // Collect data from files, each file has one data point for each query
+      const loopFilePromises = files.map(async (file) => {
+        // console.log(file.basename);
+        // Get fileCache and content
+        let fileCache: CachedMetadata = null;
+        const needFileCache = renderInfo.queries.some((q) => {
+          const type = q.getType();
+
+          // Why is this here?
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const target = q.getTarget();
+
           if (
-            target === 'numWords' ||
-            target === 'numChars' ||
-            target === 'numSentences'
+            type === SearchType.Frontmatter ||
+            type === SearchType.Tag ||
+            type === SearchType.Wiki ||
+            type === SearchType.WikiLink ||
+            type === SearchType.WikiDisplay
           ) {
             return true;
           }
+          return false;
+        });
+        if (needFileCache) {
+          fileCache = this.app.metadataCache.getFileCache(file);
         }
-        return false;
-      });
-      if (needContent) {
-        content = await this.app.vault.adapter.read(file.path);
-      }
 
-      // Get xValue and add it into xValueMap for later use
-      const xValueMap: TNumberValueMap = new Map(); // queryId: xValue for this file
-      let skipThisFile = false;
-      // console.log(renderInfo.xDataset);
-      for (const xDatasetId of renderInfo.xDataset) {
-        // console.log(`xDatasetId: ${xDatasetId}`);
-        if (!xValueMap.has(xDatasetId)) {
-          let xDate = window.moment('');
-          if (xDatasetId === -1) {
-            // Default using date in filename as xValue
-            xDate = collecting.getDateFromFilename(file, renderInfo);
-            // console.log(xDate);
-          } else {
-            const xDatasetQuery = renderInfo.queries[xDatasetId];
-            // console.log(xDatasetQuery);
-            switch (xDatasetQuery.getType()) {
-              case SearchType.Frontmatter:
-                xDate = collecting.getDateFromFrontmatter(
-                  fileCache,
-                  xDatasetQuery,
-                  renderInfo
-                );
-                break;
-              case SearchType.Tag:
-                xDate = collecting.getDateFromTag(
-                  content,
-                  xDatasetQuery,
-                  renderInfo
-                );
-                break;
-              case SearchType.Text:
-                xDate = collecting.getDateFromText(
-                  content,
-                  xDatasetQuery,
-                  renderInfo
-                );
-                break;
-              case SearchType.dvField:
-                xDate = collecting.getDateFromDvField(
-                  content,
-                  xDatasetQuery,
-                  renderInfo
-                );
-                break;
-              case SearchType.FileMeta:
-                xDate = collecting.getDateFromFileMeta(
-                  file,
-                  xDatasetQuery,
-                  renderInfo
-                );
-                break;
-              case SearchType.Task:
-              case SearchType.TaskDone:
-              case SearchType.TaskNotDone:
-                xDate = collecting.getDateFromTask(
-                  content,
-                  xDatasetQuery,
-                  renderInfo
-                );
-                break;
+        let content: string = null;
+        const needContent = renderInfo.queries.some((q) => {
+          const type = q.getType();
+          const target = q.getTarget();
+          if (
+            type === SearchType.Tag ||
+            type === SearchType.Text ||
+            type === SearchType.dvField ||
+            type === SearchType.Task ||
+            type === SearchType.TaskDone ||
+            type === SearchType.TaskNotDone
+          ) {
+            return true;
+          } else if (type === SearchType.FileMeta) {
+            if (
+              target === 'numWords' ||
+              target === 'numChars' ||
+              target === 'numSentences'
+            ) {
+              return true;
             }
           }
+          return false;
+        });
+        if (needContent) {
+          content = await this.app.vault.adapter.read(file.path);
+        }
 
-          if (!xDate.isValid()) {
-            // console.log("Invalid xDate");
-            skipThisFile = true;
-            processInfo.fileNotInFormat++;
-          } else {
-            // console.log("file " + file.basename + " accepted");
-            if (renderInfo.startDate !== null) {
-              if (xDate < renderInfo.startDate) {
-                skipThisFile = true;
-                processInfo.fileOutOfDateRange++;
-              }
-            }
-            if (renderInfo.endDate !== null) {
-              if (xDate > renderInfo.endDate) {
-                skipThisFile = true;
-                processInfo.fileOutOfDateRange++;
-              }
-            }
-          }
-
-          if (!skipThisFile) {
-            processInfo.gotAnyValidXValue ||= true;
-            xValueMap.set(
-              xDatasetId,
-              helper.dateToStr(xDate, renderInfo.dateFormat)
-            );
-            processInfo.fileAvailable++;
-
-            // Get min/max date
-            if (processInfo.fileAvailable == 1) {
-              processInfo.minDate = xDate.clone();
-              processInfo.maxDate = xDate.clone();
+        // Get xValue and add it into xValueMap for later use
+        const xValueMap: TNumberValueMap = new Map(); // queryId: xValue for this file
+        let skipThisFile = false;
+        // console.log(renderInfo.xDataset);
+        for (const xDatasetId of renderInfo.xDataset) {
+          // console.log(`xDatasetId: ${xDatasetId}`);
+          if (!xValueMap.has(xDatasetId)) {
+            let xDate = window.moment('');
+            if (xDatasetId === -1) {
+              // Default using date in filename as xValue
+              xDate = collecting.getDateFromFilename(file, renderInfo);
+              // console.log(xDate);
             } else {
-              if (xDate < processInfo.minDate) {
-                processInfo.minDate = xDate.clone();
-              }
-              if (xDate > processInfo.maxDate) {
-                processInfo.maxDate = xDate.clone();
+              const xDatasetQuery = renderInfo.queries[xDatasetId];
+              // console.log(xDatasetQuery);
+              switch (xDatasetQuery.getType()) {
+                case SearchType.Frontmatter:
+                  xDate = collecting.getDateFromFrontmatter(
+                    fileCache,
+                    xDatasetQuery,
+                    renderInfo
+                  );
+                  break;
+                case SearchType.Tag:
+                  xDate = collecting.getDateFromTag(
+                    content,
+                    xDatasetQuery,
+                    renderInfo
+                  );
+                  break;
+                case SearchType.Text:
+                  xDate = collecting.getDateFromText(
+                    content,
+                    xDatasetQuery,
+                    renderInfo
+                  );
+                  break;
+                case SearchType.dvField:
+                  xDate = collecting.getDateFromDvField(
+                    content,
+                    xDatasetQuery,
+                    renderInfo
+                  );
+                  break;
+                case SearchType.FileMeta:
+                  xDate = collecting.getDateFromFileMeta(
+                    file,
+                    xDatasetQuery,
+                    renderInfo
+                  );
+                  break;
+                case SearchType.Task:
+                case SearchType.TaskDone:
+                case SearchType.TaskNotDone:
+                  xDate = collecting.getDateFromTask(
+                    content,
+                    xDatasetQuery,
+                    renderInfo
+                  );
+                  break;
               }
             }
-          }
-        }
-      }
-      if (skipThisFile) return;
-      // console.log(xValueMap);
-      // console.log(`minDate: ${minDate}`);
-      // console.log(`maxDate: ${maxDate}`);
 
-      // Loop over queries
-      const yDatasetQueries = renderInfo.queries.filter((q) => {
-        return q.getType() !== SearchType.Table && !q.usedAsXDataset;
-      });
-      // console.log(yDatasetQueries);
-
-      const loopQueryPromises = yDatasetQueries.map(async (query) => {
-        // Get xValue from file if xDataset assigned
-        // if (renderInfo.xDataset !== null)
-        // let xDatasetId = renderInfo.xDataset;
-        // console.log(query);
-
-        // console.log("Search frontmatter tags");
-        if (fileCache && query.getType() === SearchType.Tag) {
-          // Add frontmatter tags, allow simple tag only
-          const gotAnyValue = collecting.collectDataFromFrontmatterTag(
-            fileCache,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        } // Search frontmatter tags
-
-        // console.log("Search frontmatter keys");
-        if (
-          fileCache &&
-          query.getType() === SearchType.Frontmatter &&
-          query.getTarget() !== 'tags'
-        ) {
-          const gotAnyValue = collecting.collectDataFromFrontmatterKey(
-            fileCache,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        } // console.log("Search frontmatter keys");
-
-        // console.log("Search wiki links");
-        if (
-          fileCache &&
-          (query.getType() === SearchType.Wiki ||
-            query.getType() === SearchType.WikiLink ||
-            query.getType() === SearchType.WikiDisplay)
-        ) {
-          const gotAnyValue = collecting.collectDataFromWiki(
-            fileCache,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        }
-
-        // console.log("Search inline tags");
-        if (content && query.getType() === SearchType.Tag) {
-          const gotAnyValue = collecting.collectDataFromInlineTag(
-            content,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        } // Search inline tags
-
-        // console.log("Search Text");
-        if (content && query.getType() === SearchType.Text) {
-          const gotAnyValue = collecting.collectDataFromText(
-            content,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        } // Search text
-
-        // console.log("Search FileMeta");
-        if (query.getType() === SearchType.FileMeta) {
-          const gotAnyValue = collecting.collectDataFromFileMeta(
-            file,
-            content,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        } // Search FileMeta
-
-        // console.log("Search dvField");
-        if (content && query.getType() === SearchType.dvField) {
-          const gotAnyValue = collecting.collectDataFromDvField(
-            content,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        } // search dvField
-
-        // console.log("Search Task");
-        if (
-          content &&
-          (query.getType() === SearchType.Task ||
-            query.getType() === SearchType.TaskDone ||
-            query.getType() === SearchType.TaskNotDone)
-        ) {
-          const gotAnyValue = collecting.collectDataFromTask(
-            content,
-            query,
-            renderInfo,
-            dataMap,
-            xValueMap
-          );
-          processInfo.gotAnyValidYValue ||= gotAnyValue;
-        } // search Task
-      });
-      await Promise.all(loopQueryPromises);
-    });
-    await Promise.all(loopFilePromises);
-    // console.log(dataMap);
-
-    // Collect data from a file, one file contains full dataset
-    await this.collectDataFromTable(dataMap, renderInfo, processInfo);
-    if (processInfo.errorMessage) {
-      return this.renderErrorMessage(processInfo.errorMessage, canvas, el);
-    }
-    // console.log(minDate);
-    // console.log(maxDate);
-    // console.log(dataMap);
-
-    // Check date range
-    // minDate and maxDate are collected without knowing startDate and endDate
-    // console.log(`fileTotal: ${processInfo.fileTotal}`);
-    // console.log(`fileAvailable: ${processInfo.fileAvailable}`);
-    // console.log(`fileNotInFormat: ${processInfo.fileNotInFormat}`);
-    // console.log(`fileOutOfDateRange: ${processInfo.fileOutOfDateRange}`);
-    let dateErrorMessage = '';
-    if (
-      !processInfo.minDate.isValid() ||
-      !processInfo.maxDate.isValid() ||
-      processInfo.fileAvailable === 0 ||
-      !processInfo.gotAnyValidXValue
-    ) {
-      dateErrorMessage = `No valid date as X value found in notes`;
-      if (processInfo.fileOutOfDateRange > 0) {
-        dateErrorMessage += `\n${processInfo.fileOutOfDateRange} files are out of the date range.`;
-      }
-      if (processInfo.fileNotInFormat) {
-        dateErrorMessage += `\n${processInfo.fileNotInFormat} files are not in the right format.`;
-      }
-    }
-    if (renderInfo.startDate === null && renderInfo.endDate === null) {
-      // No date arguments
-      renderInfo.startDate = processInfo.minDate.clone();
-      renderInfo.endDate = processInfo.maxDate.clone();
-    } else if (renderInfo.startDate !== null && renderInfo.endDate === null) {
-      if (renderInfo.startDate < processInfo.maxDate) {
-        renderInfo.endDate = processInfo.maxDate.clone();
-      } else {
-        dateErrorMessage = 'Invalid date range';
-      }
-    } else if (renderInfo.endDate !== null && renderInfo.startDate === null) {
-      if (renderInfo.endDate > processInfo.minDate) {
-        renderInfo.startDate = processInfo.minDate.clone();
-      } else {
-        dateErrorMessage = 'Invalid date range';
-      }
-    } else {
-      // startDate and endDate are valid
-      if (
-        (renderInfo.startDate < processInfo.minDate &&
-          renderInfo.endDate < processInfo.minDate) ||
-        (renderInfo.startDate > processInfo.maxDate &&
-          renderInfo.endDate > processInfo.maxDate)
-      ) {
-        dateErrorMessage = 'Invalid date range';
-      }
-    }
-    if (dateErrorMessage) {
-      return this.renderErrorMessage(dateErrorMessage, canvas, el);
-    }
-    // console.log(renderInfo.startDate);
-    // console.log(renderInfo.endDate);
-
-    if (!processInfo.gotAnyValidYValue) {
-      return this.renderErrorMessage(
-        'No valid Y value found in notes',
-        canvas,
-        el
-      );
-    }
-
-    // Reshape data for rendering
-    const datasets = new DatasetCollection(
-      renderInfo.startDate,
-      renderInfo.endDate
-    );
-    for (const query of renderInfo.queries) {
-      // We still create a dataset for xDataset,
-      // to keep the sequence and order of targets
-      const dataset = datasets.createDataset(query, renderInfo);
-      // Add number of targets to the dataset
-      // Number of targets has been accumulated while collecting data
-      dataset.addNumTargets(query.getNumTargets());
-      for (
-        let curDate = renderInfo.startDate.clone();
-        curDate <= renderInfo.endDate;
-        curDate.add(1, 'days')
-      ) {
-        // console.log(curDate);
-
-        // dataMap --> {date: [query: value, ...]}
-        if (dataMap.has(helper.dateToStr(curDate, renderInfo.dateFormat))) {
-          const queryValuePairs = dataMap
-            .get(helper.dateToStr(curDate, renderInfo.dateFormat))
-            .filter((pair: IQueryValuePair) => {
-              return pair.query.equalTo(query);
-            });
-          if (queryValuePairs.length > 0) {
-            // Merge values of the same day same query
-            let value = null;
-            for (let indPair = 0; indPair < queryValuePairs.length; indPair++) {
-              const collected = queryValuePairs[indPair].value;
-              if (Number.isNumber(collected) && !Number.isNaN(collected)) {
-                if (value === null) {
-                  value = collected;
-                } else {
-                  value += collected;
+            if (!xDate.isValid()) {
+              // console.log("Invalid xDate");
+              skipThisFile = true;
+              processInfo.fileNotInFormat++;
+            } else {
+              // console.log("file " + file.basename + " accepted");
+              if (renderInfo.startDate !== null) {
+                if (xDate < renderInfo.startDate) {
+                  skipThisFile = true;
+                  processInfo.fileOutOfDateRange++;
+                }
+              }
+              if (renderInfo.endDate !== null) {
+                if (xDate > renderInfo.endDate) {
+                  skipThisFile = true;
+                  processInfo.fileOutOfDateRange++;
                 }
               }
             }
-            // console.log(hasValue);
-            // console.log(value);
-            if (value !== null) {
-              dataset.setValue(curDate, value);
+
+            if (!skipThisFile) {
+              processInfo.gotAnyValidXValue ||= true;
+              xValueMap.set(
+                xDatasetId,
+                helper.dateToStr(xDate, renderInfo.dateFormat)
+              );
+              processInfo.fileAvailable++;
+
+              // Get min/max date
+              if (processInfo.fileAvailable == 1) {
+                processInfo.minDate = xDate.clone();
+                processInfo.maxDate = xDate.clone();
+              } else {
+                if (xDate < processInfo.minDate) {
+                  processInfo.minDate = xDate.clone();
+                }
+                if (xDate > processInfo.maxDate) {
+                  processInfo.maxDate = xDate.clone();
+                }
+              }
+            }
+          }
+        }
+        if (skipThisFile) return;
+        // console.log(xValueMap);
+        // console.log(`minDate: ${minDate}`);
+        // console.log(`maxDate: ${maxDate}`);
+
+        // Loop over queries
+        const yDatasetQueries = renderInfo.queries.filter((q) => {
+          return q.getType() !== SearchType.Table && !q.usedAsXDataset;
+        });
+        // console.log(yDatasetQueries);
+
+        const loopQueryPromises = yDatasetQueries.map(async (query) => {
+          // Get xValue from file if xDataset assigned
+          // if (renderInfo.xDataset !== null)
+          // let xDatasetId = renderInfo.xDataset;
+          // console.log(query);
+
+          // console.log("Search frontmatter tags");
+          if (fileCache && query.getType() === SearchType.Tag) {
+            // Add frontmatter tags, allow simple tag only
+            const gotAnyValue = collecting.collectDataFromFrontmatterTag(
+              fileCache,
+              query,
+              renderInfo,
+              dataMap,
+              xValueMap
+            );
+            processInfo.gotAnyValidYValue ||= gotAnyValue;
+          } // Search frontmatter tags
+
+          // console.log("Search frontmatter keys");
+          if (
+            fileCache &&
+            query.getType() === SearchType.Frontmatter &&
+            query.getTarget() !== 'tags'
+          ) {
+            const gotAnyValue = collecting.collectDataFromFrontmatterKey(
+              fileCache,
+              query,
+              renderInfo,
+              dataMap,
+              xValueMap
+            );
+            processInfo.gotAnyValidYValue ||= gotAnyValue;
+          } // console.log("Search frontmatter keys");
+
+          // console.log("Search wiki links");
+          if (
+            fileCache &&
+            (query.getType() === SearchType.Wiki ||
+              query.getType() === SearchType.WikiLink ||
+              query.getType() === SearchType.WikiDisplay)
+          ) {
+            const gotAnyValue = collecting.collectDataFromWiki(
+              fileCache,
+              query,
+              renderInfo,
+              dataMap,
+              xValueMap
+            );
+            processInfo.gotAnyValidYValue ||= gotAnyValue;
+          }
+
+          // console.log("Search inline tags");
+          if (content && query.getType() === SearchType.Tag) {
+            const gotAnyValue = collecting.collectDataFromInlineTag(
+              content,
+              query,
+              renderInfo,
+              dataMap,
+              xValueMap
+            );
+            processInfo.gotAnyValidYValue ||= gotAnyValue;
+          } // Search inline tags
+
+          // console.log("Search Text");
+          if (content && query.getType() === SearchType.Text) {
+            const gotAnyValue = collecting.collectDataFromText(
+              content,
+              query,
+              renderInfo,
+              dataMap,
+              xValueMap
+            );
+            processInfo.gotAnyValidYValue ||= gotAnyValue;
+          } // Search text
+
+          // console.log("Search FileMeta");
+          if (query.getType() === SearchType.FileMeta) {
+            const gotAnyValue = collecting.collectDataFromFileMeta(
+              file,
+              content,
+              query,
+              renderInfo,
+              dataMap,
+              xValueMap
+            );
+            processInfo.gotAnyValidYValue ||= gotAnyValue;
+          } // Search FileMeta
+
+          // console.log("Search dvField");
+          if (content && query.getType() === SearchType.dvField) {
+            const gotAnyValue = collecting.collectDataFromDvField(
+              content,
+              query,
+              renderInfo,
+              dataMap,
+              xValueMap
+            );
+            processInfo.gotAnyValidYValue ||= gotAnyValue;
+          } // search dvField
+
+          // console.log("Search Task");
+          if (
+            content &&
+            (query.getType() === SearchType.Task ||
+              query.getType() === SearchType.TaskDone ||
+              query.getType() === SearchType.TaskNotDone)
+          ) {
+            const gotAnyValue = collecting.collectDataFromTask(
+              content,
+              query,
+              renderInfo,
+              dataMap,
+              xValueMap
+            );
+            processInfo.gotAnyValidYValue ||= gotAnyValue;
+          } // search Task
+        });
+        await Promise.all(loopQueryPromises);
+      });
+      await Promise.all(loopFilePromises);
+      // console.log(dataMap);
+
+      // Collect data from a file, one file contains full dataset
+      await this.collectDataFromTable(dataMap, renderInfo, processInfo);
+      if (processInfo.errorMessage) {
+        return this.renderErrorMessage(
+          processInfo.errorMessage,
+          container,
+          element
+        );
+      }
+      // console.log(minDate);
+      // console.log(maxDate);
+      // console.log(dataMap);
+
+      // Check date range
+      // minDate and maxDate are collected without knowing startDate and endDate
+      // console.log(`fileTotal: ${processInfo.fileTotal}`);
+      // console.log(`fileAvailable: ${processInfo.fileAvailable}`);
+      // console.log(`fileNotInFormat: ${processInfo.fileNotInFormat}`);
+      // console.log(`fileOutOfDateRange: ${processInfo.fileOutOfDateRange}`);
+      let dateErrorMessage = '';
+      if (
+        !processInfo.minDate.isValid() ||
+        !processInfo.maxDate.isValid() ||
+        processInfo.fileAvailable === 0 ||
+        !processInfo.gotAnyValidXValue
+      ) {
+        dateErrorMessage = `No valid date as X value found in notes`;
+        if (processInfo.fileOutOfDateRange > 0) {
+          dateErrorMessage += `\n${processInfo.fileOutOfDateRange} files are out of the date range.`;
+        }
+        if (processInfo.fileNotInFormat) {
+          dateErrorMessage += `\n${processInfo.fileNotInFormat} files are not in the right format.`;
+        }
+      }
+      if (renderInfo.startDate === null && renderInfo.endDate === null) {
+        // No date arguments
+        renderInfo.startDate = processInfo.minDate.clone();
+        renderInfo.endDate = processInfo.maxDate.clone();
+      } else if (renderInfo.startDate !== null && renderInfo.endDate === null) {
+        if (renderInfo.startDate < processInfo.maxDate) {
+          renderInfo.endDate = processInfo.maxDate.clone();
+        } else {
+          dateErrorMessage = 'Invalid date range';
+        }
+      } else if (renderInfo.endDate !== null && renderInfo.startDate === null) {
+        if (renderInfo.endDate > processInfo.minDate) {
+          renderInfo.startDate = processInfo.minDate.clone();
+        } else {
+          dateErrorMessage = 'Invalid date range';
+        }
+      } else {
+        // startDate and endDate are valid
+        if (
+          (renderInfo.startDate < processInfo.minDate &&
+            renderInfo.endDate < processInfo.minDate) ||
+          (renderInfo.startDate > processInfo.maxDate &&
+            renderInfo.endDate > processInfo.maxDate)
+        ) {
+          dateErrorMessage = 'Invalid date range';
+        }
+      }
+      if (dateErrorMessage) {
+        return this.renderErrorMessage(dateErrorMessage, container, element);
+      }
+      // console.log(renderInfo.startDate);
+      // console.log(renderInfo.endDate);
+
+      if (!processInfo.gotAnyValidYValue) {
+        return this.renderErrorMessage(
+          'No valid Y value found in notes',
+          container,
+          element
+        );
+      }
+
+      // Reshape data for rendering
+      const datasets = new DatasetCollection(
+        renderInfo.startDate,
+        renderInfo.endDate
+      );
+      for (const query of renderInfo.queries) {
+        // We still create a dataset for xDataset,
+        // to keep the sequence and order of targets
+        const dataset = datasets.createDataset(query, renderInfo);
+        // Add number of targets to the dataset
+        // Number of targets has been accumulated while collecting data
+        dataset.addNumTargets(query.getNumTargets());
+        for (
+          let curDate = renderInfo.startDate.clone();
+          curDate <= renderInfo.endDate;
+          curDate.add(1, 'days')
+        ) {
+          // console.log(curDate);
+
+          // dataMap --> {date: [query: value, ...]}
+          if (dataMap.has(helper.dateToStr(curDate, renderInfo.dateFormat))) {
+            const queryValuePairs = dataMap
+              .get(helper.dateToStr(curDate, renderInfo.dateFormat))
+              .filter((pair: IQueryValuePair) => {
+                return pair.query.equalTo(query);
+              });
+            if (queryValuePairs.length > 0) {
+              // Merge values of the same day same query
+              let value = null;
+              for (
+                let indPair = 0;
+                indPair < queryValuePairs.length;
+                indPair++
+              ) {
+                const collected = queryValuePairs[indPair].value;
+                if (Number.isNumber(collected) && !Number.isNaN(collected)) {
+                  if (value === null) {
+                    value = collected;
+                  } else {
+                    value += collected;
+                  }
+                }
+              }
+              // console.log(hasValue);
+              // console.log(value);
+              if (value !== null) {
+                dataset.setValue(curDate, value);
+              }
             }
           }
         }
       }
-    }
-    renderInfo.datasets = datasets;
-    // console.log(renderInfo.datasets);
+      renderInfo.datasets = datasets;
+      // console.log(renderInfo.datasets);
 
-    const retRender = renderer.renderTracker(canvas, renderInfo);
-    if (typeof retRender === 'string') {
-      return this.renderErrorMessage(retRender, canvas, el);
-    }
+      const retRender = renderer.renderTracker(container, renderInfo);
+      if (typeof retRender === 'string') {
+        return this.renderErrorMessage(retRender, container, element);
+      }
 
-    el.appendChild(canvas);
+      element.appendChild(container);
+    } catch (e) {
+      renderer.renderError(container, e);
+      element.appendChild(container);
+    }
   }
 
   // TODO: remove this.app and move to collecting.ts
