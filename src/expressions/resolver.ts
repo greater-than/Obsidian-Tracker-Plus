@@ -1,7 +1,9 @@
+import jsep from 'jsep';
 import { sprintf } from 'sprintf-js';
+import { TrackerError } from '../errors';
 import { RenderInfo } from '../models/render-info';
 import { dateToString } from '../utils/date-time.utils';
-import { resolve } from './helper';
+import { evaluate } from './evaluator';
 import { IExprResolved } from './types';
 import Moment = moment.Moment;
 
@@ -15,7 +17,7 @@ export const resolveTemplate = (
   template: string,
   renderInfo: RenderInfo
 ): string => {
-  const expressions = resolve(template, renderInfo);
+  const expressions = getExpressions(template, renderInfo);
   if (typeof expressions === 'string') return expressions; // error message
 
   for (const expr of expressions) {
@@ -50,12 +52,54 @@ export const resolveValue = (
     return parseFloat(text);
 
   // template
-  const retResolve = resolve(text, renderInfo);
-  if (typeof retResolve === 'string') return retResolve; // error message
+  const expressions = getExpressions(text, renderInfo);
 
-  const exprMap = retResolve as Array<IExprResolved>;
+  if (expressions.length <= 0)
+    throw new TrackerError('Failed to resolve values');
 
-  if (exprMap.length > 0) return exprMap[0].value; // only first value will be return
+  return expressions[0].value;
+};
 
-  return 'Error: failed to resolve values';
+/**
+ * Returns an array of resolved expressions from the provided RenderInfo
+ * @param {string} text
+ * @param {RenderInfo} renderInfo
+ * @returns {IExprResolved[]}
+ */
+export const getExpressions = (
+  text: string,
+  renderInfo: RenderInfo
+): IExprResolved[] => {
+  // console.log(text);
+  const expressions: Array<IExprResolved> = [];
+
+  // {{(?<expr>[\w+\-*\/0-9\s()\[\]%.]+)(::(?<format>[\w+\-*\/0-9\s()\[\]%.:]+))?}}
+  const pattern =
+    '{{(?<expr>[\\w+\\-*\\/0-9\\s()\\[\\]%.,]+)(::(?<format>[\\w+\\-*\\/0-9\\s()\\[\\]%.:]+))?}}';
+  const regex = new RegExp(pattern, 'gm');
+  let match;
+  while ((match = regex.exec(text))) {
+    const source = match[0];
+    if (expressions.some((e) => e.source === source)) continue;
+
+    if (
+      typeof match.groups !== 'undefined' &&
+      typeof match.groups.expr !== 'undefined'
+    ) {
+      let value = null;
+
+      const expr = jsep(match.groups.expr);
+      if (!expr) throw new TrackerError('Failed to parse expression');
+      value = evaluate(expr, renderInfo);
+
+      if (typeof value === 'number' || window.moment.isMoment(value)) {
+        const format =
+          typeof match.groups.format !== 'undefined'
+            ? match.groups.format
+            : null;
+        expressions.push({ source, value, format });
+      }
+    }
+  }
+  return expressions;
 };

@@ -81,7 +81,6 @@ export const getDateFromTag = (
   query: Query,
   renderInfo: RenderInfo
 ): Moment => {
-  // console.log("getDateFromTag");
   // Get date from '#tagName: date'
   // Inline value-attached tag only
 
@@ -93,15 +92,13 @@ export const getDateFromTag = (
   if (query.parentTarget) {
     tagName = query.parentTarget; // use parent tag name for multiple values
   }
-  // console.log(tagName);
 
-  const strRegex =
+  const pattern =
     '(^|\\s)#' +
     tagName +
     '(\\/[\\w-]+)*(:(?<value>[\\d\\.\\/-]*)[a-zA-Z]*)?([\\.!,\\?;~-]*)?(\\s|$)';
-  // console.log(strRegex);
 
-  return extractDateUsingRegexWithValue(content, strRegex, renderInfo);
+  return extractDateUsingRegexWithValue(content, pattern, renderInfo);
 };
 
 // Not support multiple targets
@@ -111,7 +108,6 @@ export const getDateFromText = (
   query: Query,
   renderInfo: RenderInfo
 ): Moment => {
-  // console.log("getDateFromText");
   // Get date from text using regex with value
 
   // TODO Why is this here?
@@ -153,7 +149,6 @@ export const getDateFromDvField = (
     '(^| |\\t)\\*{0,2}' +
     dvTarget +
     '\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-\\w,@; \\t:]*))(\\r\\?\\n|\\r|$)';
-  // console.log(strRegex);
 
   return extractDateUsingRegexWithValue(content, strRegex, renderInfo);
 };
@@ -165,7 +160,6 @@ export const getDateFromWiki = (
   query: Query,
   renderInfo: RenderInfo
 ): Moment => {
-  //console.log("getDateFromWiki");
   // Get date from '[[regex with value]]'
 
   const date = window.moment('');
@@ -216,14 +210,11 @@ export const getDateFromFileMeta = (
   query: Query,
   renderInfo: RenderInfo
 ): Moment => {
-  // console.log("getDateFromFileMeta");
   // Get date from cDate, mDate or baseFileName
 
   let date = window.moment('');
 
   if (file && file instanceof TFile) {
-    // console.log(file.stat);
-
     const target = query.target;
     if (target === 'cDate') {
       const ctime = file.stat.ctime; // unix time
@@ -235,8 +226,6 @@ export const getDateFromFileMeta = (
       date = getDateFromFilename(file, renderInfo);
     }
   }
-
-  // console.log(date);
   return date;
 };
 
@@ -247,14 +236,12 @@ export const getDateFromTask = (
   query: Query,
   renderInfo: RenderInfo
 ): Moment => {
-  // console.log("getDateFromTask");
   // Get date from '- [ ] regex with value' or '- [x] regex with value'
 
   // Why is this here?
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const date = window.moment('');
   const searchType = query.type;
-  // console.log(searchType);
 
   let strRegex = query.target;
   if (searchType === SearchType.Task) {
@@ -266,7 +253,6 @@ export const getDateFromTask = (
   } else {
     strRegex = '\\[[\\sx]\\]\\s' + strRegex;
   }
-  // console.log(strTextRegex);
 
   return extractDateUsingRegexWithValue(content, strRegex, renderInfo);
 };
@@ -279,15 +265,9 @@ export const collectDataFromFrontmatterTag = (
   dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
-  // console.log("collectDataFromFrontmatterTag");
-  // console.log(query);
-  // console.log(dataMap);
-  // console.log(xValueMap);
-
   const frontMatter = fileCache.frontmatter;
   let frontMatterTags: string[] = [];
   if (frontMatter && frontMatter.tags) {
-    // console.log(frontMatter.tags);
     let tagMeasure = 0.0;
     let tagExist = false;
     if (Array.isArray(frontMatter.tags)) {
@@ -301,8 +281,6 @@ export const collectDataFromFrontmatterTag = (
         }
       }
     }
-    // console.log(frontMatterTags);
-    // console.log(query.getTarget());
 
     for (const tag of frontMatterTags) {
       if (tag === query.target) {
@@ -343,20 +321,14 @@ export const collectDataFromFrontmatterKey = (
   dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
-  // console.log("collectDataFromFrontmatterKey");
-
   const frontMatter = fileCache.frontmatter;
   if (frontMatter) {
-    // console.log(frontMatter);
-    // console.log(query.getTarget());
     const deepValue = helper.deepValue(frontMatter, query.target);
-    // console.log(deepValue);
     if (deepValue) {
       const retParse = helper.parseFloatFromAny(
         deepValue,
         renderInfo.textValueMap
       );
-      // console.log(retParse);
       if (retParse.value === null) {
         // Try parsing as a boolean: true means 1, false means 0.
         if (deepValue === 'true' || deepValue === 'false') {
@@ -377,13 +349,6 @@ export const collectDataFromFrontmatterKey = (
       query.parentTarget &&
       helper.deepValue(frontMatter, query.parentTarget)
     ) {
-      // console.log("multiple values");
-      // console.log(query.getTarget());
-      // console.log(query.getParentTarget());
-      // console.log(query.getSubId());
-      // console.log(
-      //     frontMatter[query.getParentTarget()]
-      // );
       const toParse = helper.deepValue(frontMatter, query.parentTarget);
       let splitted = null;
       if (Array.isArray(toParse)) {
@@ -393,7 +358,6 @@ export const collectDataFromFrontmatterKey = (
       } else if (typeof toParse === 'string') {
         splitted = toParse.split(query.getSeparator());
       }
-      // console.log(splitted);
       if (
         splitted &&
         splitted.length > query.getAccessor() &&
@@ -487,7 +451,6 @@ export const collectDataFromInlineTag = (
   dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
-  // console.log(content);
   // Test this in Regex101
   // (^|\s)#tagName(\/[\w-]+)*(:(?<value>[\d\.\/-]*)[a-zA-Z]*)?([\\.!,\\?;~-]*)?(\s|$)
   let tagName = query.target;
@@ -501,7 +464,6 @@ export const collectDataFromInlineTag = (
     '(^|\\s)#' +
     tagName +
     '(\\/[\\w-]+)*(:(?<value>[\\d\\.\\/-]*)[a-zA-Z]*)?([\\.!,\\?;~-]*)?(\\s|$)';
-  // console.log(strRegex);
 
   return extractDataUsingRegexWithMultipleValues(
     content,
@@ -521,10 +483,7 @@ export const collectDataFromText = (
   dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
-  // console.log("collectDataFromText");
-
   const strRegex = query.target;
-  // console.log(strRegex);
 
   return extractDataUsingRegexWithMultipleValues(
     content,
@@ -544,11 +503,7 @@ export const collectDataFromFileMeta = (
   dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
-  // console.log("collectDataFromFileMeta");
-
   if (file && file instanceof TFile) {
-    // console.log(file.stat);
-
     const target = query.target;
     const xValue = xValueMap.get(renderInfo.xDataset[query.id]);
 
@@ -687,7 +642,6 @@ export const collectDataFromInlineDvField = (
     '\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-,@; \\t:' +
     WordCharacters +
     ']*))(\\]|\\)).*?$';
-  // console.log(strRegex);
 
   return extractDataUsingRegexWithMultipleValues(
     content,
@@ -707,9 +661,7 @@ export const collectDataFromTask = (
   dataMap: DataMap,
   xValueMap: TNumberValueMap
 ): boolean => {
-  // console.log("collectDataFromTask");
   const searchType = query.type;
-  // console.log(searchType);
 
   let strRegex = query.target;
   if (searchType === SearchType.Task) {

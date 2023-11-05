@@ -1,6 +1,6 @@
-import { Moment } from 'moment';
 import { Dataset } from '../models/dataset';
 import { RenderInfo } from '../models/render-info';
+import Moment = moment.Moment;
 
 // Function accept datasetId as first argument
 type TDatasetToValue = (

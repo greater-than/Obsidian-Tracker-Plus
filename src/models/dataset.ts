@@ -200,7 +200,7 @@ export class Dataset implements IterableIterator<DataPoint> {
     }
   }
 
-  public getLengthNotNull() {
+  public get nonNullValueCount() {
     let countNotNull = 0;
     for (let ind = 0; ind < this._values.length; ind++) {
       if (this._values[ind] !== null) {

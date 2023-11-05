@@ -211,8 +211,8 @@ export default class Tracker extends Plugin {
                 // console.log(splitted);
                 if (splitted.length === 2) {
                   const toParse = splitted[1].trim();
-                  const strRegex = fileMultiplierAfterLink;
-                  const regex = new RegExp(strRegex, 'gm');
+                  const pattern = fileMultiplierAfterLink;
+                  const regex = new RegExp(pattern, 'gm');
                   let match;
                   while ((match = regex.exec(toParse))) {
                     // console.log(match);
