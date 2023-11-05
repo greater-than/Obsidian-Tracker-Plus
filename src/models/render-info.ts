@@ -47,7 +47,7 @@ export class RenderInfo {
   aspectRatio: AspectRatio;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  output: any[];
+  output: any[]; // TODO Can this be an array of allowed output components?
   line: LineChart[];
   bar: BarChart[];
   pie: PieChart[];
