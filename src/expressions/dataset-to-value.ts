@@ -151,11 +151,11 @@ export const DatasetToValue: IDatasetToValue = {
     // return number
     let streak = 0;
     let maxStreak = 0;
-    for (const dataPoint of dataset) {
-      if (dataPoint.value !== null) streak++;
+    Array.from(dataset || []).forEach((point) => {
+      if (point.value !== null) streak++;
       else streak = 0;
       if (streak >= maxStreak) maxStreak = streak;
-    }
+    });
     return maxStreak;
   },
 
@@ -171,17 +171,16 @@ export const DatasetToValue: IDatasetToValue = {
     let maxStreak = 0;
     let streakStart: Moment = null;
     let maxStreakStart: Moment = null;
-    if (!dataset) return maxStreakStart;
-    for (const dataPoint of dataset) {
-      if (dataPoint.value !== null) {
-        streakStart = streak === 0 ? dataPoint.date : streakStart;
+    Array.from(dataset || []).forEach((point) => {
+      if (point.value !== null) {
+        streakStart = streak === 0 ? point.date : streakStart;
         streak++;
       } else streak = 0; // reset streak
       if (streak >= maxStreak) {
         maxStreak = streak;
         maxStreakStart = streakStart;
       }
-    }
+    });
     return maxStreakStart;
   },
 
@@ -197,14 +196,11 @@ export const DatasetToValue: IDatasetToValue = {
     let maxStreak = 0;
     let streakEnd: Moment = null;
     let maxStreakEnd: Moment = null;
-    if (!dataset) return maxStreakEnd;
-    const ds = Array.from(dataset);
-
-    Array.from(dataset).forEach((p, i) => {
+    Array.from(dataset || []).forEach((point, index, points) => {
       let nextPoint = null;
-      if (i < ds.length - 1) nextPoint = ds[i + 1];
-      if (p.value !== null) {
-        streakEnd = nextPoint?.value === null ? p.date : streakEnd;
+      if (index < points.length - 1) nextPoint = points[index + 1];
+      if (point.value !== null) {
+        streakEnd = nextPoint?.value === null ? point.date : streakEnd;
         streak++;
       } else streak = 0; // reset streak
       if (streak >= maxStreak) {
@@ -212,7 +208,6 @@ export const DatasetToValue: IDatasetToValue = {
         maxStreakEnd = streakEnd;
       }
     });
-
     return maxStreakEnd;
   },
 
@@ -226,7 +221,7 @@ export const DatasetToValue: IDatasetToValue = {
   maxBreaks: (dataset: Dataset, _renderInfo: RenderInfo): number => {
     let breaks = 0;
     let maxBreaks = 0;
-    Array.from(dataset).forEach((p) => {
+    Array.from(dataset || []).forEach((p) => {
       if (p.value === null) breaks++;
       else breaks = 0;
       if (breaks > maxBreaks) maxBreaks = breaks;
@@ -246,8 +241,7 @@ export const DatasetToValue: IDatasetToValue = {
     let maxBreaks = 0;
     let breaksStart: Moment = null;
     let maxBreaksStart: Moment = null;
-    if (!dataset) return maxBreaksStart;
-    Array.from(dataset).forEach((p) => {
+    Array.from(dataset || []).forEach((p) => {
       if (p.value === null) {
         if (breaks === 0) breaksStart = p.date;
         breaks++;
@@ -272,12 +266,11 @@ export const DatasetToValue: IDatasetToValue = {
     let maxBreaks = 0;
     let breaksEnd: Moment = null;
     let maxBreaksEnd: Moment = null;
-    if (!dataset) return maxBreaksEnd;
-    Array.from(dataset).forEach((p, ind, arr) => {
-      const nextPoint = ind < arr.length - 1 ? arr[ind + 1] : null;
-      if (p.value === null) {
+    Array.from(dataset || []).forEach((point, index, points) => {
+      const nextPoint = index < points.length - 1 ? points[index + 1] : null;
+      if (point.value === null) {
         breaks++;
-        if (nextPoint?.value !== null) breaksEnd = p.date;
+        if (nextPoint?.value !== null) breaksEnd = point.date;
       } else breaks = 0; // reset breaks
       if (breaks >= maxBreaks) {
         maxBreaks = breaks;
@@ -303,8 +296,17 @@ export const DatasetToValue: IDatasetToValue = {
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   currentStreak: (dataset: Dataset, _renderInfo: RenderInfo): number => {
-    if (!dataset) return 0;
-    return Array.from(dataset).filter((ds) => ds.value !== null).length;
+    let streak = 0;
+    Array.from(dataset || [])
+      .reverse()
+      .every((point) => {
+        if (point.value === null) return false;
+        else {
+          streak++;
+          return true;
+        }
+      });
+    return streak;
   },
 
   /**
@@ -314,16 +316,17 @@ export const DatasetToValue: IDatasetToValue = {
    * @returns {number}
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  currentStreakStart: (dataset, _renderInfo): Moment => {
+  currentStreakStart: (dataset: Dataset, _renderInfo: RenderInfo): Moment => {
     let start: Moment = null;
-    if (dataset) {
-      const points = Array.from(dataset);
-      for (let ind = points.length - 1; ind >= 0; ind--) {
-        const point = points[ind];
-        if (ind < points.length - 1) start = points[ind + 1].date;
-        if (point.value === null) break;
-      }
-    }
+    Array.from(dataset || [])
+      .reverse()
+      .every((point, index, points) => {
+        if (point.value === null) return false;
+        if (index < points.length - 1) {
+          start = points[index + 1].date;
+          return true;
+        }
+      });
     if (start === null) throw new StreakError(Reason.NO_START);
     return start;
   },
@@ -337,17 +340,17 @@ export const DatasetToValue: IDatasetToValue = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   currentStreakEnd: (dataset: Dataset, _renderInfo: RenderInfo): Moment => {
     let currentStreak = 0;
-    let currentStreakEnd: Moment = null;
-    if (dataset) {
-      Array.from(dataset).every((p) => {
-        if (p.value === null) return false;
-        if (currentStreak === 0) currentStreakEnd = p.date;
+    let end: Moment = null;
+    Array.from(dataset || [])
+      .reverse()
+      .every((point) => {
+        if (point.value === null) return false;
+        if (currentStreak === 0) end = point.date;
         currentStreak++;
         return true;
       });
-    }
-    if (currentStreakEnd === null) throw new BrokenStreakError(Reason.NO_END);
-    return currentStreakEnd;
+    if (end === null) throw new BrokenStreakError(Reason.NO_END);
+    return end;
   },
 
   /**
@@ -357,8 +360,17 @@ export const DatasetToValue: IDatasetToValue = {
    * @returns {number}
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  currentBreaks: (dataset: Dataset, _renderInfo: RenderInfo): number =>
-    Array.from(dataset).filter((p) => p.value === null).length, // TODO This is not the number of breaks, but the count of days between streaks. Is this correct?
+  currentBreaks: (dataset: Dataset, _renderInfo: RenderInfo): number => {
+    let breaks = 0;
+    Array.from(dataset || [])
+      .reverse()
+      .every((point) => {
+        if (point.value !== null) return false;
+        breaks++;
+        return true;
+      });
+    return breaks;
+  }, // TODO This is not the number of breaks, but the count of days between streaks. Is this correct?
 
   /**
    * @summary Returns the start date of the current break
@@ -368,15 +380,16 @@ export const DatasetToValue: IDatasetToValue = {
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   currentBreaksStart: (dataset: Dataset, _renderInfo: RenderInfo): Moment => {
-    let breakStart: Moment = null;
-    if (dataset) {
-      const points = Array.from(dataset);
-      points.forEach(
-        (p, i) => (breakStart = i < points.length - 1 ? p.date : null)
-      );
-    }
-    if (breakStart === null) throw new BrokenStreakError(Reason.NO_START);
-    return breakStart;
+    let start: Moment = null;
+    Array.from(dataset || [])
+      .reverse()
+      .every((point, index, points) => {
+        if (point.value !== null) return false;
+        if (index < points.length - 1) start = points[index + 1].date;
+        return true;
+      });
+    if (start === null) throw new BrokenStreakError(Reason.NO_START);
+    return start;
   },
 
   /**
@@ -389,15 +402,14 @@ export const DatasetToValue: IDatasetToValue = {
   currentBreaksEnd: (dataset: Dataset, _renderInfo: RenderInfo): Moment => {
     let breaks = 0;
     let breaksEnd: Moment = null;
-    if (dataset) {
-      const points = Array.from(dataset);
-      points.forEach((p) => {
-        if (p.value === null) {
-          if (breaks === 0) breaksEnd = p.date;
-          breaks++;
-        }
+    Array.from(dataset)
+      .reverse()
+      .every((point) => {
+        if (point.value !== null) return false;
+        if (breaks === 0) breaksEnd = point.date;
+        breaks++;
+        return true;
       });
-    }
     if (breaksEnd === null) throw new BrokenStreakError(Reason.NO_END);
     return breaksEnd;
   },
