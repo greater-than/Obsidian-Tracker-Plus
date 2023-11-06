@@ -46,15 +46,16 @@ export class RenderInfo {
   fitPanelWidth: boolean;
   aspectRatio: AspectRatio;
 
+  // # Output
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   output: any[]; // TODO Can this be an array of allowed output components?
   line: LineChart[];
   bar: BarChart[];
   pie: PieChart[];
-  summary: Summary[];
+  bullet: BulletGraph[];
   month: Month[];
   heatmap: Heatmap[];
-  bullet: BulletGraph[];
+  summary: Summary[];
   customDataset: CustomDatasetInfo[];
 
   public datasets: DatasetCollection | null;

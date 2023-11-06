@@ -326,7 +326,7 @@ export default class Tracker extends Plugin {
           if (
             type === SearchType.Tag ||
             type === SearchType.Text ||
-            type === SearchType.dvField ||
+            type === SearchType.DvField ||
             type === SearchType.Task ||
             type === SearchType.TaskDone ||
             type === SearchType.TaskNotDone
@@ -384,7 +384,7 @@ export default class Tracker extends Plugin {
                     renderInfo
                   );
                   break;
-                case SearchType.dvField:
+                case SearchType.DvField:
                   xDate = collecting.getDateFromDvField(
                     content,
                     xDatasetQuery,
@@ -454,23 +454,17 @@ export default class Tracker extends Plugin {
           }
         }
         if (skipThisFile) return;
-        // console.log(xValueMap);
-        // console.log(`minDate: ${minDate}`);
-        // console.log(`maxDate: ${maxDate}`);
 
         // Loop over queries
         const yDatasetQueries = renderInfo.queries.filter((q) => {
           return q.type !== SearchType.Table && !q.usedAsXDataset;
         });
-        // console.log(yDatasetQueries);
 
         const loopQueryPromises = yDatasetQueries.map(async (query) => {
           // Get xValue from file if xDataset assigned
           // if (renderInfo.xDataset !== null)
           // let xDatasetId = renderInfo.xDataset;
-          // console.log(query);
 
-          // console.log("Search frontmatter tags");
           if (fileCache && query.type === SearchType.Tag) {
             // Add frontmatter tags, allow simple tag only
             const gotAnyValue = collecting.collectDataFromFrontmatterTag(
@@ -483,7 +477,6 @@ export default class Tracker extends Plugin {
             processInfo.gotAnyValidYValue ||= gotAnyValue;
           } // Search frontmatter tags
 
-          // console.log("Search frontmatter keys");
           if (
             fileCache &&
             query.type === SearchType.Frontmatter &&
@@ -497,9 +490,8 @@ export default class Tracker extends Plugin {
               xValueMap
             );
             processInfo.gotAnyValidYValue ||= gotAnyValue;
-          } // console.log("Search frontmatter keys");
+          }
 
-          // console.log("Search wiki links");
           if (
             fileCache &&
             (query.type === SearchType.Wiki ||
@@ -554,7 +546,7 @@ export default class Tracker extends Plugin {
           } // Search FileMeta
 
           // console.log("Search dvField");
-          if (content && query.type === SearchType.dvField) {
+          if (content && query.type === SearchType.DvField) {
             const gotAnyValue = collecting.collectDataFromDvField(
               content,
               query,

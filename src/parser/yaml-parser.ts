@@ -16,17 +16,17 @@ import { Summary } from '../ui-components/summary/summary.model';
 import * as helper from '../utils/helper';
 import {
   getAvailableKeysOfClass,
-  getBoolArrayFromInput,
+  getBooleans,
   getNumberArray,
-  getNumberArrayFromInput,
+  getNumbers,
+  getString,
   getStringArray,
-  getStringArrayFromInput,
-  getStringFromInput,
-  parseCommonChartInfo,
-  splitInputByComma,
+  getStrings,
+  isSearchTypeValid,
+  isYAxisLocationValid,
+  parseCartesianChartInfo,
+  splitByComma,
   validateColor,
-  validateSearchType,
-  validateYAxisLocation,
 } from './yaml-parser.helper';
 
 // TODO Breakup this function
@@ -73,7 +73,7 @@ export const getRenderInfo = (
       }
     }
   } else if (typeof yaml.searchTarget === 'string') {
-    const splitted = splitInputByComma(yaml.searchTarget);
+    const splitted = splitByComma(yaml.searchTarget);
     // console.log(splitted);
     if (splitted.length > 1) {
       for (let piece of splitted) {
@@ -110,12 +110,12 @@ export const getRenderInfo = (
     return errorMessage;
   }
   const searchType: Array<SearchType> = [];
-  const retSearchType = getStringArrayFromInput(
+  const retSearchType = getStrings(
     'searchType',
     yaml.searchType,
     numDatasets,
     '',
-    validateSearchType,
+    isSearchTypeValid,
     false
   );
   if (typeof retSearchType === 'string') {
@@ -142,7 +142,7 @@ export const getRenderInfo = (
         searchType.push(SearchType.Text);
         break;
       case 'dvfield':
-        searchType.push(SearchType.dvField);
+        searchType.push(SearchType.DvField);
         break;
       case 'table':
         searchType.push(SearchType.Table);
@@ -177,7 +177,7 @@ export const getRenderInfo = (
 
   // separator
   let multipleValueSeparator: Array<string> = [];
-  const retMultipleValueSeparator = getStringArrayFromInput(
+  const retMultipleValueSeparator = getStrings(
     'separator',
     yaml.separator,
     numDatasets,
@@ -197,7 +197,7 @@ export const getRenderInfo = (
   // console.log(multipleValueSeparator);
 
   // xDataset
-  const retXDataset = getNumberArrayFromInput(
+  const retXDataset = getNumbers(
     'xDataset',
     yaml.xDataset,
     numDatasets,
@@ -317,7 +317,7 @@ export const getRenderInfo = (
   }
 
   // Root folder to search
-  renderInfo.folder = getStringFromInput(yaml?.folder, plugin.settings.folder);
+  renderInfo.folder = getString(yaml?.folder, plugin.settings.folder);
   if (renderInfo.folder.trim() === '') {
     renderInfo.folder = plugin.settings.folder;
   }
@@ -361,7 +361,7 @@ export const getRenderInfo = (
   // console.log(renderInfo.fileContainsLinkedFiles);
 
   // fileMultiplierAfterLink
-  renderInfo.fileMultiplierAfterLink = getStringFromInput(
+  renderInfo.fileMultiplierAfterLink = getString(
     yaml?.fileMultiplierAfterLink,
     renderInfo.fileMultiplierAfterLink
   );
@@ -383,13 +383,13 @@ export const getRenderInfo = (
   // console.log("renderInfo dateFormat: " + renderInfo.dateFormat);
 
   // Date format prefix
-  renderInfo.dateFormatPrefix = getStringFromInput(
+  renderInfo.dateFormatPrefix = getString(
     yaml?.dateFormatPrefix,
     renderInfo.dateFormatPrefix
   );
 
   // Date format suffix
-  renderInfo.dateFormatSuffix = getStringFromInput(
+  renderInfo.dateFormatSuffix = getString(
     yaml?.dateFormatSuffix,
     renderInfo.dateFormatSuffix
   );
@@ -494,7 +494,7 @@ export const getRenderInfo = (
   // console.log(renderInfo.xDataset);
 
   // Dataset name (need xDataset to set default name)
-  const retDatasetName = getStringArrayFromInput(
+  const retDatasetName = getStrings(
     'datasetName',
     yaml.datasetName,
     numDatasets,
@@ -524,7 +524,7 @@ export const getRenderInfo = (
   // console.log(renderInfo.datasetName);
 
   // constValue
-  const retConstValue = getNumberArrayFromInput(
+  const retConstValue = getNumbers(
     'constValue',
     yaml.constValue,
     numDatasets,
@@ -538,7 +538,7 @@ export const getRenderInfo = (
   // console.log(renderInfo.constValue);
 
   // ignoreAttachedValue
-  const retIgnoreAttachedValue = getBoolArrayFromInput(
+  const retIgnoreAttachedValue = getBooleans(
     'ignoreAttachedValue',
     yaml.ignoreAttachedValue,
     numDatasets,
@@ -552,7 +552,7 @@ export const getRenderInfo = (
   // console.log(renderInfo.ignoreAttachedValue);
 
   // ignoreZeroValue
-  const retIgnoreZeroValue = getBoolArrayFromInput(
+  const retIgnoreZeroValue = getBooleans(
     'ignoreZeroValue',
     yaml.ignoreZeroValue,
     numDatasets,
@@ -566,13 +566,7 @@ export const getRenderInfo = (
   // console.log(renderInfo.ignoreAttachedValue);
 
   // accum
-  const retAccum = getBoolArrayFromInput(
-    'accum',
-    yaml.accum,
-    numDatasets,
-    false,
-    true
-  );
+  const retAccum = getBooleans('accum', yaml.accum, numDatasets, false, true);
   if (typeof retAccum === 'string') {
     return retAccum;
   }
@@ -580,7 +574,7 @@ export const getRenderInfo = (
   // console.log(renderInfo.accum);
 
   // penalty
-  const retPenalty = getNumberArrayFromInput(
+  const retPenalty = getNumbers(
     'penalty',
     yaml.penalty,
     numDatasets,
@@ -594,7 +588,7 @@ export const getRenderInfo = (
   // console.log(renderInfo.penalty);
 
   // valueShift
-  const retValueShift = getNumberArrayFromInput(
+  const retValueShift = getNumbers(
     'valueShift',
     yaml.valueShift,
     numDatasets,
@@ -608,7 +602,7 @@ export const getRenderInfo = (
   // console.log(renderInfo.valueShift);
 
   // shiftOnlyValueLargerThan
-  const retShiftOnlyValueLargerThan = getNumberArrayFromInput(
+  const retShiftOnlyValueLargerThan = getNumbers(
     'shiftOnlyValueLargerThan',
     yaml.shiftOnlyValueLargerThan,
     numDatasets,
@@ -645,8 +639,8 @@ export const getRenderInfo = (
   // aspectRatio
   if (typeof yaml.aspectRatio === 'string') {
     // yaml.fitPanelWidth
-    const ratioRegEx = /([0-9]*):([0-9]*)/;
-    let parts = yaml.aspectRatio.match(ratioRegEx);
+    const pattern = /([0-9]*):([0-9]*)/;
+    let parts = yaml.aspectRatio.match(pattern);
     parts.shift();
     parts = parts.map((i: string) => parseInt(i, 10));
     if (parts.length == 2) {
@@ -658,7 +652,7 @@ export const getRenderInfo = (
   }
 
   // margin
-  const retMargin = getNumberArrayFromInput('margin', yaml.margin, 4, 10, true);
+  const retMargin = getNumbers('margin', yaml.margin, 4, 10, true);
   if (typeof retMargin === 'string') {
     return retMargin; // errorMessage
   }
@@ -700,10 +694,7 @@ export const getRenderInfo = (
     customDataset.id = customDatasetId;
 
     // name
-    customDataset.name = getStringFromInput(
-      yamlCustomDataset?.name,
-      customDataset.name
-    );
+    customDataset.name = getString(yamlCustomDataset?.name, customDataset.name);
 
     // xData
     const retXData = getStringArray('xData', yamlCustomDataset?.xData);
@@ -746,13 +737,13 @@ export const getRenderInfo = (
       }
     }
 
-    const retParseCommonChartInfo = parseCommonChartInfo(yamlLine, line);
+    const retParseCommonChartInfo = parseCartesianChartInfo(yamlLine, line);
     if (typeof retParseCommonChartInfo === 'string') {
       return retParseCommonChartInfo;
     }
 
     // lineColor
-    const retLineColor = getStringArrayFromInput(
+    const retLineColor = getStrings(
       'lineColor',
       yamlLine?.lineColor,
       numDatasets,
@@ -767,7 +758,7 @@ export const getRenderInfo = (
     // console.log(line.lineColor);
 
     // lineWidth
-    const retLineWidth = getNumberArrayFromInput(
+    const retLineWidth = getNumbers(
       'lineWidth',
       yamlLine?.lineWidth,
       numDatasets,
@@ -781,7 +772,7 @@ export const getRenderInfo = (
     // console.log(line.lineWidth);
 
     // showLine
-    const retShowLine = getBoolArrayFromInput(
+    const retShowLine = getBooleans(
       'showLine',
       yamlLine?.showLine,
       numDatasets,
@@ -795,7 +786,7 @@ export const getRenderInfo = (
     // console.log(line.showLine);
 
     // showPoint
-    const retShowPoint = getBoolArrayFromInput(
+    const retShowPoint = getBooleans(
       'showPoint',
       yamlLine?.showPoint,
       numDatasets,
@@ -809,7 +800,7 @@ export const getRenderInfo = (
     // console.log(line.showPoint);
 
     // pointColor
-    const retPointColor = getStringArrayFromInput(
+    const retPointColor = getStrings(
       'pointColor',
       yamlLine?.pointColor,
       numDatasets,
@@ -824,7 +815,7 @@ export const getRenderInfo = (
     // console.log(line.pointColor);
 
     // pointBorderColor
-    const retPointBorderColor = getStringArrayFromInput(
+    const retPointBorderColor = getStrings(
       'pointBorderColor',
       yamlLine?.pointBorderColor,
       numDatasets,
@@ -839,7 +830,7 @@ export const getRenderInfo = (
     // console.log(line.pointBorderColor);
 
     // pointBorderWidth
-    const retPointBorderWidth = getNumberArrayFromInput(
+    const retPointBorderWidth = getNumbers(
       'pointBorderWidth',
       yamlLine?.pointBorderWidth,
       numDatasets,
@@ -853,7 +844,7 @@ export const getRenderInfo = (
     // console.log(line.pointBorderWidth);
 
     // pointSize
-    const retPointSize = getNumberArrayFromInput(
+    const retPointSize = getNumbers(
       'pointSize',
       yamlLine?.pointSize,
       numDatasets,
@@ -867,7 +858,7 @@ export const getRenderInfo = (
     // console.log(line.pointSize);
 
     // fillGap
-    const retFillGap = getBoolArrayFromInput(
+    const retFillGap = getBooleans(
       'fillGap',
       yamlLine?.fillGap,
       numDatasets,
@@ -881,12 +872,12 @@ export const getRenderInfo = (
     // console.log(line.fillGap);
 
     // yAxisLocation
-    const retYAxisLocation = getStringArrayFromInput(
+    const retYAxisLocation = getStrings(
       'yAxisLocation',
       yamlLine?.yAxisLocation,
       numDatasets,
       'left',
-      validateYAxisLocation,
+      isYAxisLocationValid,
       true
     );
     if (typeof retYAxisLocation === 'string') {
@@ -915,13 +906,13 @@ export const getRenderInfo = (
       }
     }
 
-    const retParseCommonChartInfo = parseCommonChartInfo(yamlBar, bar);
+    const retParseCommonChartInfo = parseCartesianChartInfo(yamlBar, bar);
     if (typeof retParseCommonChartInfo === 'string') {
       return retParseCommonChartInfo;
     }
 
     // barColor
-    const retBarColor = getStringArrayFromInput(
+    const retBarColor = getStrings(
       'barColor',
       yamlBar?.barColor,
       numDatasets,
@@ -936,12 +927,12 @@ export const getRenderInfo = (
     // console.log(bar.barColor);
 
     // yAxisLocation
-    const retYAxisLocation = getStringArrayFromInput(
+    const retYAxisLocation = getStrings(
       'yAxisLocation',
       yamlBar?.yAxisLocation,
       numDatasets,
       'left',
-      validateYAxisLocation,
+      isYAxisLocationValid,
       true
     );
     if (typeof retYAxisLocation === 'string') {
@@ -971,7 +962,7 @@ export const getRenderInfo = (
     }
 
     // title
-    pie.title = getStringFromInput(yamlPie?.title, pie.title);
+    pie.title = getString(yamlPie?.title, pie.title);
     // console.log(pie.title);
 
     // data
@@ -984,7 +975,7 @@ export const getRenderInfo = (
     const numData = pie.data.length;
 
     // dataColor
-    const retDataColor = getStringArrayFromInput(
+    const retDataColor = getStrings(
       'dataColor',
       yamlPie?.dataColor,
       numData,
@@ -999,7 +990,7 @@ export const getRenderInfo = (
     // console.log(pie.dataColor);
 
     // dataName
-    const retDataName = getStringArrayFromInput(
+    const retDataName = getStrings(
       'dataName',
       yamlPie?.dataName,
       numData,
@@ -1014,7 +1005,7 @@ export const getRenderInfo = (
     // console.log(pie.dataName);
 
     // label
-    const retLabel = getStringArrayFromInput(
+    const retLabel = getStrings(
       'label',
       yamlPie?.label,
       numData,
@@ -1035,7 +1026,7 @@ export const getRenderInfo = (
     // console.log(pie.hideLabelLessThan);
 
     // extLabel
-    const retExtLabel = getStringArrayFromInput(
+    const retExtLabel = getStrings(
       'extLabel',
       yamlPie?.extLabel,
       numData,
@@ -1067,7 +1058,7 @@ export const getRenderInfo = (
     }
 
     // legendPosition
-    pie.legendPosition = getStringFromInput(yamlPie?.legendPosition, 'right');
+    pie.legendPosition = getString(yamlPie?.legendPosition, 'right');
 
     // legendOrient
     let defaultLegendOrientation = 'horizontal';
@@ -1081,7 +1072,7 @@ export const getRenderInfo = (
     } else {
       defaultLegendOrientation = 'horizontal';
     }
-    pie.legendOrientation = getStringFromInput(
+    pie.legendOrientation = getString(
       yamlPie?.legendOrientation,
       defaultLegendOrientation
     );
@@ -1089,13 +1080,10 @@ export const getRenderInfo = (
     // console.log(pie.legendOrientation);
 
     // legendBgColor
-    pie.legendBgColor = getStringFromInput(
-      yamlPie?.legendBgColor,
-      pie.legendBgColor
-    );
+    pie.legendBgColor = getString(yamlPie?.legendBgColor, pie.legendBgColor);
 
     // legendBorderColor
-    pie.legendBorderColor = getStringFromInput(
+    pie.legendBorderColor = getString(
       yamlPie?.legendBorderColor,
       pie.legendBorderColor
     );
@@ -1121,13 +1109,10 @@ export const getRenderInfo = (
     }
 
     // template
-    summary.template = getStringFromInput(
-      yamlSummary?.template,
-      summary.template
-    );
+    summary.template = getString(yamlSummary?.template, summary.template);
 
     // style
-    summary.style = getStringFromInput(yamlSummary?.style, summary.style);
+    summary.style = getString(yamlSummary?.style, summary.style);
 
     renderInfo.summary.push(summary);
   } // summary related parameters
@@ -1149,7 +1134,7 @@ export const getRenderInfo = (
     }
 
     // mode
-    month.mode = getStringFromInput(yamlMonth?.mode, month.mode);
+    month.mode = getString(yamlMonth?.mode, month.mode);
     // console.log(month.mode);
 
     // dataset
@@ -1168,10 +1153,7 @@ export const getRenderInfo = (
     const numDataset = month.dataset.length;
 
     // startWeekOn
-    month.startWeekOn = getStringFromInput(
-      yamlMonth?.startWeekOn,
-      month.startWeekOn
-    );
+    month.startWeekOn = getString(yamlMonth?.startWeekOn, month.startWeekOn);
 
     // showCircle
     if (typeof yamlMonth?.showCircle === 'boolean') {
@@ -1232,7 +1214,7 @@ export const getRenderInfo = (
     }
 
     // color
-    month.color = getStringFromInput(yamlMonth?.color, month.color);
+    month.color = getString(yamlMonth?.color, month.color);
     // console.log(month.color);
 
     // dimNotInMonth
@@ -1263,10 +1245,7 @@ export const getRenderInfo = (
     }
 
     // circleColor
-    month.circleColor = getStringFromInput(
-      yamlMonth?.circleColor,
-      month.circleColor
-    );
+    month.circleColor = getString(yamlMonth?.circleColor, month.circleColor);
     // console.log(month.circleColor);
 
     // circleColorByValue
@@ -1276,42 +1255,42 @@ export const getRenderInfo = (
     // console.log(month.circleColorByValue);
 
     // headerYearColor
-    month.headerYearColor = getStringFromInput(
+    month.headerYearColor = getString(
       yamlMonth?.headerYearColor,
       month.headerYearColor
     );
     // console.log(month.headerYearColor);
 
     // headerMonthColor
-    month.headerMonthColor = getStringFromInput(
+    month.headerMonthColor = getString(
       yamlMonth?.headerMonthColor,
       month.headerMonthColor
     );
     // console.log(month.headerMonthColor);
 
     // dividingLineColor
-    month.dividingLineColor = getStringFromInput(
+    month.dividingLineColor = getString(
       yamlMonth?.dividingLineColor,
       month.dividingLineColor
     );
     // console.log(month.dividingLineColor);
 
     // todayRingColor
-    month.todayRingColor = getStringFromInput(
+    month.todayRingColor = getString(
       yamlMonth?.todayRingColor,
       month.todayRingColor
     );
     // console.log(month.todayRingColor);
 
     // selectedRingColor
-    month.selectedRingColor = getStringFromInput(
+    month.selectedRingColor = getString(
       yamlMonth?.selectedRingColor,
       month.selectedRingColor
     );
     // console.log(month.selectedRingColor);
 
     // initMonth
-    month.initMonth = getStringFromInput(yamlMonth?.initMonth, month.initMonth);
+    month.initMonth = getString(yamlMonth?.initMonth, month.initMonth);
     // console.log(month.initMonth);
 
     // showAnnotation
@@ -1385,18 +1364,15 @@ export const getRenderInfo = (
     }
 
     // title
-    bullet.title = getStringFromInput(yamlBullet?.title, bullet.title);
+    bullet.title = getString(yamlBullet?.title, bullet.title);
     // console.log(bullet.title);
 
     // dataset
-    bullet.dataset = getStringFromInput(yamlBullet?.dataset, bullet.dataset);
+    bullet.dataset = getString(yamlBullet?.dataset, bullet.dataset);
     // console.log(bullet.dataset);
 
     // orientation
-    bullet.orientation = getStringFromInput(
-      yamlBullet?.orientation,
-      bullet.orientation
-    );
+    bullet.orientation = getString(yamlBullet?.orientation, bullet.orientation);
     // console.log(bullet.orientation);
 
     // range
@@ -1435,7 +1411,7 @@ export const getRenderInfo = (
     // console.log(renderInfo.bullet.range);
 
     // range color
-    const retRangeColor = getStringArrayFromInput(
+    const retRangeColor = getStrings(
       'rangeColor',
       yamlBullet?.rangeColor,
       numRange,
@@ -1450,21 +1426,15 @@ export const getRenderInfo = (
     // console.log(bullet.rangeColor);
 
     // actual value, can possess template variable
-    bullet.value = getStringFromInput(yamlBullet?.value, bullet.value);
+    bullet.value = getString(yamlBullet?.value, bullet.value);
     // console.log(bullet.value);
 
     // value unit
-    bullet.valueUnit = getStringFromInput(
-      yamlBullet?.valueUnit,
-      bullet.valueUnit
-    );
+    bullet.valueUnit = getString(yamlBullet?.valueUnit, bullet.valueUnit);
     // console.log(bullet.valueUnit);
 
     // value color
-    bullet.valueColor = getStringFromInput(
-      yamlBullet?.valueColor,
-      bullet.valueColor
-    );
+    bullet.valueColor = getString(yamlBullet?.valueColor, bullet.valueColor);
     // console.log(bullet.valueColor);
 
     // show mark
@@ -1480,10 +1450,7 @@ export const getRenderInfo = (
     // console.log(bullet.markValue);
 
     // mark color
-    bullet.markerColor = getStringFromInput(
-      yamlBullet?.markerColor,
-      bullet.markerColor
-    );
+    bullet.markerColor = getString(yamlBullet?.markerColor, bullet.markerColor);
     // console.log(bullet.markValue);
 
     renderInfo.bullet.push(bullet);
