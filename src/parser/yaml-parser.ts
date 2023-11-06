@@ -15,18 +15,18 @@ import { Month } from '../ui-components/month/month.model';
 import { Summary } from '../ui-components/summary/summary.model';
 import * as helper from '../utils/helper';
 import {
-  getAvailableKeysOfClass,
   getBooleans,
+  getKeys,
   getNumberArray,
   getNumbers,
   getString,
   getStringArray,
   getStrings,
+  isColorValid,
   isSearchTypeValid,
   isYAxisLocationValid,
-  parseCartesianChartInfo,
+  setCartesianChartInfo,
   splitByComma,
-  validateColor,
 } from './yaml-parser.helper';
 
 // TODO Breakup this function
@@ -48,7 +48,7 @@ export const getRenderInfo = (
     return errorMessage;
   }
   // console.log(yaml);
-  const keysFoundInYAML = getAvailableKeysOfClass(yaml);
+  const keysFoundInYAML = getKeys(yaml);
   // console.log(keysFoundInYAML);
 
   let errorMessage = '';
@@ -219,7 +219,7 @@ export const getRenderInfo = (
   const queries: Array<Query> = [];
   for (let ind = 0; ind < searchTarget.length; ind++) {
     const query = new Query(queries.length, searchType[ind], searchTarget[ind]);
-    query.setSeparator(multipleValueSeparator[ind]);
+    query.separator = multipleValueSeparator[ind];
     if (xDataset.includes(ind)) query.usedAsXDataset = true;
     queries.push(query);
   }
@@ -227,7 +227,7 @@ export const getRenderInfo = (
 
   // Create graph info
   const renderInfo = new RenderInfo(queries);
-  const keysOfRenderInfo = getAvailableKeysOfClass(renderInfo);
+  const keysOfRenderInfo = getKeys(renderInfo);
   const additionalAllowedKeys = ['searchType', 'searchTarget', 'separator'];
   // console.log(keysOfRenderInfo);
   const yamlLineKeys = [];
@@ -617,7 +617,7 @@ export const getRenderInfo = (
 
   // textValueMap
   if (typeof yaml.textValueMap !== 'undefined') {
-    const keys = getAvailableKeysOfClass(yaml.textValueMap);
+    const keys = getKeys(yaml.textValueMap);
     // console.log(texts);
     for (const key of keys) {
       const text = key.trim();
@@ -672,8 +672,8 @@ export const getRenderInfo = (
     const customDataset = new CustomDatasetInfo();
     const yamlCustomDataset = yaml[datasetKey];
 
-    const keysOfCustomDatasetInfo = getAvailableKeysOfClass(customDataset);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlCustomDataset);
+    const keysOfCustomDatasetInfo = getKeys(customDataset);
+    const keysFoundInYAML = getKeys(yamlCustomDataset);
     // console.log(keysOfCustomDatasetInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -726,8 +726,8 @@ export const getRenderInfo = (
     const line = new LineChart();
     const yamlLine = yaml[lineKey];
 
-    const keysOfLineInfo = getAvailableKeysOfClass(line);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlLine);
+    const keysOfLineInfo = getKeys(line);
+    const keysFoundInYAML = getKeys(yamlLine);
     // console.log(keysOfLineInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -737,7 +737,7 @@ export const getRenderInfo = (
       }
     }
 
-    const retParseCommonChartInfo = parseCartesianChartInfo(yamlLine, line);
+    const retParseCommonChartInfo = setCartesianChartInfo(yamlLine, line);
     if (typeof retParseCommonChartInfo === 'string') {
       return retParseCommonChartInfo;
     }
@@ -748,7 +748,7 @@ export const getRenderInfo = (
       yamlLine?.lineColor,
       numDatasets,
       '',
-      validateColor,
+      isColorValid,
       true
     );
     if (typeof retLineColor === 'string') {
@@ -805,7 +805,7 @@ export const getRenderInfo = (
       yamlLine?.pointColor,
       numDatasets,
       '#69b3a2',
-      validateColor,
+      isColorValid,
       true
     );
     if (typeof retPointColor === 'string') {
@@ -820,7 +820,7 @@ export const getRenderInfo = (
       yamlLine?.pointBorderColor,
       numDatasets,
       '#69b3a2',
-      validateColor,
+      isColorValid,
       true
     );
     if (typeof retPointBorderColor === 'string') {
@@ -895,8 +895,8 @@ export const getRenderInfo = (
     const bar = new BarChart();
     const yamlBar = yaml[barKey];
 
-    const keysOfBarInfo = getAvailableKeysOfClass(bar);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlBar);
+    const keysOfBarInfo = getKeys(bar);
+    const keysFoundInYAML = getKeys(yamlBar);
     // console.log(keysOfBarInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -906,7 +906,7 @@ export const getRenderInfo = (
       }
     }
 
-    const retParseCommonChartInfo = parseCartesianChartInfo(yamlBar, bar);
+    const retParseCommonChartInfo = setCartesianChartInfo(yamlBar, bar);
     if (typeof retParseCommonChartInfo === 'string') {
       return retParseCommonChartInfo;
     }
@@ -917,7 +917,7 @@ export const getRenderInfo = (
       yamlBar?.barColor,
       numDatasets,
       '',
-      validateColor,
+      isColorValid,
       true
     );
     if (typeof retBarColor === 'string') {
@@ -950,8 +950,8 @@ export const getRenderInfo = (
     const pie = new PieChart();
     const yamlPie = yaml[pieKey];
 
-    const keysOfPieInfo = getAvailableKeysOfClass(pie);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlPie);
+    const keysOfPieInfo = getKeys(pie);
+    const keysFoundInYAML = getKeys(yamlPie);
     // console.log(keysOfPieInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -980,7 +980,7 @@ export const getRenderInfo = (
       yamlPie?.dataColor,
       numData,
       null,
-      validateColor,
+      isColorValid,
       true
     );
     if (typeof retDataColor === 'string') {
@@ -1097,8 +1097,8 @@ export const getRenderInfo = (
     const summary = new Summary();
     const yamlSummary = yaml[summaryKey];
 
-    const keysOfSummaryInfo = getAvailableKeysOfClass(summary);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlSummary);
+    const keysOfSummaryInfo = getKeys(summary);
+    const keysFoundInYAML = getKeys(yamlSummary);
     // console.log(keysOfSummaryInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -1122,8 +1122,8 @@ export const getRenderInfo = (
     const month = new Month();
     const yamlMonth = yaml[monthKey];
 
-    const keysOfMonthInfo = getAvailableKeysOfClass(month);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlMonth);
+    const keysOfMonthInfo = getKeys(month);
+    const keysFoundInYAML = getKeys(yamlMonth);
     // console.log(keysOfSummaryInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -1332,8 +1332,8 @@ export const getRenderInfo = (
     const heatmap = new Heatmap();
     const yamlHeatmap = yaml[heatmapKey];
 
-    const keysOfHeatmapInfo = getAvailableKeysOfClass(heatmap);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlHeatmap);
+    const keysOfHeatmapInfo = getKeys(heatmap);
+    const keysFoundInYAML = getKeys(yamlHeatmap);
     // console.log(keysOfHeatmapInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -1352,8 +1352,8 @@ export const getRenderInfo = (
     const bullet = new BulletGraph();
     const yamlBullet = yaml[bulletKey];
 
-    const keysOfBulletInfo = getAvailableKeysOfClass(bullet);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlBullet);
+    const keysOfBulletInfo = getKeys(bullet);
+    const keysFoundInYAML = getKeys(yamlBullet);
     // console.log(keysOfSummaryInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -1416,7 +1416,7 @@ export const getRenderInfo = (
       yamlBullet?.rangeColor,
       numRange,
       '',
-      validateColor,
+      isColorValid,
       true
     );
     if (typeof retRangeColor === 'string') {
