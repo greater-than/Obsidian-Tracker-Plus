@@ -94,6 +94,15 @@ export class Query {
   public get numTargets() {
     return this._numTargets;
   }
+
+  get separator(): string {
+    return this._separator;
+  }
+
+  set separator(value: string) {
+    this._separator = value;
+  }
+
   // #endregion
 
   public equalTo(other: Query): boolean {
@@ -116,18 +125,12 @@ export class Query {
     return null;
   }
 
-  public setSeparator(sep: string) {
-    this._separator = sep;
-  }
-
   public getSeparator(isForFrontmatterTags: boolean = false) {
-    if (this._separator === '') {
-      if (isForFrontmatterTags) {
-        return ',';
-      }
-      return '/';
-    }
-    return this._separator;
+    return this.separator === ''
+      ? isForFrontmatterTags
+        ? ','
+        : '/'
+      : this._separator;
   }
 
   public incrementTargetCount(num: number = 1) {

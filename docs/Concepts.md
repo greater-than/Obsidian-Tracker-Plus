@@ -6,7 +6,7 @@ This plugin was designed to read code blocks in [YAML format](https://en.wikiped
 
 ### Collecting Data
 
-Providing parameters `searchType` and `searchTarget` is the minimum requirement for a successful data collection. `searchType` can be `tag`, `frontmatter`, `wiki`, `dvField`, `table`, `fileMeta`, `task`, or `text`. Then the cooresponding `searchTarget` should be provided according to the specified type.
+Providing parameters `searchType` and `searchTarget` is the minimum requirement for a successful data collection. `searchType` can be `tag`, `frontmatter`, `wiki`, `dvField`, `table`, `fileMeta`, `task`, or `text`. Then the corresponding `searchTarget` should be provided according to the specified type.
 
 ### Target Evaluation
 
@@ -26,6 +26,6 @@ Output type `bullet` creates a [bullet chart](https://en.wikipedia.org/wiki/Bull
 
 Output type `month` creates a month view with circled dates exceeding the given threshold and streaks showing how long it persisted.
 
-Output type `pie` creates a pie chart. The `data` parameter should be applied for circular sectors you want to add. Parameter `label` and `extLabel` are used for displaying labels and `dataName` is used for the diplay names on legend.
+Output type `pie` creates a pie chart. The `data` parameter should be applied for circular sectors you want to add. Parameter `label` and `extLabel` are used for displaying labels and `dataName` is used for the display names on legend.
 
 Detailed description for all parameters of the output types can be found [here](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/docs/InputParameters.md).

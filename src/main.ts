@@ -326,7 +326,7 @@ export default class Tracker extends Plugin {
           if (
             type === SearchType.Tag ||
             type === SearchType.Text ||
-            type === SearchType.dvField ||
+            type === SearchType.DataviewField ||
             type === SearchType.Task ||
             type === SearchType.TaskDone ||
             type === SearchType.TaskNotDone
@@ -384,7 +384,7 @@ export default class Tracker extends Plugin {
                     renderInfo
                   );
                   break;
-                case SearchType.dvField:
+                case SearchType.DataviewField:
                   xDate = collecting.getDateFromDvField(
                     content,
                     xDatasetQuery,
@@ -454,23 +454,17 @@ export default class Tracker extends Plugin {
           }
         }
         if (skipThisFile) return;
-        // console.log(xValueMap);
-        // console.log(`minDate: ${minDate}`);
-        // console.log(`maxDate: ${maxDate}`);
 
         // Loop over queries
         const yDatasetQueries = renderInfo.queries.filter((q) => {
           return q.type !== SearchType.Table && !q.usedAsXDataset;
         });
-        // console.log(yDatasetQueries);
 
         const loopQueryPromises = yDatasetQueries.map(async (query) => {
           // Get xValue from file if xDataset assigned
           // if (renderInfo.xDataset !== null)
           // let xDatasetId = renderInfo.xDataset;
-          // console.log(query);
 
-          // console.log("Search frontmatter tags");
           if (fileCache && query.type === SearchType.Tag) {
             // Add frontmatter tags, allow simple tag only
             const gotAnyValue = collecting.collectDataFromFrontmatterTag(
@@ -483,7 +477,6 @@ export default class Tracker extends Plugin {
             processInfo.gotAnyValidYValue ||= gotAnyValue;
           } // Search frontmatter tags
 
-          // console.log("Search frontmatter keys");
           if (
             fileCache &&
             query.type === SearchType.Frontmatter &&
@@ -497,9 +490,8 @@ export default class Tracker extends Plugin {
               xValueMap
             );
             processInfo.gotAnyValidYValue ||= gotAnyValue;
-          } // console.log("Search frontmatter keys");
+          }
 
-          // console.log("Search wiki links");
           if (
             fileCache &&
             (query.type === SearchType.Wiki ||
@@ -540,7 +532,6 @@ export default class Tracker extends Plugin {
             processInfo.gotAnyValidYValue ||= gotAnyValue;
           } // Search text
 
-          // console.log("Search FileMeta");
           if (query.type === SearchType.FileMeta) {
             const gotAnyValue = collecting.collectDataFromFileMeta(
               file,
@@ -553,8 +544,7 @@ export default class Tracker extends Plugin {
             processInfo.gotAnyValidYValue ||= gotAnyValue;
           } // Search FileMeta
 
-          // console.log("Search dvField");
-          if (content && query.type === SearchType.dvField) {
+          if (content && query.type === SearchType.DataviewField) {
             const gotAnyValue = collecting.collectDataFromDvField(
               content,
               query,
@@ -565,7 +555,6 @@ export default class Tracker extends Plugin {
             processInfo.gotAnyValidYValue ||= gotAnyValue;
           } // search dvField
 
-          // console.log("Search Task");
           if (
             content &&
             (query.type === SearchType.Task ||
@@ -585,7 +574,6 @@ export default class Tracker extends Plugin {
         await Promise.all(loopQueryPromises);
       });
       await Promise.all(loopFilePromises);
-      // console.log(dataMap);
 
       // Collect data from a file, one file contains full dataset
       await this.collectDataFromTable(dataMap, renderInfo, processInfo);
@@ -596,9 +584,6 @@ export default class Tracker extends Plugin {
           element
         );
       }
-      // console.log(minDate);
-      // console.log(maxDate);
-      // console.log(dataMap);
 
       // Check date range
       // minDate and maxDate are collected without knowing startDate and endDate

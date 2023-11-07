@@ -1,6 +1,6 @@
-# Test Scaling and Positioning
+# Scaling, Width, Positioning, and Aspect Ratios
 
-## Scaling the chart
+## Scaling
 
 Scaling factor 0.5
 
@@ -32,7 +32,7 @@ line:
     lineColor: "#d65d0e"
 ```
 
-## Fitting the chart to the panel width
+## Width
 
 ```tracker
 searchType: tag
@@ -47,7 +47,7 @@ line:
     lineColor: "#d65d0e"
 ```
 
-## Chart Positioning
+## Positioning
 
 margin: top right bottom left
 
@@ -101,6 +101,22 @@ endDate: 2021-01-31
 fixedScale: 1.0
 fitPanelWidth: false
 margin: 10, 10, 10, 150
+line:
+    title: PushUp
+    yAxisLabel: Count
+    lineColor: "#d65d0e"
+```
+
+## Aspect Ratio
+
+aspectRatio 5:3
+```tracker
+searchType: tag
+searchTarget: exercise-pushup
+folder: diary
+endDate: 2021-01-31
+aspectRatio: 5:3
+fitPanelWidth: false
 line:
     title: PushUp
     yAxisLabel: Count

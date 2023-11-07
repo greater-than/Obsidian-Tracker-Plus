@@ -17,7 +17,7 @@ export const parseMarkdownTableRow = (
 };
 
 /**
- *
+ * TODO What is this doing?
  * @param {string} imageTag
  * @returns {string}
  */
@@ -57,10 +57,12 @@ export const toBool = (value: string | number): boolean | null => {
   return null;
 };
 
-export const toSentenceCase = (
-  value: string
-  // lowerCaseRemainingChars: boolean = false
-): string => {
+/**
+ * @summary Capitalizes the first word in each sentence
+ * @param {string} value
+ * @returns {string}
+ */
+export const toSentenceCase = (value: string): string => {
   const sentences = value.split('.');
   let all = '';
   sentences.forEach((sentence) => {

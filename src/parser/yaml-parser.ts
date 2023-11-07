@@ -10,23 +10,23 @@ import { BarChart } from '../ui-components/chart/bar-chart.model';
 import { LineChart } from '../ui-components/chart/line-chart.model';
 import { PieChart } from '../ui-components/chart/pie-chart.model';
 import { BulletGraph } from '../ui-components/graph/bullet-graph.model';
-import { Heatmap } from '../ui-components/heatmap/heatmap.model';
+import { HeatMap } from '../ui-components/heat-map/heat-map.model';
 import { Month } from '../ui-components/month/month.model';
 import { Summary } from '../ui-components/summary/summary.model';
 import * as helper from '../utils/helper';
 import {
-  getAvailableKeysOfClass,
-  getBoolArrayFromInput,
+  getBooleans,
+  getKeys,
   getNumberArray,
-  getNumberArrayFromInput,
+  getNumbers,
+  getString,
   getStringArray,
-  getStringArrayFromInput,
-  getStringFromInput,
-  parseCommonChartInfo,
-  splitInputByComma,
-  validateColor,
-  validateSearchType,
-  validateYAxisLocation,
+  getStrings,
+  isColorValid,
+  isSearchTypeValid,
+  isYAxisLocationValid,
+  setCartesianChartInfo,
+  splitByComma,
 } from './yaml-parser.helper';
 
 // TODO Breakup this function
@@ -48,7 +48,7 @@ export const getRenderInfo = (
     return errorMessage;
   }
   // console.log(yaml);
-  const keysFoundInYAML = getAvailableKeysOfClass(yaml);
+  const keysFoundInYAML = getKeys(yaml);
   // console.log(keysFoundInYAML);
 
   let errorMessage = '';
@@ -73,7 +73,7 @@ export const getRenderInfo = (
       }
     }
   } else if (typeof yaml.searchTarget === 'string') {
-    const splitted = splitInputByComma(yaml.searchTarget);
+    const splitted = splitByComma(yaml.searchTarget);
     // console.log(splitted);
     if (splitted.length > 1) {
       for (let piece of splitted) {
@@ -110,12 +110,12 @@ export const getRenderInfo = (
     return errorMessage;
   }
   const searchType: Array<SearchType> = [];
-  const retSearchType = getStringArrayFromInput(
+  const retSearchType = getStrings(
     'searchType',
     yaml.searchType,
     numDatasets,
     '',
-    validateSearchType,
+    isSearchTypeValid,
     false
   );
   if (typeof retSearchType === 'string') {
@@ -142,7 +142,7 @@ export const getRenderInfo = (
         searchType.push(SearchType.Text);
         break;
       case 'dvfield':
-        searchType.push(SearchType.dvField);
+        searchType.push(SearchType.DataviewField);
         break;
       case 'table':
         searchType.push(SearchType.Table);
@@ -177,7 +177,7 @@ export const getRenderInfo = (
 
   // separator
   let multipleValueSeparator: Array<string> = [];
-  const retMultipleValueSeparator = getStringArrayFromInput(
+  const retMultipleValueSeparator = getStrings(
     'separator',
     yaml.separator,
     numDatasets,
@@ -197,13 +197,11 @@ export const getRenderInfo = (
   // console.log(multipleValueSeparator);
 
   // xDataset
-  const retXDataset = getNumberArrayFromInput(
-    'xDataset',
-    yaml.xDataset,
-    numDatasets,
-    -1,
-    true
-  );
+  const retXDataset = getNumbers('xDataset', yaml.xDataset, {
+    valueCount: numDatasets,
+    defaultValue: -1,
+    allowInvalidValue: true,
+  });
   if (typeof retXDataset === 'string') {
     return retXDataset; // errorMessage
   }
@@ -219,7 +217,7 @@ export const getRenderInfo = (
   const queries: Array<Query> = [];
   for (let ind = 0; ind < searchTarget.length; ind++) {
     const query = new Query(queries.length, searchType[ind], searchTarget[ind]);
-    query.setSeparator(multipleValueSeparator[ind]);
+    query.separator = multipleValueSeparator[ind];
     if (xDataset.includes(ind)) query.usedAsXDataset = true;
     queries.push(query);
   }
@@ -227,7 +225,7 @@ export const getRenderInfo = (
 
   // Create graph info
   const renderInfo = new RenderInfo(queries);
-  const keysOfRenderInfo = getAvailableKeysOfClass(renderInfo);
+  const keysOfRenderInfo = getKeys(renderInfo);
   const additionalAllowedKeys = ['searchType', 'searchTarget', 'separator'];
   // console.log(keysOfRenderInfo);
   const yamlLineKeys = [];
@@ -317,7 +315,7 @@ export const getRenderInfo = (
   }
 
   // Root folder to search
-  renderInfo.folder = getStringFromInput(yaml?.folder, plugin.settings.folder);
+  renderInfo.folder = getString(yaml?.folder, plugin.settings.folder);
   if (renderInfo.folder.trim() === '') {
     renderInfo.folder = plugin.settings.folder;
   }
@@ -361,7 +359,7 @@ export const getRenderInfo = (
   // console.log(renderInfo.fileContainsLinkedFiles);
 
   // fileMultiplierAfterLink
-  renderInfo.fileMultiplierAfterLink = getStringFromInput(
+  renderInfo.fileMultiplierAfterLink = getString(
     yaml?.fileMultiplierAfterLink,
     renderInfo.fileMultiplierAfterLink
   );
@@ -383,13 +381,13 @@ export const getRenderInfo = (
   // console.log("renderInfo dateFormat: " + renderInfo.dateFormat);
 
   // Date format prefix
-  renderInfo.dateFormatPrefix = getStringFromInput(
+  renderInfo.dateFormatPrefix = getString(
     yaml?.dateFormatPrefix,
     renderInfo.dateFormatPrefix
   );
 
   // Date format suffix
-  renderInfo.dateFormatSuffix = getStringFromInput(
+  renderInfo.dateFormatSuffix = getString(
     yaml?.dateFormatSuffix,
     renderInfo.dateFormatSuffix
   );
@@ -494,7 +492,7 @@ export const getRenderInfo = (
   // console.log(renderInfo.xDataset);
 
   // Dataset name (need xDataset to set default name)
-  const retDatasetName = getStringArrayFromInput(
+  const retDatasetName = getStrings(
     'datasetName',
     yaml.datasetName,
     numDatasets,
@@ -524,13 +522,11 @@ export const getRenderInfo = (
   // console.log(renderInfo.datasetName);
 
   // constValue
-  const retConstValue = getNumberArrayFromInput(
-    'constValue',
-    yaml.constValue,
-    numDatasets,
-    1.0,
-    true
-  );
+  const retConstValue = getNumbers('constValue', yaml.constValue, {
+    valueCount: numDatasets,
+    defaultValue: 1.0,
+    allowInvalidValue: true,
+  });
   if (typeof retConstValue === 'string') {
     return retConstValue; // errorMessage
   }
@@ -538,7 +534,7 @@ export const getRenderInfo = (
   // console.log(renderInfo.constValue);
 
   // ignoreAttachedValue
-  const retIgnoreAttachedValue = getBoolArrayFromInput(
+  const retIgnoreAttachedValue = getBooleans(
     'ignoreAttachedValue',
     yaml.ignoreAttachedValue,
     numDatasets,
@@ -552,7 +548,7 @@ export const getRenderInfo = (
   // console.log(renderInfo.ignoreAttachedValue);
 
   // ignoreZeroValue
-  const retIgnoreZeroValue = getBoolArrayFromInput(
+  const retIgnoreZeroValue = getBooleans(
     'ignoreZeroValue',
     yaml.ignoreZeroValue,
     numDatasets,
@@ -566,13 +562,7 @@ export const getRenderInfo = (
   // console.log(renderInfo.ignoreAttachedValue);
 
   // accum
-  const retAccum = getBoolArrayFromInput(
-    'accum',
-    yaml.accum,
-    numDatasets,
-    false,
-    true
-  );
+  const retAccum = getBooleans('accum', yaml.accum, numDatasets, false, true);
   if (typeof retAccum === 'string') {
     return retAccum;
   }
@@ -580,13 +570,11 @@ export const getRenderInfo = (
   // console.log(renderInfo.accum);
 
   // penalty
-  const retPenalty = getNumberArrayFromInput(
-    'penalty',
-    yaml.penalty,
-    numDatasets,
-    null,
-    true
-  );
+  const retPenalty = getNumbers('penalty', yaml.penalty, {
+    valueCount: numDatasets,
+    defaultValue: null,
+    allowInvalidValue: true,
+  });
   if (typeof retPenalty === 'string') {
     return retPenalty;
   }
@@ -594,13 +582,11 @@ export const getRenderInfo = (
   // console.log(renderInfo.penalty);
 
   // valueShift
-  const retValueShift = getNumberArrayFromInput(
-    'valueShift',
-    yaml.valueShift,
-    numDatasets,
-    0,
-    true
-  );
+  const retValueShift = getNumbers('valueShift', yaml.valueShift, {
+    valueCount: numDatasets,
+    defaultValue: 0,
+    allowInvalidValue: true,
+  });
   if (typeof retValueShift === 'string') {
     return retValueShift;
   }
@@ -608,12 +594,14 @@ export const getRenderInfo = (
   // console.log(renderInfo.valueShift);
 
   // shiftOnlyValueLargerThan
-  const retShiftOnlyValueLargerThan = getNumberArrayFromInput(
+  const retShiftOnlyValueLargerThan = getNumbers(
     'shiftOnlyValueLargerThan',
     yaml.shiftOnlyValueLargerThan,
-    numDatasets,
-    null,
-    true
+    {
+      valueCount: numDatasets,
+      defaultValue: null,
+      allowInvalidValue: true,
+    }
   );
   if (typeof retShiftOnlyValueLargerThan === 'string') {
     return retShiftOnlyValueLargerThan;
@@ -623,7 +611,7 @@ export const getRenderInfo = (
 
   // textValueMap
   if (typeof yaml.textValueMap !== 'undefined') {
-    const keys = getAvailableKeysOfClass(yaml.textValueMap);
+    const keys = getKeys(yaml.textValueMap);
     // console.log(texts);
     for (const key of keys) {
       const text = key.trim();
@@ -645,8 +633,8 @@ export const getRenderInfo = (
   // aspectRatio
   if (typeof yaml.aspectRatio === 'string') {
     // yaml.fitPanelWidth
-    const ratioRegEx = /([0-9]*):([0-9]*)/;
-    let parts = yaml.aspectRatio.match(ratioRegEx);
+    const pattern = /([0-9]*):([0-9]*)/;
+    let parts = yaml.aspectRatio.match(pattern);
     parts.shift();
     parts = parts.map((i: string) => parseInt(i, 10));
     if (parts.length == 2) {
@@ -658,7 +646,11 @@ export const getRenderInfo = (
   }
 
   // margin
-  const retMargin = getNumberArrayFromInput('margin', yaml.margin, 4, 10, true);
+  const retMargin = getNumbers('margin', yaml.margin, {
+    valueCount: 4,
+    defaultValue: 10,
+    allowInvalidValue: true,
+  });
   if (typeof retMargin === 'string') {
     return retMargin; // errorMessage
   }
@@ -678,8 +670,8 @@ export const getRenderInfo = (
     const customDataset = new CustomDatasetInfo();
     const yamlCustomDataset = yaml[datasetKey];
 
-    const keysOfCustomDatasetInfo = getAvailableKeysOfClass(customDataset);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlCustomDataset);
+    const keysOfCustomDatasetInfo = getKeys(customDataset);
+    const keysFoundInYAML = getKeys(yamlCustomDataset);
     // console.log(keysOfCustomDatasetInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -700,10 +692,7 @@ export const getRenderInfo = (
     customDataset.id = customDatasetId;
 
     // name
-    customDataset.name = getStringFromInput(
-      yamlCustomDataset?.name,
-      customDataset.name
-    );
+    customDataset.name = getString(yamlCustomDataset?.name, customDataset.name);
 
     // xData
     const retXData = getStringArray('xData', yamlCustomDataset?.xData);
@@ -735,8 +724,8 @@ export const getRenderInfo = (
     const line = new LineChart();
     const yamlLine = yaml[lineKey];
 
-    const keysOfLineInfo = getAvailableKeysOfClass(line);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlLine);
+    const keysOfLineInfo = getKeys(line);
+    const keysFoundInYAML = getKeys(yamlLine);
     // console.log(keysOfLineInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -746,18 +735,18 @@ export const getRenderInfo = (
       }
     }
 
-    const retParseCommonChartInfo = parseCommonChartInfo(yamlLine, line);
+    const retParseCommonChartInfo = setCartesianChartInfo(yamlLine, line);
     if (typeof retParseCommonChartInfo === 'string') {
       return retParseCommonChartInfo;
     }
 
     // lineColor
-    const retLineColor = getStringArrayFromInput(
+    const retLineColor = getStrings(
       'lineColor',
       yamlLine?.lineColor,
       numDatasets,
       '',
-      validateColor,
+      isColorValid,
       true
     );
     if (typeof retLineColor === 'string') {
@@ -767,13 +756,11 @@ export const getRenderInfo = (
     // console.log(line.lineColor);
 
     // lineWidth
-    const retLineWidth = getNumberArrayFromInput(
-      'lineWidth',
-      yamlLine?.lineWidth,
-      numDatasets,
-      1.5,
-      true
-    );
+    const retLineWidth = getNumbers('lineWidth', yamlLine?.lineWidth, {
+      valueCount: numDatasets,
+      defaultValue: 1.5,
+      allowInvalidValue: true,
+    });
     if (typeof retLineWidth === 'string') {
       return retLineWidth; // errorMessage
     }
@@ -781,7 +768,7 @@ export const getRenderInfo = (
     // console.log(line.lineWidth);
 
     // showLine
-    const retShowLine = getBoolArrayFromInput(
+    const retShowLine = getBooleans(
       'showLine',
       yamlLine?.showLine,
       numDatasets,
@@ -795,7 +782,7 @@ export const getRenderInfo = (
     // console.log(line.showLine);
 
     // showPoint
-    const retShowPoint = getBoolArrayFromInput(
+    const retShowPoint = getBooleans(
       'showPoint',
       yamlLine?.showPoint,
       numDatasets,
@@ -809,12 +796,12 @@ export const getRenderInfo = (
     // console.log(line.showPoint);
 
     // pointColor
-    const retPointColor = getStringArrayFromInput(
+    const retPointColor = getStrings(
       'pointColor',
       yamlLine?.pointColor,
       numDatasets,
       '#69b3a2',
-      validateColor,
+      isColorValid,
       true
     );
     if (typeof retPointColor === 'string') {
@@ -824,12 +811,12 @@ export const getRenderInfo = (
     // console.log(line.pointColor);
 
     // pointBorderColor
-    const retPointBorderColor = getStringArrayFromInput(
+    const retPointBorderColor = getStrings(
       'pointBorderColor',
       yamlLine?.pointBorderColor,
       numDatasets,
       '#69b3a2',
-      validateColor,
+      isColorValid,
       true
     );
     if (typeof retPointBorderColor === 'string') {
@@ -839,12 +826,10 @@ export const getRenderInfo = (
     // console.log(line.pointBorderColor);
 
     // pointBorderWidth
-    const retPointBorderWidth = getNumberArrayFromInput(
+    const retPointBorderWidth = getNumbers(
       'pointBorderWidth',
       yamlLine?.pointBorderWidth,
-      numDatasets,
-      0.0,
-      true
+      { valueCount: numDatasets, defaultValue: 0.0, allowInvalidValue: true }
     );
     if (typeof retPointBorderWidth === 'string') {
       return retPointBorderWidth; // errorMessage
@@ -853,13 +838,11 @@ export const getRenderInfo = (
     // console.log(line.pointBorderWidth);
 
     // pointSize
-    const retPointSize = getNumberArrayFromInput(
-      'pointSize',
-      yamlLine?.pointSize,
-      numDatasets,
-      3.0,
-      true
-    );
+    const retPointSize = getNumbers('pointSize', yamlLine?.pointSize, {
+      valueCount: numDatasets,
+      defaultValue: 3.0,
+      allowInvalidValue: true,
+    });
     if (typeof retPointSize === 'string') {
       return retPointSize; // errorMessage
     }
@@ -867,7 +850,7 @@ export const getRenderInfo = (
     // console.log(line.pointSize);
 
     // fillGap
-    const retFillGap = getBoolArrayFromInput(
+    const retFillGap = getBooleans(
       'fillGap',
       yamlLine?.fillGap,
       numDatasets,
@@ -881,12 +864,12 @@ export const getRenderInfo = (
     // console.log(line.fillGap);
 
     // yAxisLocation
-    const retYAxisLocation = getStringArrayFromInput(
+    const retYAxisLocation = getStrings(
       'yAxisLocation',
       yamlLine?.yAxisLocation,
       numDatasets,
       'left',
-      validateYAxisLocation,
+      isYAxisLocationValid,
       true
     );
     if (typeof retYAxisLocation === 'string') {
@@ -904,8 +887,8 @@ export const getRenderInfo = (
     const bar = new BarChart();
     const yamlBar = yaml[barKey];
 
-    const keysOfBarInfo = getAvailableKeysOfClass(bar);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlBar);
+    const keysOfBarInfo = getKeys(bar);
+    const keysFoundInYAML = getKeys(yamlBar);
     // console.log(keysOfBarInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -915,18 +898,18 @@ export const getRenderInfo = (
       }
     }
 
-    const retParseCommonChartInfo = parseCommonChartInfo(yamlBar, bar);
+    const retParseCommonChartInfo = setCartesianChartInfo(yamlBar, bar);
     if (typeof retParseCommonChartInfo === 'string') {
       return retParseCommonChartInfo;
     }
 
     // barColor
-    const retBarColor = getStringArrayFromInput(
+    const retBarColor = getStrings(
       'barColor',
       yamlBar?.barColor,
       numDatasets,
       '',
-      validateColor,
+      isColorValid,
       true
     );
     if (typeof retBarColor === 'string') {
@@ -936,12 +919,12 @@ export const getRenderInfo = (
     // console.log(bar.barColor);
 
     // yAxisLocation
-    const retYAxisLocation = getStringArrayFromInput(
+    const retYAxisLocation = getStrings(
       'yAxisLocation',
       yamlBar?.yAxisLocation,
       numDatasets,
       'left',
-      validateYAxisLocation,
+      isYAxisLocationValid,
       true
     );
     if (typeof retYAxisLocation === 'string') {
@@ -959,8 +942,8 @@ export const getRenderInfo = (
     const pie = new PieChart();
     const yamlPie = yaml[pieKey];
 
-    const keysOfPieInfo = getAvailableKeysOfClass(pie);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlPie);
+    const keysOfPieInfo = getKeys(pie);
+    const keysFoundInYAML = getKeys(yamlPie);
     // console.log(keysOfPieInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -971,7 +954,7 @@ export const getRenderInfo = (
     }
 
     // title
-    pie.title = getStringFromInput(yamlPie?.title, pie.title);
+    pie.title = getString(yamlPie?.title, pie.title);
     // console.log(pie.title);
 
     // data
@@ -984,12 +967,12 @@ export const getRenderInfo = (
     const numData = pie.data.length;
 
     // dataColor
-    const retDataColor = getStringArrayFromInput(
+    const retDataColor = getStrings(
       'dataColor',
       yamlPie?.dataColor,
       numData,
       null,
-      validateColor,
+      isColorValid,
       true
     );
     if (typeof retDataColor === 'string') {
@@ -999,7 +982,7 @@ export const getRenderInfo = (
     // console.log(pie.dataColor);
 
     // dataName
-    const retDataName = getStringArrayFromInput(
+    const retDataName = getStrings(
       'dataName',
       yamlPie?.dataName,
       numData,
@@ -1014,7 +997,7 @@ export const getRenderInfo = (
     // console.log(pie.dataName);
 
     // label
-    const retLabel = getStringArrayFromInput(
+    const retLabel = getStrings(
       'label',
       yamlPie?.label,
       numData,
@@ -1035,7 +1018,7 @@ export const getRenderInfo = (
     // console.log(pie.hideLabelLessThan);
 
     // extLabel
-    const retExtLabel = getStringArrayFromInput(
+    const retExtLabel = getStrings(
       'extLabel',
       yamlPie?.extLabel,
       numData,
@@ -1067,7 +1050,7 @@ export const getRenderInfo = (
     }
 
     // legendPosition
-    pie.legendPosition = getStringFromInput(yamlPie?.legendPosition, 'right');
+    pie.legendPosition = getString(yamlPie?.legendPosition, 'right');
 
     // legendOrient
     let defaultLegendOrientation = 'horizontal';
@@ -1081,7 +1064,7 @@ export const getRenderInfo = (
     } else {
       defaultLegendOrientation = 'horizontal';
     }
-    pie.legendOrientation = getStringFromInput(
+    pie.legendOrientation = getString(
       yamlPie?.legendOrientation,
       defaultLegendOrientation
     );
@@ -1089,13 +1072,10 @@ export const getRenderInfo = (
     // console.log(pie.legendOrientation);
 
     // legendBgColor
-    pie.legendBgColor = getStringFromInput(
-      yamlPie?.legendBgColor,
-      pie.legendBgColor
-    );
+    pie.legendBgColor = getString(yamlPie?.legendBgColor, pie.legendBgColor);
 
     // legendBorderColor
-    pie.legendBorderColor = getStringFromInput(
+    pie.legendBorderColor = getString(
       yamlPie?.legendBorderColor,
       pie.legendBorderColor
     );
@@ -1109,8 +1089,8 @@ export const getRenderInfo = (
     const summary = new Summary();
     const yamlSummary = yaml[summaryKey];
 
-    const keysOfSummaryInfo = getAvailableKeysOfClass(summary);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlSummary);
+    const keysOfSummaryInfo = getKeys(summary);
+    const keysFoundInYAML = getKeys(yamlSummary);
     // console.log(keysOfSummaryInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -1121,13 +1101,10 @@ export const getRenderInfo = (
     }
 
     // template
-    summary.template = getStringFromInput(
-      yamlSummary?.template,
-      summary.template
-    );
+    summary.template = getString(yamlSummary?.template, summary.template);
 
     // style
-    summary.style = getStringFromInput(yamlSummary?.style, summary.style);
+    summary.style = getString(yamlSummary?.style, summary.style);
 
     renderInfo.summary.push(summary);
   } // summary related parameters
@@ -1137,8 +1114,8 @@ export const getRenderInfo = (
     const month = new Month();
     const yamlMonth = yaml[monthKey];
 
-    const keysOfMonthInfo = getAvailableKeysOfClass(month);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlMonth);
+    const keysOfMonthInfo = getKeys(month);
+    const keysFoundInYAML = getKeys(yamlMonth);
     // console.log(keysOfSummaryInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -1149,7 +1126,7 @@ export const getRenderInfo = (
     }
 
     // mode
-    month.mode = getStringFromInput(yamlMonth?.mode, month.mode);
+    month.mode = getString(yamlMonth?.mode, month.mode);
     // console.log(month.mode);
 
     // dataset
@@ -1168,10 +1145,7 @@ export const getRenderInfo = (
     const numDataset = month.dataset.length;
 
     // startWeekOn
-    month.startWeekOn = getStringFromInput(
-      yamlMonth?.startWeekOn,
-      month.startWeekOn
-    );
+    month.startWeekOn = getString(yamlMonth?.startWeekOn, month.startWeekOn);
 
     // showCircle
     if (typeof yamlMonth?.showCircle === 'boolean') {
@@ -1232,7 +1206,7 @@ export const getRenderInfo = (
     }
 
     // color
-    month.color = getStringFromInput(yamlMonth?.color, month.color);
+    month.color = getString(yamlMonth?.color, month.color);
     // console.log(month.color);
 
     // dimNotInMonth
@@ -1263,10 +1237,7 @@ export const getRenderInfo = (
     }
 
     // circleColor
-    month.circleColor = getStringFromInput(
-      yamlMonth?.circleColor,
-      month.circleColor
-    );
+    month.circleColor = getString(yamlMonth?.circleColor, month.circleColor);
     // console.log(month.circleColor);
 
     // circleColorByValue
@@ -1276,42 +1247,42 @@ export const getRenderInfo = (
     // console.log(month.circleColorByValue);
 
     // headerYearColor
-    month.headerYearColor = getStringFromInput(
+    month.headerYearColor = getString(
       yamlMonth?.headerYearColor,
       month.headerYearColor
     );
     // console.log(month.headerYearColor);
 
     // headerMonthColor
-    month.headerMonthColor = getStringFromInput(
+    month.headerMonthColor = getString(
       yamlMonth?.headerMonthColor,
       month.headerMonthColor
     );
     // console.log(month.headerMonthColor);
 
     // dividingLineColor
-    month.dividingLineColor = getStringFromInput(
+    month.dividingLineColor = getString(
       yamlMonth?.dividingLineColor,
       month.dividingLineColor
     );
     // console.log(month.dividingLineColor);
 
     // todayRingColor
-    month.todayRingColor = getStringFromInput(
+    month.todayRingColor = getString(
       yamlMonth?.todayRingColor,
       month.todayRingColor
     );
     // console.log(month.todayRingColor);
 
     // selectedRingColor
-    month.selectedRingColor = getStringFromInput(
+    month.selectedRingColor = getString(
       yamlMonth?.selectedRingColor,
       month.selectedRingColor
     );
     // console.log(month.selectedRingColor);
 
     // initMonth
-    month.initMonth = getStringFromInput(yamlMonth?.initMonth, month.initMonth);
+    month.initMonth = getString(yamlMonth?.initMonth, month.initMonth);
     // console.log(month.initMonth);
 
     // showAnnotation
@@ -1350,11 +1321,11 @@ export const getRenderInfo = (
 
   // Heatmap related parameters
   for (const heatmapKey of yamlHeatmapKeys) {
-    const heatmap = new Heatmap();
+    const heatmap = new HeatMap();
     const yamlHeatmap = yaml[heatmapKey];
 
-    const keysOfHeatmapInfo = getAvailableKeysOfClass(heatmap);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlHeatmap);
+    const keysOfHeatmapInfo = getKeys(heatmap);
+    const keysFoundInYAML = getKeys(yamlHeatmap);
     // console.log(keysOfHeatmapInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -1373,8 +1344,8 @@ export const getRenderInfo = (
     const bullet = new BulletGraph();
     const yamlBullet = yaml[bulletKey];
 
-    const keysOfBulletInfo = getAvailableKeysOfClass(bullet);
-    const keysFoundInYAML = getAvailableKeysOfClass(yamlBullet);
+    const keysOfBulletInfo = getKeys(bullet);
+    const keysFoundInYAML = getKeys(yamlBullet);
     // console.log(keysOfSummaryInfo);
     // console.log(keysFoundInYAML);
     for (const key of keysFoundInYAML) {
@@ -1385,18 +1356,15 @@ export const getRenderInfo = (
     }
 
     // title
-    bullet.title = getStringFromInput(yamlBullet?.title, bullet.title);
+    bullet.title = getString(yamlBullet?.title, bullet.title);
     // console.log(bullet.title);
 
     // dataset
-    bullet.dataset = getStringFromInput(yamlBullet?.dataset, bullet.dataset);
+    bullet.dataset = getString(yamlBullet?.dataset, bullet.dataset);
     // console.log(bullet.dataset);
 
     // orientation
-    bullet.orientation = getStringFromInput(
-      yamlBullet?.orientation,
-      bullet.orientation
-    );
+    bullet.orientation = getString(yamlBullet?.orientation, bullet.orientation);
     // console.log(bullet.orientation);
 
     // range
@@ -1435,12 +1403,12 @@ export const getRenderInfo = (
     // console.log(renderInfo.bullet.range);
 
     // range color
-    const retRangeColor = getStringArrayFromInput(
+    const retRangeColor = getStrings(
       'rangeColor',
       yamlBullet?.rangeColor,
       numRange,
       '',
-      validateColor,
+      isColorValid,
       true
     );
     if (typeof retRangeColor === 'string') {
@@ -1450,21 +1418,15 @@ export const getRenderInfo = (
     // console.log(bullet.rangeColor);
 
     // actual value, can possess template variable
-    bullet.value = getStringFromInput(yamlBullet?.value, bullet.value);
+    bullet.value = getString(yamlBullet?.value, bullet.value);
     // console.log(bullet.value);
 
     // value unit
-    bullet.valueUnit = getStringFromInput(
-      yamlBullet?.valueUnit,
-      bullet.valueUnit
-    );
+    bullet.valueUnit = getString(yamlBullet?.valueUnit, bullet.valueUnit);
     // console.log(bullet.valueUnit);
 
     // value color
-    bullet.valueColor = getStringFromInput(
-      yamlBullet?.valueColor,
-      bullet.valueColor
-    );
+    bullet.valueColor = getString(yamlBullet?.valueColor, bullet.valueColor);
     // console.log(bullet.valueColor);
 
     // show mark
@@ -1480,10 +1442,7 @@ export const getRenderInfo = (
     // console.log(bullet.markValue);
 
     // mark color
-    bullet.markerColor = getStringFromInput(
-      yamlBullet?.markerColor,
-      bullet.markerColor
-    );
+    bullet.markerColor = getString(yamlBullet?.markerColor, bullet.markerColor);
     // console.log(bullet.markValue);
 
     renderInfo.bullet.push(bullet);

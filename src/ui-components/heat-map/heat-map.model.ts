@@ -1,7 +1,7 @@
 import { ComponentType } from '../../models/enums';
 import { IComponent } from '../../models/types';
 
-export class Heatmap implements IComponent {
+export class HeatMap implements IComponent {
   dataset: string;
   startWeekOn: string;
   orientation: string;
