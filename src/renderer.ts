@@ -4,7 +4,7 @@ import { renderBarChart } from './ui-components/chart/bar-chart.renderer';
 import { renderLineChart } from './ui-components/chart/line-chart.renderer';
 import * as pie from './ui-components/chart/pie-chart.renderer';
 import * as bullet from './ui-components/graph/bullet-graph.renderer';
-import * as heatmap from './ui-components/heatmap/heatmap.renderer';
+import * as heatmap from './ui-components/heat-map/heat-map.renderer';
 import * as month from './ui-components/month/month.renderer';
 import * as summary from './ui-components/summary/summary.renderer';
 

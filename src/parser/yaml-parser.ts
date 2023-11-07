@@ -10,7 +10,7 @@ import { BarChart } from '../ui-components/chart/bar-chart.model';
 import { LineChart } from '../ui-components/chart/line-chart.model';
 import { PieChart } from '../ui-components/chart/pie-chart.model';
 import { BulletGraph } from '../ui-components/graph/bullet-graph.model';
-import { Heatmap } from '../ui-components/heatmap/heatmap.model';
+import { HeatMap } from '../ui-components/heat-map/heat-map.model';
 import { Month } from '../ui-components/month/month.model';
 import { Summary } from '../ui-components/summary/summary.model';
 import * as helper from '../utils/helper';
@@ -142,7 +142,7 @@ export const getRenderInfo = (
         searchType.push(SearchType.Text);
         break;
       case 'dvfield':
-        searchType.push(SearchType.DvField);
+        searchType.push(SearchType.DataviewField);
         break;
       case 'table':
         searchType.push(SearchType.Table);
@@ -197,13 +197,11 @@ export const getRenderInfo = (
   // console.log(multipleValueSeparator);
 
   // xDataset
-  const retXDataset = getNumbers(
-    'xDataset',
-    yaml.xDataset,
-    numDatasets,
-    -1,
-    true
-  );
+  const retXDataset = getNumbers('xDataset', yaml.xDataset, {
+    valueCount: numDatasets,
+    defaultValue: -1,
+    allowInvalidValue: true,
+  });
   if (typeof retXDataset === 'string') {
     return retXDataset; // errorMessage
   }
@@ -524,13 +522,11 @@ export const getRenderInfo = (
   // console.log(renderInfo.datasetName);
 
   // constValue
-  const retConstValue = getNumbers(
-    'constValue',
-    yaml.constValue,
-    numDatasets,
-    1.0,
-    true
-  );
+  const retConstValue = getNumbers('constValue', yaml.constValue, {
+    valueCount: numDatasets,
+    defaultValue: 1.0,
+    allowInvalidValue: true,
+  });
   if (typeof retConstValue === 'string') {
     return retConstValue; // errorMessage
   }
@@ -574,13 +570,11 @@ export const getRenderInfo = (
   // console.log(renderInfo.accum);
 
   // penalty
-  const retPenalty = getNumbers(
-    'penalty',
-    yaml.penalty,
-    numDatasets,
-    null,
-    true
-  );
+  const retPenalty = getNumbers('penalty', yaml.penalty, {
+    valueCount: numDatasets,
+    defaultValue: null,
+    allowInvalidValue: true,
+  });
   if (typeof retPenalty === 'string') {
     return retPenalty;
   }
@@ -588,13 +582,11 @@ export const getRenderInfo = (
   // console.log(renderInfo.penalty);
 
   // valueShift
-  const retValueShift = getNumbers(
-    'valueShift',
-    yaml.valueShift,
-    numDatasets,
-    0,
-    true
-  );
+  const retValueShift = getNumbers('valueShift', yaml.valueShift, {
+    valueCount: numDatasets,
+    defaultValue: 0,
+    allowInvalidValue: true,
+  });
   if (typeof retValueShift === 'string') {
     return retValueShift;
   }
@@ -605,9 +597,11 @@ export const getRenderInfo = (
   const retShiftOnlyValueLargerThan = getNumbers(
     'shiftOnlyValueLargerThan',
     yaml.shiftOnlyValueLargerThan,
-    numDatasets,
-    null,
-    true
+    {
+      valueCount: numDatasets,
+      defaultValue: null,
+      allowInvalidValue: true,
+    }
   );
   if (typeof retShiftOnlyValueLargerThan === 'string') {
     return retShiftOnlyValueLargerThan;
@@ -652,7 +646,11 @@ export const getRenderInfo = (
   }
 
   // margin
-  const retMargin = getNumbers('margin', yaml.margin, 4, 10, true);
+  const retMargin = getNumbers('margin', yaml.margin, {
+    valueCount: 4,
+    defaultValue: 10,
+    allowInvalidValue: true,
+  });
   if (typeof retMargin === 'string') {
     return retMargin; // errorMessage
   }
@@ -758,13 +756,11 @@ export const getRenderInfo = (
     // console.log(line.lineColor);
 
     // lineWidth
-    const retLineWidth = getNumbers(
-      'lineWidth',
-      yamlLine?.lineWidth,
-      numDatasets,
-      1.5,
-      true
-    );
+    const retLineWidth = getNumbers('lineWidth', yamlLine?.lineWidth, {
+      valueCount: numDatasets,
+      defaultValue: 1.5,
+      allowInvalidValue: true,
+    });
     if (typeof retLineWidth === 'string') {
       return retLineWidth; // errorMessage
     }
@@ -833,9 +829,7 @@ export const getRenderInfo = (
     const retPointBorderWidth = getNumbers(
       'pointBorderWidth',
       yamlLine?.pointBorderWidth,
-      numDatasets,
-      0.0,
-      true
+      { valueCount: numDatasets, defaultValue: 0.0, allowInvalidValue: true }
     );
     if (typeof retPointBorderWidth === 'string') {
       return retPointBorderWidth; // errorMessage
@@ -844,13 +838,11 @@ export const getRenderInfo = (
     // console.log(line.pointBorderWidth);
 
     // pointSize
-    const retPointSize = getNumbers(
-      'pointSize',
-      yamlLine?.pointSize,
-      numDatasets,
-      3.0,
-      true
-    );
+    const retPointSize = getNumbers('pointSize', yamlLine?.pointSize, {
+      valueCount: numDatasets,
+      defaultValue: 3.0,
+      allowInvalidValue: true,
+    });
     if (typeof retPointSize === 'string') {
       return retPointSize; // errorMessage
     }
@@ -1329,7 +1321,7 @@ export const getRenderInfo = (
 
   // Heatmap related parameters
   for (const heatmapKey of yamlHeatmapKeys) {
-    const heatmap = new Heatmap();
+    const heatmap = new HeatMap();
     const yamlHeatmap = yaml[heatmapKey];
 
     const keysOfHeatmapInfo = getKeys(heatmap);

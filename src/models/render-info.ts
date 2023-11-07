@@ -3,7 +3,7 @@ import { BarChart } from '../ui-components/chart/bar-chart.model';
 import { LineChart } from '../ui-components/chart/line-chart.model';
 import { PieChart } from '../ui-components/chart/pie-chart.model';
 import { BulletGraph } from '../ui-components/graph/bullet-graph.model';
-import { Heatmap } from '../ui-components/heatmap/heatmap.model';
+import { HeatMap } from '../ui-components/heat-map/heat-map.model';
 import { Month } from '../ui-components/month/month.model';
 import { Summary } from '../ui-components/summary/summary.model';
 import { AspectRatio } from './aspect-ratio';
@@ -54,7 +54,7 @@ export class RenderInfo {
   pie: PieChart[];
   bullet: BulletGraph[];
   month: Month[];
-  heatmap: Heatmap[];
+  heatmap: HeatMap[];
   summary: Summary[];
   customDataset: CustomDatasetInfo[];
 

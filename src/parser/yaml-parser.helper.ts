@@ -23,7 +23,7 @@ import { CartesianChart } from '../ui-components/chart/cartesian-chart.model';
 import { LineChart } from '../ui-components/chart/line-chart.model';
 import { PieChart } from '../ui-components/chart/pie-chart.model';
 import { BulletGraph } from '../ui-components/graph/bullet-graph.model';
-import { Heatmap } from '../ui-components/heatmap/heatmap.model';
+import { HeatMap } from '../ui-components/heat-map/heat-map.model';
 import { Month } from '../ui-components/month/month.model';
 import { Summary } from '../ui-components/summary/summary.model';
 import { StringUtils } from '../utils';
@@ -151,7 +151,7 @@ export const getSearchTypes = (
       case 'text':
         return SearchType.Text;
       case 'dvfield':
-        return SearchType.DvField;
+        return SearchType.DataviewField;
       case 'table':
         return SearchType.Table;
       case 'filemeta':
@@ -184,7 +184,7 @@ export const getSearchTypes = (
  * @summary Returns an array of separators from the separator input property
  * @param separator
  * @param numTargets
- * @returns
+ * @returns {string[]}
  */
 export const getSeparators = (
   separator: string,
@@ -206,7 +206,7 @@ export const getSeparators = (
  * @param {SearchType[]} searchTypes
  * @param {number[]} datasets
  * @param {string[]} separators
- * @returns
+ * @returns {Query[]}
  */
 export const getQueries = (
   searchTargets: string[],
@@ -228,7 +228,7 @@ export const getQueries = (
  * @throws An error if the name matches a key in the dataset input property
  * @param {string[]} keys
  * @param {Query[]} queries
- * @returns
+ * @returns {string[]}
  */
 export const getCustomDatasetKeys = (
   keys: string[],
@@ -249,9 +249,9 @@ export const getCustomDatasetKeys = (
 };
 
 /**
- * @summary Returns an array of output keys from the tracker code block
+ * @summary Returns an object of output keys from the tracker code block
  * @param {string[]} keys
- * @returns
+ * @returns {{ lineKeys: string[]; barKeys: string[]; pieKeys: string[]; summaryKeys: string[]; monthKeys: string[]; heatmapKeys: string[]; bulletKeys: string[]; }}
  */
 export const getOutputKeys = (
   keys: string[]
@@ -295,9 +295,11 @@ export const getMargins = (marginString: string) => {
   const [top, right, bottom, left, ...theRest] = getNumbers(
     'margin',
     marginString,
-    4,
-    10,
-    true
+    {
+      valueCount: 4,
+      defaultValue: 10,
+      allowInvalidValue: true,
+    }
   );
   if (theRest.length > 0)
     console.warn(
@@ -335,13 +337,11 @@ export const getLineCharts = (
     );
 
     // lineWidth
-    line.lineWidth = getNumbers(
-      'lineWidth',
-      yamlLine?.lineWidth,
-      searchTargets.length,
-      1.5,
-      true
-    );
+    line.lineWidth = getNumbers('lineWidth', yamlLine?.lineWidth, {
+      valueCount: searchTargets.length,
+      defaultValue: 1.5,
+      allowInvalidValue: true,
+    });
 
     // showLine
     line.showLine = getBooleans(
@@ -385,19 +385,19 @@ export const getLineCharts = (
     line.pointBorderWidth = getNumbers(
       'pointBorderWidth',
       yamlLine?.pointBorderWidth,
-      searchTargets.length,
-      0.0,
-      true
+      {
+        valueCount: searchTargets.length,
+        defaultValue: 0.0,
+        allowInvalidValue: true,
+      }
     );
 
     // pointSize
-    line.pointSize = getNumbers(
-      'pointSize',
-      yamlLine?.pointSize,
-      searchTargets.length,
-      3.0,
-      true
-    );
+    line.pointSize = getNumbers('pointSize', yamlLine?.pointSize, {
+      valueCount: searchTargets.length,
+      defaultValue: 3.0,
+      allowInvalidValue: true,
+    });
 
     // fillGap
     line.fillGap = getBooleans(
@@ -758,13 +758,13 @@ export const getMonths = (
   });
 };
 
-export const getHeatmaps = (
+export const getHeatMaps = (
   keys: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   yaml: any
 ) => {
   return keys.map((key) => {
-    const heatmap = new Heatmap();
+    const heatmap = new HeatMap();
     const yamlHeatmap = yaml[key];
 
     const heatmapKeys = getKeys(heatmap);
@@ -1102,31 +1102,34 @@ export const getStringArray = (
   throw new ParameterError(name);
 };
 
+export interface IDataOptions {
+  valueCount: number;
+  defaultValue: number;
+  allowInvalidValue: boolean;
+}
+
 /**
  * @summary Returns a number array from the provided input property
  * @param {string} name The name of the property in the tracker block
  * @param {any} input The value of the named property
- * @param {number} numDataset The number of items that should be found in the input string
- * @param {number} defaultValue Default values for every item in the array
+ * @param {IDataOptions} options
  * @returns {number[]}
  */
 export function getNumbers(
   name: string,
   input: object | number | string,
-  numDataset: number,
-  defaultValue: number,
-  allowNoValidValue: boolean
+  options: IDataOptions
 ): Array<number> {
-  const numbers: Array<number> = [];
+  const numbers: number[] = [];
   let validValueCount = 0;
-
-  while (numDataset > numbers.length) numbers.push(defaultValue);
+  const { valueCount, defaultValue, allowInvalidValue } = options;
+  while (valueCount > numbers.length) numbers.push(defaultValue);
 
   if (typeof input === 'undefined' || input === null) {
     // all defaultValue
   } else if (typeof input === 'object' && input !== null) {
     if (Array.isArray(input)) {
-      if (input.length > numDataset) throw new InputMismatchError(name);
+      if (input.length > valueCount) throw new InputMismatchError(name);
       if (input.length === 0) throw new ArrayError(name);
 
       for (let ind = 0; ind < numbers.length; ind++) {
@@ -1153,7 +1156,7 @@ export function getNumbers(
   } else if (typeof input === 'string') {
     const values = splitByComma(input);
     if (values.length > 1) {
-      if (values.length > numDataset) throw new InputMismatchError(name);
+      if (values.length > valueCount) throw new InputMismatchError(name);
 
       for (let ind = 0; ind < numbers.length; ind++) {
         if (ind < values.length) {
@@ -1195,7 +1198,7 @@ export function getNumbers(
     for (let ind = 1; ind < numbers.length; ind++) numbers[ind] = input;
   } else throw new ValueError(name);
 
-  if (!allowNoValidValue && validValueCount === 0)
+  if (!allowInvalidValue && validValueCount === 0)
     throw new TrackerError(`No valid input for ${name}`);
 
   return numbers;
@@ -1211,7 +1214,7 @@ export function getNumberArray(
   name: string,
   input: object | number | string
 ): number[] {
-  if (!input) throw new ParameterError(name, Reason.IS_EMPTY);
+  if (isNullOrUndefined(input)) return [];
 
   const elements = convertInputToArray(input);
   if (!elements) {
@@ -1363,12 +1366,20 @@ export const setCartesianChartInfo = (
   chart.yAxisTickLabelFormat = yAxisTickLabelFormat;
 
   // yMin
-  const yMin = getNumbers('yMin', yaml?.yMin, 2, null, true);
+  const yMin = getNumbers('yMin', yaml?.yMin, {
+    valueCount: 2,
+    defaultValue: null,
+    allowInvalidValue: true,
+  });
   if (yMin.length > 2) throw new YAxisArgumentError('yMin');
   chart.yMin = yMin;
 
   // yMax
-  const yMax = getNumbers('yMax', yaml?.yMax, 2, null, true);
+  const yMax = getNumbers('yMax', yaml?.yMax, {
+    valueCount: 2,
+    defaultValue: null,
+    allowInvalidValue: true,
+  });
   if (yMax.length > 2) throw new YAxisArgumentError('yMax');
   chart.yMax = yMax;
 

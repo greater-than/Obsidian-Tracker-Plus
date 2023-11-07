@@ -326,7 +326,7 @@ export default class Tracker extends Plugin {
           if (
             type === SearchType.Tag ||
             type === SearchType.Text ||
-            type === SearchType.DvField ||
+            type === SearchType.DataviewField ||
             type === SearchType.Task ||
             type === SearchType.TaskDone ||
             type === SearchType.TaskNotDone
@@ -384,7 +384,7 @@ export default class Tracker extends Plugin {
                     renderInfo
                   );
                   break;
-                case SearchType.DvField:
+                case SearchType.DataviewField:
                   xDate = collecting.getDateFromDvField(
                     content,
                     xDatasetQuery,
@@ -532,7 +532,6 @@ export default class Tracker extends Plugin {
             processInfo.gotAnyValidYValue ||= gotAnyValue;
           } // Search text
 
-          // console.log("Search FileMeta");
           if (query.type === SearchType.FileMeta) {
             const gotAnyValue = collecting.collectDataFromFileMeta(
               file,
@@ -545,8 +544,7 @@ export default class Tracker extends Plugin {
             processInfo.gotAnyValidYValue ||= gotAnyValue;
           } // Search FileMeta
 
-          // console.log("Search dvField");
-          if (content && query.type === SearchType.DvField) {
+          if (content && query.type === SearchType.DataviewField) {
             const gotAnyValue = collecting.collectDataFromDvField(
               content,
               query,
@@ -557,7 +555,6 @@ export default class Tracker extends Plugin {
             processInfo.gotAnyValidYValue ||= gotAnyValue;
           } // search dvField
 
-          // console.log("Search Task");
           if (
             content &&
             (query.type === SearchType.Task ||
@@ -577,7 +574,6 @@ export default class Tracker extends Plugin {
         await Promise.all(loopQueryPromises);
       });
       await Promise.all(loopFilePromises);
-      // console.log(dataMap);
 
       // Collect data from a file, one file contains full dataset
       await this.collectDataFromTable(dataMap, renderInfo, processInfo);
@@ -588,9 +584,6 @@ export default class Tracker extends Plugin {
           element
         );
       }
-      // console.log(minDate);
-      // console.log(maxDate);
-      // console.log(dataMap);
 
       // Check date range
       // minDate and maxDate are collected without knowing startDate and endDate

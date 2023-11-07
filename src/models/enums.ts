@@ -5,7 +5,7 @@ export enum SearchType {
   WikiLink = 'wiki.link',
   WikiDisplay = 'wiki.display',
   Text = 'text',
-  DvField = 'dvField',
+  DataviewField = 'dvField',
   Table = 'table',
   FileMeta = 'fileMeta',
   Task = 'task',

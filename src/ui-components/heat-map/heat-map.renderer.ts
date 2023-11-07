@@ -3,7 +3,7 @@ import { Dataset } from '../../models/dataset';
 import { RenderInfo } from '../../models/render-info';
 import { ComponentElements } from '../../models/types';
 import * as helper from '../../utils/helper';
-import { Heatmap } from './heatmap.model';
+import { HeatMap } from './heat-map.model';
 
 interface DayInfo {
   date: string;
@@ -18,7 +18,7 @@ const createAreas = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _heatmapInfo: Heatmap
+  _heatmapInfo: HeatMap
 ): ComponentElements => {
   // clean areas
   d3.select(canvas).select('#svg').remove();
@@ -75,7 +75,7 @@ const renderHeatmapHeader = (
   _canvas: HTMLElement,
   _chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  heatmapInfo: Heatmap,
+  heatmapInfo: HeatMap,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ): void => {
@@ -89,7 +89,7 @@ const renderHeatmapDays = (
   _canvas: HTMLElement,
   chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  heatmapInfo: Heatmap,
+  heatmapInfo: HeatMap,
   dataset: Dataset
 ) => {
   // console.log("renderHeatmapDays");
@@ -227,7 +227,7 @@ const renderHeatmapDays = (
 export const renderHeatmap = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  heatmapInfo: Heatmap
+  heatmapInfo: HeatMap
 ) => {
   // console.log("renderHeatmap");
   // console.log(renderInfo);
