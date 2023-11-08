@@ -18,7 +18,6 @@ export const resolveTemplate = (
   renderInfo: RenderInfo
 ): string => {
   const expressions = getExpressions(template, renderInfo);
-  if (typeof expressions === 'string') return expressions; // error message
 
   for (const expr of expressions) {
     const { source, value, format } = expr;
@@ -70,7 +69,6 @@ export const getExpressions = (
   text: string,
   renderInfo: RenderInfo
 ): IExprResolved[] => {
-  // console.log(text);
   const expressions: Array<IExprResolved> = [];
 
   // {{(?<expr>[\w+\-*\/0-9\s()\[\]%.]+)(::(?<format>[\w+\-*\/0-9\s()\[\]%.:]+))?}}
