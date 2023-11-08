@@ -2,79 +2,44 @@ import * as d3 from 'd3';
 import { RenderInfo } from './models/render-info';
 import { renderBarChart } from './ui-components/chart/bar-chart.renderer';
 import { renderLineChart } from './ui-components/chart/line-chart.renderer';
-import * as pie from './ui-components/chart/pie-chart.renderer';
-import * as bullet from './ui-components/graph/bullet-graph.renderer';
-import * as heatmap from './ui-components/heat-map/heat-map.renderer';
-import * as month from './ui-components/month-view/month-view.renderer';
-import * as summary from './ui-components/summary/summary.renderer';
+import { renderPieChart } from './ui-components/chart/pie-chart.renderer';
+import { renderBulletGraph } from './ui-components/graph/bullet-graph.renderer';
+import { renderHeatMap } from './ui-components/heat-map/heat-map.renderer';
+import { renderMonth } from './ui-components/month-view/month-view.renderer';
+import { renderSummary } from './ui-components/summary/summary.renderer';
 
 export const renderTracker = (
-  canvas: HTMLElement,
+  container: HTMLElement,
   renderInfo: RenderInfo
-): string => {
-  // Data preprocessing
+): void => {
+  const { valueShift, shiftOnlyValueLargerThan, penalty, accum } = renderInfo;
+
+  // Data pre-processing
   for (const dataset of renderInfo.datasets) {
     if (dataset.query.usedAsXDataset) continue;
+
     // valueShift
-    const shiftAmount = renderInfo.valueShift[dataset.id];
-    if (shiftAmount !== null && shiftAmount !== 0) {
-      dataset.shiftYValues(
-        shiftAmount,
-        renderInfo.shiftOnlyValueLargerThan[dataset.id]
-      );
-    }
+    const shiftAmount = valueShift[dataset.id];
+    if (shiftAmount !== null && shiftAmount !== 0)
+      dataset.shiftYValues(shiftAmount, shiftOnlyValueLargerThan[dataset.id]);
+
     // penalty
-    if (renderInfo.penalty[dataset.id] !== null) {
-      dataset.setYPenalty(renderInfo.penalty[dataset.id]);
-    }
+    if (penalty[dataset.id] !== null) dataset.setYPenalty(penalty[dataset.id]);
+
     // accum
-    if (renderInfo.accum[dataset.id]) {
-      dataset.accumulateValues();
-    }
+    if (accum[dataset.id]) dataset.accumulateValues();
   }
 
-  for (const lineInfo of renderInfo.line) {
-    const ret = renderLineChart(canvas, renderInfo, lineInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
-  }
-  for (const barInfo of renderInfo.bar) {
-    const ret = renderBarChart(canvas, renderInfo, barInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
-  }
-  for (const pieInfo of renderInfo.pie) {
-    const ret = pie.renderPieChart(canvas, renderInfo, pieInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
-  }
-  for (const summaryInfo of renderInfo.summary) {
-    const ret = summary.renderSummary(canvas, renderInfo, summaryInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
-  }
-  for (const bulletInfo of renderInfo.bullet) {
-    const ret = bullet.renderBulletGraph(canvas, renderInfo, bulletInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
-  }
-  for (const monthInfo of renderInfo.month) {
-    const ret = month.renderMonth(canvas, renderInfo, monthInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
-  }
-  for (const heatmapInfo of renderInfo.heatmap) {
-    const ret = heatmap.renderHeatmap(canvas, renderInfo, heatmapInfo);
-    if (typeof ret === 'string') {
-      return ret;
-    }
-  }
+  const { line, bar, pie, summary, bullet, month, heatmap } = renderInfo;
+  const args = [container, renderInfo] as const;
+
+  line.forEach((component) => renderLineChart(...args, component));
+  bar.forEach((component) => renderBarChart(...args, component));
+  pie.forEach((component) => renderPieChart(...args, component));
+  summary.forEach((component) => renderSummary(...args, component));
+  bullet.forEach((component) => renderBulletGraph(...args, component));
+  month.forEach((component) => renderMonth(...args, component));
+  heatmap.forEach((component) => renderHeatMap(...args, component));
 };
 
 export const renderErrorMessage = (
