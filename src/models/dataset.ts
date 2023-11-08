@@ -282,6 +282,14 @@ export class DatasetCollection implements IterableIterator<Dataset> {
     return dataset;
   }
 
+  public add(query: Query, renderInfo: RenderInfo): Dataset {
+    const ds = new Dataset(this, query);
+    ds.id = query.id;
+    if (renderInfo) ds.name = renderInfo.datasetName[ds.id];
+    this._datasets.push(ds);
+    return ds;
+  }
+
   public getIndexOfDate(date: Moment) {
     const cData = date.creationData();
     const dateFormat = cData.format.toString();
