@@ -45,7 +45,6 @@ const createAreas = (
     // d3.select(chartElements[props[i]]).remove();
     delete chartElements[props[i]];
   }
-  // console.log(chartElements);
 
   // whole area for plotting, includes margins
   const svg = d3
@@ -95,7 +94,6 @@ const renderTitle = (
   renderInfo: RenderInfo,
   pieInfo: PieChart
 ) => {
-  // console.log("renderTitle");
   // under graphArea
 
   if (!renderInfo || !pieInfo) return;
@@ -136,10 +134,6 @@ const renderLegend = (
   renderInfo: RenderInfo,
   pieInfo: PieChart
 ): void => {
-  // console.log("renderLegend");
-  // console.log(piInfo.legendPosition);
-  // console.log(piInfo.legendOrientation);
-
   // Get chart elements
   const svg = chartElements.svg;
 
@@ -192,11 +186,6 @@ const renderLegend = (
       d3.sum(nameSizes, (s, _i) => s.width);
     legendHeight = ySpacing + nameHeight;
   }
-  // console.log(
-  //     `maxName: ${maxName}, characterWidth: ${characterWidth}, maxNameWidth: ${maxNameWidth}`
-  // );
-  // console.log(`xSpacing:${xSpacing}, numNames: ${numNames}, markerWidth: ${markerWidth}`);
-  // console.log(`legendWidth: ${legendWidth}, legendHeight: ${legendHeight}`);
 
   // Calculate legendX and legendY
   let legendX = 0.0; // relative to graphArea
@@ -232,13 +221,11 @@ const renderLegend = (
   } else {
     return;
   }
-  // console.log(`legendX: ${legendX}, legendY: ${legendY}`);
 
   const legend = chartElements.graphArea
     .append('g')
     .attr('id', 'legend')
     .attr('transform', 'translate(' + legendX + ',' + legendY + ')');
-  // console.log('legendX: %d, legendY: %d', legendX, legendY);
 
   const legendBg = legend
     .append('rect')
@@ -351,8 +338,6 @@ const renderPie = (
   renderInfo: RenderInfo,
   pieInfo: PieChart
 ): string => {
-  // console.log("renderPie");
-  // console.log(renderInfo);
   let errorMessage = '';
 
   const radius = renderInfo.dataAreaSize.width * 0.5;
@@ -373,13 +358,11 @@ const renderPie = (
   if (errorMessage !== '') {
     return errorMessage;
   }
-  // console.log(values);
 
   // labels
   const labels: Array<string> = [];
   for (const strExpr of pieInfo.label) {
     const retLabel = expr.resolveTemplate(strExpr, renderInfo);
-    // console.log(retLabel);
     if (retLabel.startsWith('Error')) {
       errorMessage = retLabel;
       break;
@@ -389,7 +372,6 @@ const renderPie = (
   if (errorMessage !== '') {
     return errorMessage;
   }
-  // console.log(labels);
 
   // hideLabelLessThan
   const hideLabelLessThan = pieInfo.hideLabelLessThan;
@@ -412,13 +394,11 @@ const renderPie = (
   if (errorMessage !== '') {
     return errorMessage;
   }
-  // console.log(extLabels);
 
   // extLabel sizes
   const extLabelSizes = extLabels.map((n) => {
     return helper.measureTextSize(n, 'tracker-pie-label');
   });
-  // console.log(extLabelSizes);
 
   const showExtLabelOnlyIfNoLabel = pieInfo.showExtLabelOnlyIfNoLabel;
 
@@ -464,7 +444,6 @@ const renderPie = (
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isLabelHidden = (arcObj: any) => {
-    // console.log(`start/end: ${arcObj.startAngle}/${arcObj.endAngle}`);
     const fraction = (arcObj.endAngle - arcObj.startAngle) / (2.0 * Math.PI);
     if (fraction < hideLabelLessThan) {
       return true;
@@ -548,8 +527,6 @@ const renderPie = (
     const posLabel = arc.centroid(arcObj); // line insertion in the slice
     const posMiddle = hiddenArc.centroid(arcObj); // line break: we use the other arc generator that has been built only for that
     const posExtLabel = hiddenArc.centroid(arcObj); // Label position = almost the same as posB
-    // console.log(labels[i]);
-    // console.log(`label/middle/extLabel: ${posLabel}/${posMiddle}/${posExtLabel}`);
 
     let distMiddleToLabel = Math.sqrt(
       (posMiddle[0] - posLabel[0]) ** 2 + (posMiddle[1] - posLabel[1]) ** 2
@@ -578,7 +555,6 @@ const renderPie = (
     );
 
     if (distMiddleToLabel > distExtLabelToLabel) {
-      // console.log("two points");
       return [posLabel, posExtLabel];
     }
     return [posLabel, posMiddle, posExtLabel];
@@ -615,11 +591,7 @@ export const renderPieChart = (
   renderInfo: RenderInfo,
   pieInfo: PieChart
 ) => {
-  // console.log("renderPieChart");
-  // console.log(renderInfo);
   if (!renderInfo || !pieInfo) return;
-
-  // return "Under construction";
 
   let chartElements: ComponentElements = {};
   chartElements = createAreas(chartElements, canvas, renderInfo, pieInfo);
@@ -636,9 +608,8 @@ export const renderPieChart = (
 
   renderPie(canvas, chartElements, renderInfo, pieInfo);
 
-  if (pieInfo.showLegend) {
+  if (pieInfo.showLegend)
     renderLegend(canvas, chartElements, renderInfo, pieInfo);
-  }
 
   setChartScale(canvas, chartElements, renderInfo);
 };

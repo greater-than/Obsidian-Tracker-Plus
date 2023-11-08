@@ -16,8 +16,6 @@ export const renderBarChart = (
   renderInfo: RenderInfo,
   barInfo: BarChart
 ): string => {
-  // console.log("renderBarChart");
-  // console.log(renderInfo);
   if (!renderInfo || !barInfo) return;
 
   const chartElements = createAreas(canvas, renderInfo);

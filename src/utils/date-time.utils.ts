@@ -46,7 +46,7 @@ export const timeFormats = ((): string[] => {
  * @param {string} suffixToStrip
  * @returns {string}
  */
-export const getDateStringFromInputString = (
+export const getDateStringFromInput = (
   input: string,
   prefixToStrip: string,
   suffixToStrip: string
@@ -75,7 +75,7 @@ export const getDateStringFromInputString = (
  * @param removePattern
  * @returns {[number, string]}
  */
-export const extractValueFromDurationString = (
+export const extractValueFromDuration = (
   duration: string,
   units: string[],
   removePattern: boolean = true
@@ -136,7 +136,7 @@ export const parseDuration = (duration: string): Duration => {
   const mDuration = window.moment.duration(0);
 
   formats.forEach((format) => {
-    let { value } = extractValueFromDurationString(duration, format.units);
+    let { value } = extractValueFromDuration(duration, format.units);
     if (value !== null) {
       if (isNegative) value *= -1;
       mDuration.add(value, format.unit as DurationInputArg2);
@@ -222,7 +222,7 @@ export const getDateByDurationToToday = (
  * @param {MomentFormatSpecification} format
  * @returns {Moment}
  */
-export const stringToDate = (
+export const toMoment = (
   date: string,
   format: MomentFormatSpecification
 ): Moment => {
@@ -261,7 +261,7 @@ export const getDateFromUnixTime = (
   const m = window.moment;
   const date = m(unixTime);
   const strDate = dateToString(date, format);
-  return stringToDate(strDate, format);
+  return toMoment(strDate, format);
 };
 
 /**
@@ -272,5 +272,5 @@ export const getDateFromUnixTime = (
 export const getDateToday = (format: string): Moment => {
   const today = window.moment('');
   const strToday = dateToString(today, format);
-  return stringToDate(strToday, format);
+  return toMoment(strToday, format);
 };

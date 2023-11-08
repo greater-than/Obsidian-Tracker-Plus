@@ -1,7 +1,7 @@
 import { ComponentType } from '../../models/enums';
 import { IComponent } from '../../models/types';
 
-export class Month implements IComponent {
+export class MonthView implements IComponent {
   mode: string;
   dataset: number[];
   startWeekOn: string;

@@ -3,7 +3,7 @@ import { ValueType } from '../../models/enums';
 import { RenderInfo } from '../../models/render-info';
 import { ComponentElements } from '../../models/types';
 import * as helper from '../../utils/helper';
-import { Month } from './month.model';
+import { MonthView } from './month-view.model';
 import Moment = moment.Moment;
 
 let logToConsole = false;
@@ -51,7 +51,10 @@ const setChartScale = (
   }
 };
 
-const toNextDataset = (renderInfo: RenderInfo, monthInfo: Month): boolean => {
+const toNextDataset = (
+  renderInfo: RenderInfo,
+  monthInfo: MonthView
+): boolean => {
   const datasetIds = monthInfo.dataset;
   if (datasetIds.length === 0) return false; // false if selected dataset not changed
 
@@ -105,7 +108,7 @@ const createAreas = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _monthInfo: Month
+  _monthInfo: MonthView
 ): ComponentElements => {
   // clean areas
   d3.select(canvas).select('#svg').remove();
@@ -158,7 +161,10 @@ const createAreas = (
   return chartElements;
 };
 
-const clearSelection = (chartElements: ComponentElements, monthInfo: Month) => {
+const clearSelection = (
+  chartElements: ComponentElements,
+  monthInfo: MonthView
+) => {
   const circles = chartElements.svg.selectAll('circle');
   // console.log(circles);
   for (const circle of circles) {
@@ -178,7 +184,7 @@ const renderMonthHeader = (
   canvas: HTMLElement,
   chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  monthInfo: Month,
+  monthInfo: MonthView,
   curMonthDate: Moment
 ): void => {
   // console.log("renderMonthHeader")
@@ -485,7 +491,7 @@ function renderMonthDays(
   _canvas: HTMLElement,
   chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  monthInfo: Month,
+  monthInfo: MonthView,
   curMonthDate: Moment
 ): string {
   // console.log("renderMonthDays");
@@ -719,13 +725,6 @@ function renderMonthDays(
       logToConsole = false;
     }
   }
-  // console.log(daysInMonthView);
-  // console.log(daysInMonthView.filter((d: DayInfo) => {
-  //     return d.streakIn;
-  // }));
-  // console.log(daysInMonthView.filter((d: DayInfo) => {
-  //     return d.streakOut;
-  // }));
 
   // scale
   const totalDayBlockWidth = (indCol + 1) * cellSize;
@@ -747,7 +746,6 @@ function renderMonthDays(
     } else if (monthInfo.color) {
       streakColor = monthInfo.color;
     }
-    // console.log(streakColor);
 
     chartElements.dataArea
       .selectAll('streakIn')
@@ -874,8 +872,6 @@ function renderMonthDays(
               'white',
               circleColor
             )(d.scaledValue * 0.8 + 0.2);
-            // console.log(d.scaledValue);
-            // console.log(scaledColor);
             return scaledColor;
           } else {
             return 'none';
@@ -1061,11 +1057,9 @@ const refresh = (
   canvas: HTMLElement,
   chartElements: ComponentElements,
   renderInfo: RenderInfo,
-  monthInfo: Month,
+  monthInfo: MonthView,
   curMonthDate: Moment
 ): void => {
-  // console.log("refresh");
-  // console.log(renderInfo);
   if (!renderInfo || !renderMonth) return;
 
   chartElements = createAreas(chartElements, canvas, renderInfo, monthInfo);
@@ -1079,11 +1073,8 @@ const refresh = (
 export const renderMonth = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
-  monthInfo: Month
+  monthInfo: MonthView
 ): string => {
-  // console.log("renderMonth");
-  // console.log(renderInfo);
-  // console.log(monthInfo);
   if (!renderInfo || !renderMonth) return;
 
   // dataset

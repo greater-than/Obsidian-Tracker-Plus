@@ -10,7 +10,7 @@ export const Position = {
   LEFT: 'left',
 };
 
-export const Type = {
+export const ValueType = {
   BOOLEAN: 'boolean',
   NUMBER: 'number',
   STRING: 'string',
