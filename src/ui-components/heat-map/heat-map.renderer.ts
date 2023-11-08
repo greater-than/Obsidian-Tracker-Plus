@@ -224,14 +224,14 @@ const renderHeatmapDays = (
   }
 };
 
-export const renderHeatmap = (
+export const renderHeatMap = (
   canvas: HTMLElement,
   renderInfo: RenderInfo,
   heatmapInfo: HeatMap
 ) => {
   // console.log("renderHeatmap");
   // console.log(renderInfo);
-  if (!renderInfo || !renderHeatmap) return;
+  if (!renderInfo || !renderHeatMap) return;
 
   return 'Under construction';
 
