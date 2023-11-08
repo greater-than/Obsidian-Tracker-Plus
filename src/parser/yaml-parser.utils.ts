@@ -10,7 +10,11 @@ import { SearchTypeValues, YAxisLocationValues } from '../models/enums';
 import { DateTimeUtils, StringUtils } from '../utils';
 import * as helper from '../utils/helper';
 import { isNullOrUndefined } from '../utils/object.utils';
-import { INumberValueOptions, IStringValueOptions } from './types';
+import {
+  INumberValueOptions,
+  IStringValueOptions,
+  TValueValidator,
+} from './types';
 
 /**
  * @summary Returns keys in an object
@@ -66,16 +70,14 @@ export const formatDate = (
       prefixToStrip,
       suffixToStrip
     );
-
     const dateAsMoment =
       DateTimeUtils.getDateByDurationToToday(dateString, format) ??
-      DateTimeUtils.stringToDate(dateString, format);
+      DateTimeUtils.toMoment(dateString, format);
 
     if (!dateAsMoment || !dateAsMoment.isValid())
       throw new TrackerError(
-        `Invalid startDate, the format of startDate may not match your dateFormat '${format}'`
+        `Invalid date '${date}', the format may not match your dateFormat '${format}'`
       );
-
     return dateAsMoment;
   }
 };
@@ -140,22 +142,22 @@ export const convertToArray = (
  * @summary Returns a boolean array from the provided input property
  * @param {string} name
  * @param {any} input
- * @param {number} numDataset
+ * @param {number} valueCount
  * @param {boolean} defaultValue
- * @param {boolean} allowNoValidValue
+ * @param {boolean} allowInvalidValue
  * @returns {boolean[]}
  */
 export const getBooleans = <T>(
   name: string,
   input: T,
-  numDataset: number,
+  valueCount: number,
   defaultValue: boolean,
-  allowNoValidValue: boolean
+  allowInvalidValue: boolean
 ): Array<boolean> => {
   const booleans: boolean[] = [];
   let validValueCount = 0;
 
-  while (numDataset > booleans.length) {
+  while (valueCount > booleans.length) {
     booleans.push(defaultValue);
   }
 
@@ -163,7 +165,7 @@ export const getBooleans = <T>(
     // all defaultValue
   } else if (typeof input === 'object' && input !== null) {
     if (Array.isArray(input)) {
-      if (input.length > numDataset) throw new InputMismatchError(name);
+      if (input.length > valueCount) throw new InputMismatchError(name);
       if (input.length === 0) throw new ArrayError(name);
 
       for (let ind = 0; ind < booleans.length; ind++) {
@@ -192,7 +194,7 @@ export const getBooleans = <T>(
   } else if (typeof input === 'string') {
     const values = splitByComma(input);
     if (values.length > 1) {
-      if (values.length > numDataset) throw new InputMismatchError(name);
+      if (values.length > valueCount) throw new InputMismatchError(name);
 
       for (let ind = 0; ind < booleans.length; ind++) {
         if (ind < values.length) {
@@ -233,7 +235,7 @@ export const getBooleans = <T>(
     for (let ind = 1; ind < booleans.length; ind++) booleans[ind] = input;
   } else throw new ValueError(name);
 
-  if (!allowNoValidValue && validValueCount === 0) throw new ValueError(name);
+  if (!allowInvalidValue && validValueCount === 0) throw new ValueError(name);
 
   return booleans;
 };
@@ -264,9 +266,7 @@ export const getString = <T extends string | number>(
 export const getStrings = <T extends object | string | number>(
   name: string,
   input: T,
-  // TODO Define signature type for validator
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  validator: Function,
+  validator: TValueValidator,
   options: IStringValueOptions
 ): string[] => {
   const strings: string[] = [];
@@ -346,10 +346,9 @@ export const getStrings = <T extends object | string | number>(
   return strings.map((s) => StringUtils.replaceImgTagByAlt(s));
 };
 
-export const getStringArray = (
+export const getStringArray = <T extends object | string | number>(
   name: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  input: any
+  input: T
 ): string[] => {
   if (isNullOrUndefined(input)) return [];
 

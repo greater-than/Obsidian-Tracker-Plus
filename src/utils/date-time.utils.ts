@@ -222,7 +222,7 @@ export const getDateByDurationToToday = (
  * @param {MomentFormatSpecification} format
  * @returns {Moment}
  */
-export const stringToDate = (
+export const toMoment = (
   date: string,
   format: MomentFormatSpecification
 ): Moment => {
@@ -261,7 +261,7 @@ export const getDateFromUnixTime = (
   const m = window.moment;
   const date = m(unixTime);
   const strDate = dateToString(date, format);
-  return stringToDate(strDate, format);
+  return toMoment(strDate, format);
 };
 
 /**
@@ -272,5 +272,5 @@ export const getDateFromUnixTime = (
 export const getDateToday = (format: string): Moment => {
   const today = window.moment('');
   const strToday = dateToString(today, format);
-  return stringToDate(strToday, format);
+  return toMoment(strToday, format);
 };
