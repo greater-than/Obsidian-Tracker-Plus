@@ -244,7 +244,7 @@ export const getDateFromTask = (
   const searchType = query.type;
 
   let strRegex = query.target;
-  if (searchType === SearchType.Task) {
+  if (searchType === SearchType.Task || searchType === SearchType.TaskAll) {
     strRegex = '\\[[\\sx]\\]\\s' + strRegex;
   } else if (searchType === SearchType.TaskDone) {
     strRegex = '\\[x\\]\\s' + strRegex;
@@ -664,7 +664,7 @@ export const collectDataFromTask = (
   const searchType = query.type;
 
   let strRegex = query.target;
-  if (searchType === SearchType.Task) {
+  if (searchType === SearchType.Task || searchType === SearchType.TaskAll) {
     strRegex = '\\[[\\sx]\\]\\s' + strRegex;
   } else if (searchType === SearchType.TaskDone) {
     strRegex = '\\[x\\]\\s' + strRegex;
