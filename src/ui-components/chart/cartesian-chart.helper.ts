@@ -18,7 +18,6 @@ export const getXTickValues = (
 ): [Array<Date>, d3.TimeInterval] => {
   // The input interval could be null,
   // generate tick values even if interval is null
-  // console.log(interval);
   let tickValues: Array<Date> = [];
   let tickInterval = null;
 
@@ -100,8 +99,6 @@ export const getYTickValues = (
 ): number[] => {
   // The input interval could be null,
   // generate tick values for time values even if interval is null
-  // console.log(interval);
-  // console.log(isTimeValue);
   const absExtent = Math.abs(yUpper - yLower);
   let tickValues: Array<number> = [];
 
@@ -178,8 +175,6 @@ export const getYTickLabelFormat = (
         const dayStart = window.moment('00:00', 'HH:mm', true);
         const tickTime = dayStart.add(value, 'seconds');
         let format = tickTime.format('HH:mm');
-        // console.log(`yLower/yUpper: ${yLower}/${yUpper}`)
-        // console.log(`value/extent/inter:${value}/${absExtent}/${(value-yLower)/3600}`);
         // auto interleave if extent over 12 hours
         if (absExtent > 12 * 60 * 60) {
           const devHour = (value - yLower) / 3600;
@@ -330,8 +325,6 @@ export const renderYAxis = (
       }
     }
   }
-  // console.log(yMinOfDatasets);
-  // console.log(yMaxOfDatasets);
   let yMin = null;
   if (yAxisLocation === 'left') {
     yMin = chartInfo.yMin[0];

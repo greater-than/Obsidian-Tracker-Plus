@@ -5,15 +5,13 @@ import { renderLineChart } from './ui-components/chart/line-chart.renderer';
 import * as pie from './ui-components/chart/pie-chart.renderer';
 import * as bullet from './ui-components/graph/bullet-graph.renderer';
 import * as heatmap from './ui-components/heat-map/heat-map.renderer';
-import * as month from './ui-components/month/month.renderer';
+import * as month from './ui-components/month-view/month-view.renderer';
 import * as summary from './ui-components/summary/summary.renderer';
 
 export const renderTracker = (
   canvas: HTMLElement,
   renderInfo: RenderInfo
 ): string => {
-  // console.log("render");
-  // console.log(renderInfo.datasets);
   // Data preprocessing
   for (const dataset of renderInfo.datasets) {
     if (dataset.query.usedAsXDataset) continue;

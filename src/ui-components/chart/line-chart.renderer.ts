@@ -17,8 +17,6 @@ export const renderLineChart = (
   renderInfo: RenderInfo,
   lineInfo: LineChart
 ): string => {
-  // console.log("renderLineChart");
-  // console.log(renderInfo);
   if (!renderInfo || !lineInfo) return;
 
   const chartElements = createAreas(canvas, renderInfo);
@@ -26,8 +24,7 @@ export const renderLineChart = (
   renderTitle(chartElements, renderInfo, lineInfo);
 
   renderXAxis(chartElements, renderInfo, lineInfo);
-  // console.log(chartElements.xAxis);
-  // console.log(chartElements.xScale);
+
   const datasetOnLeftYAxis = [];
   const datasetOnRightYAxis = [];
   const xDatasetIds = renderInfo.datasets.getXDatasetIds();
