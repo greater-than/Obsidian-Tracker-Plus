@@ -17,6 +17,7 @@ import { DataMap } from './models/data-map';
 import { DatasetCollection } from './models/dataset';
 import { ComponentType, SearchType, ValueType } from './models/enums';
 import { ProcessInfo } from './models/process-info';
+import { Query } from './models/query';
 import { RenderInfo } from './models/render-info';
 import { TableData } from './models/table-data';
 import { IQueryValuePair, TNumberValueMap } from './models/types';
@@ -28,7 +29,7 @@ import {
   TrackerSettingTab,
   TrackerSettings,
 } from './settings';
-import { IoUtils } from './utils';
+import { DateTimeUtils, IoUtils } from './utils';
 import * as helper from './utils/helper';
 // import { getDailyNoteSettings } from "obsidian-daily-notes-interface";
 
@@ -104,6 +105,110 @@ export default class Tracker extends Plugin {
   onunload = (): void => console.log('unloading Tracker+ plugin');
 
   /**
+   * @summary Returns true if the query needs data from the note
+   * @param {Query[]} queries
+   * @returns {boolean}
+   */
+  needContent = (queries: Query[]): boolean =>
+    queries.some(
+      (q) =>
+        q.type ===
+        (SearchType.Tag ||
+          SearchType.Text ||
+          SearchType.DataviewField ||
+          SearchType.Task ||
+          SearchType.TaskDone ||
+          SearchType.TaskNotDone ||
+          (SearchType.FileMeta &&
+            ['numWords', 'numChars', 'numSentences'].includes(q.target)))
+    );
+
+  /**
+   * @summary Returns min/max dates if xDate is valid, within the range of renderInfo start/end dates, and
+   * @param {ProcessInfo} processInfo
+   * @param {RenderInfo} renderInfo
+   * @param {moment.Moment} date
+   * @returns {boolean} true if processInfo min/max dates were updated
+   */
+  getMinMaxDates = (
+    processInfo: ProcessInfo,
+    renderInfo: RenderInfo,
+    date: moment.Moment
+  ): { minDate: moment.Moment; maxDate: moment.Moment } => {
+    const xDateIsValid =
+      date.isValid() &&
+      ((renderInfo.startDate !== null && date < renderInfo.startDate) ||
+        (renderInfo.endDate !== null && date > renderInfo.endDate));
+    if (!xDateIsValid) return { minDate: null, maxDate: null };
+
+    let minDate = null;
+    let maxDate = null;
+
+    if (processInfo.fileAvailable == 1) minDate = maxDate = date.clone();
+    else if (date < processInfo.minDate) minDate = date.clone();
+    else if (date > processInfo.maxDate) maxDate = date.clone();
+
+    return { minDate, maxDate };
+  };
+
+  /**
+   * Returns datasets for each renderInfo query
+   * @param {RenderInfo} renderInfo
+   * @param {DataMap} dataMap
+   * @returns {DatasetCollection}
+   */
+  getDatasets = (
+    renderInfo: RenderInfo,
+    dataMap: DataMap
+  ): DatasetCollection => {
+    const { startDate, endDate, dateFormat } = renderInfo;
+    const datasets = new DatasetCollection(startDate, endDate);
+    renderInfo.queries.forEach((query) => {
+      // We still create a dataset for each xDataset,
+      // to keep the sequence and order of targets
+      const dataset = datasets.add(query, renderInfo);
+
+      dataset.incrementTargetCount(query.numTargets);
+      const date = startDate.clone();
+      while (date <= endDate) {
+        if (dataMap.has(DateTimeUtils.dateToString(date, dateFormat))) {
+          const values = dataMap
+            .get(DateTimeUtils.dateToString(date, dateFormat))
+            .filter((qv: IQueryValuePair) => qv.query.equalTo(query));
+
+          const value =
+            values.length > 0
+              ? values.reduce((prev, qv) => {
+                  if (Number.isNumber(qv.value) && !Number.isNaN(qv.value))
+                    prev.value += qv.value;
+                  return prev;
+                }).value
+              : null;
+          if (value !== null) dataset.setValue(date, value);
+        }
+        date.add(1, 'days');
+      }
+    });
+    return datasets;
+  };
+
+  /**
+   * @summary Returns true if the queries are searching Frontmatter, Tags, or Wikis
+   * @param {RenderInfo} renderInfo
+   * @returns {boolean}
+   */
+  needFileCache = (renderInfo: RenderInfo): boolean => {
+    return renderInfo.queries.some(
+      (q) =>
+        q.type === SearchType.Frontmatter ||
+        SearchType.Tag ||
+        SearchType.Wiki ||
+        SearchType.WikiLink ||
+        SearchType.WikiDisplay
+    );
+  };
+
+  /**
    * @summary Processes a tracker code block
    * @param {string} source
    * @param {HTMLElement} element
@@ -134,13 +239,13 @@ export default class Tracker extends Plugin {
         this.metadataCache
       );
       if (files.length === 0)
+        // TODO should this move to the getFiles func?
         throw new TrackerError(
           `Markdown files not found in folder '${renderInfo.folder}'`
         );
 
       // Collect data for dataMap
       const dataMap = new DataMap(); // {strDate: [query: value, ...]}
-
       const processInfo = new ProcessInfo();
       processInfo.fileTotal = files.length;
 
