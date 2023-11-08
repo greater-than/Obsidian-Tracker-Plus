@@ -4,12 +4,15 @@ import {
   Editor,
   MarkdownPostProcessorContext,
   MarkdownView,
+  MetadataCache,
   Plugin,
   TFile,
-  TFolder,
+  Vault,
+  Workspace,
   normalizePath,
 } from 'obsidian';
 import * as collecting from './data-collector/data-collector';
+import { TrackerError } from './errors';
 import { DataMap } from './models/data-map';
 import { DatasetCollection } from './models/dataset';
 import { ComponentType, SearchType, ValueType } from './models/enums';
@@ -25,6 +28,7 @@ import {
   TrackerSettingTab,
   TrackerSettings,
 } from './settings';
+import { IoUtils } from './utils';
 import * as helper from './utils/helper';
 // import { getDailyNoteSettings } from "obsidian-daily-notes-interface";
 
@@ -44,6 +48,9 @@ declare module 'obsidian' {
 
 export default class Tracker extends Plugin {
   settings: TrackerSettings;
+  workspace: Workspace = this.app.workspace;
+  vault: Vault = this.app.vault;
+  metadataCache: MetadataCache = this.app.metadataCache;
 
   async onload(): Promise<void> {
     console.log('loading Tracker+ plugin');
@@ -94,207 +101,51 @@ export default class Tracker extends Plugin {
     return;
   }
 
-  onunload(): void {
-    console.log('unloading Tracker+ plugin');
-  }
+  onunload = (): void => console.log('unloading Tracker+ plugin');
 
-  getFilesInFolder(
-    folder: TFolder,
-    includeSubFolders: boolean = true
-  ): TFile[] {
-    let files: TFile[] = [];
-
-    for (const item of folder.children) {
-      if (item instanceof TFile) {
-        if (item.extension === 'md') {
-          files.push(item);
-        }
-      } else {
-        if (item instanceof TFolder && includeSubFolders) {
-          files = files.concat(this.getFilesInFolder(item));
-        }
-      }
-    }
-
-    return files;
-  }
-
-  async getFiles(
-    files: TFile[],
-    renderInfo: RenderInfo,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _includeSubFolders: boolean = true
-  ): Promise<void> {
-    if (!files) return;
-
-    const folderToSearch = renderInfo.folder;
-    const useSpecifiedFilesOnly = renderInfo.specifiedFilesOnly;
-    const specifiedFiles = renderInfo.file;
-    const filesContainsLinkedFiles = renderInfo.fileContainsLinkedFiles;
-    const fileMultiplierAfterLink = renderInfo.fileMultiplierAfterLink;
-
-    // Include files in folder
-    if (!useSpecifiedFilesOnly) {
-      const folder = this.app.vault.getAbstractFileByPath(
-        normalizePath(folderToSearch)
-      );
-      if (folder && folder instanceof TFolder) {
-        const folderFiles = this.getFilesInFolder(folder);
-        for (const file of folderFiles) {
-          files.push(file);
-        }
-      }
-    }
-
-    // Include specified file
-    for (const filePath of specifiedFiles) {
-      let path = filePath;
-      if (!path.endsWith('.md')) {
-        path += '.md';
-      }
-      path = normalizePath(path);
-
-      const file = this.app.vault.getAbstractFileByPath(path);
-      // console.log(file);
-      if (file && file instanceof TFile) {
-        files.push(file);
-      }
-    }
-
-    // Include files in pointed by links in file
-    let linkedFileMultiplier = 1;
-    let searchFileMultiplierAfterLink = true;
-    if (fileMultiplierAfterLink === '') {
-      searchFileMultiplierAfterLink = false;
-    } else if (/^[0-9]+$/.test(fileMultiplierAfterLink)) {
-      // integer
-      linkedFileMultiplier = parseFloat(fileMultiplierAfterLink);
-      searchFileMultiplierAfterLink = false;
-    } else if (!/\?<value>/.test(fileMultiplierAfterLink)) {
-      // no 'value' named group
-      searchFileMultiplierAfterLink = false;
-    }
-    for (let filePath of filesContainsLinkedFiles) {
-      if (!filePath.endsWith('.md')) {
-        filePath += '.md';
-      }
-      const file = this.app.vault.getAbstractFileByPath(
-        normalizePath(filePath)
-      );
-      if (file && file instanceof TFile) {
-        // Get linked files
-        const fileCache = this.app.metadataCache.getFileCache(file);
-        const fileContent = await this.app.vault.adapter.read(file.path);
-        const lines = fileContent.split(/\r\n|[\n\v\f\r\x85\u2028\u2029]/);
-        // console.log(lines);
-
-        if (!fileCache?.links) continue;
-
-        for (const link of fileCache.links) {
-          if (!link) continue;
-          const linkedFile = this.app.metadataCache.getFirstLinkpathDest(
-            link.link,
-            filePath
-          );
-          if (linkedFile && linkedFile instanceof TFile) {
-            if (searchFileMultiplierAfterLink) {
-              // Get the line of link in file
-              const lineNumber = link.position.end.line;
-              // console.log(lineNumber);
-              if (lineNumber >= 0 && lineNumber < lines.length) {
-                const line = lines[lineNumber];
-                // console.log(line);
-
-                // Try extract multiplier
-                // if (link.position)
-                const splitted = line.split(link.original);
-                // console.log(splitted);
-                if (splitted.length === 2) {
-                  const toParse = splitted[1].trim();
-                  const pattern = fileMultiplierAfterLink;
-                  const regex = new RegExp(pattern, 'gm');
-                  let match;
-                  while ((match = regex.exec(toParse))) {
-                    // console.log(match);
-                    if (
-                      typeof match.groups !== 'undefined' &&
-                      typeof match.groups.value !== 'undefined'
-                    ) {
-                      // must have group name 'value'
-                      const retParse = helper.parseFloatFromAny(
-                        match.groups.value.trim(),
-                        renderInfo.textValueMap
-                      );
-                      if (retParse.value !== null) {
-                        linkedFileMultiplier = retParse.value;
-                        break;
-                      }
-                    }
-                  }
-                }
-              }
-            }
-
-            for (let i = 0; i < linkedFileMultiplier; i++) {
-              files.push(linkedFile);
-            }
-          }
-        }
-      }
-    }
-  }
-
+  /**
+   * @summary Processes a tracker code block
+   * @param {string} source
+   * @param {HTMLElement} element
+   * @param {MarkdownPostProcessorContext} _context
+   */
   async processCodeBlock(
     source: string,
     element: HTMLElement,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _ctx: MarkdownPostProcessorContext
+    _context: MarkdownPostProcessorContext
   ): Promise<void> {
     const container = document.createElement('div');
     try {
       let yamlText = source.trim();
 
-      // Replace all tabs by spaces
+      // Replace all tabs with spaces
       const tabSize = this.app.vault.getConfig('tabSize');
       const spaces = Array(tabSize).fill(' ').join('');
       yamlText = yamlText.replace(/\t/gm, spaces);
 
       // Get render info
-      const retRenderInfo = getRenderInfo(yamlText, this);
-      if (typeof retRenderInfo === 'string') {
-        return this.renderErrorMessage(retRenderInfo, container, element);
-      }
-      const renderInfo = retRenderInfo as RenderInfo;
+      const renderInfo = getRenderInfo(yamlText, this);
 
       // Get files
-      const files: TFile[] = [];
-      try {
-        await this.getFiles(files, renderInfo);
-      } catch (e) {
-        return this.renderErrorMessage(e.message, container, element);
-      }
-      if (files.length === 0) {
-        return this.renderErrorMessage(
-          'No markdown files found in folder',
-          container,
-          element
+      const files: TFile[] = await IoUtils.getFiles(
+        renderInfo,
+        this.vault,
+        this.metadataCache
+      );
+      if (files.length === 0)
+        throw new TrackerError(
+          `Markdown files not found in folder '${renderInfo.folder}'`
         );
-      }
-      // console.log(files);
 
-      // let dailyNotesSettings = getDailyNoteSettings();
-      // console.log(dailyNotesSettings);
-      // I always got YYYY-MM-DD from dailyNotesSettings.format
-      // Use own settings panel for now
-
-      // Collecting data to dataMap first
+      // Collect data for dataMap
       const dataMap = new DataMap(); // {strDate: [query: value, ...]}
+
       const processInfo = new ProcessInfo();
       processInfo.fileTotal = files.length;
 
       // Collect data from files, each file has one data point for each query
       const loopFilePromises = files.map(async (file) => {
-        // console.log(file.basename);
         // Get fileCache and content
         let fileCache: CachedMetadata = null;
         const needFileCache = renderInfo.queries.some((q) => {
@@ -351,18 +202,14 @@ export default class Tracker extends Plugin {
         // Get xValue and add it into xValueMap for later use
         const xValueMap: TNumberValueMap = new Map(); // queryId: xValue for this file
         let skipThisFile = false;
-        // console.log(renderInfo.xDataset);
         for (const xDatasetId of renderInfo.xDataset) {
-          // console.log(`xDatasetId: ${xDatasetId}`);
           if (!xValueMap.has(xDatasetId)) {
             let xDate = window.moment('');
             if (xDatasetId === -1) {
               // Default using date in filename as xValue
               xDate = collecting.getDateFromFilename(file, renderInfo);
-              // console.log(xDate);
             } else {
               const xDatasetQuery = renderInfo.queries[xDatasetId];
-              // console.log(xDatasetQuery);
               switch (xDatasetQuery.type) {
                 case SearchType.Frontmatter:
                   xDate = collecting.getDateFromFrontmatter(
@@ -413,11 +260,9 @@ export default class Tracker extends Plugin {
             }
 
             if (!xDate.isValid()) {
-              // console.log("Invalid xDate");
               skipThisFile = true;
               processInfo.fileNotInFormat++;
             } else {
-              // console.log("file " + file.basename + " accepted");
               if (renderInfo.startDate !== null) {
                 if (xDate < renderInfo.startDate) {
                   skipThisFile = true;
@@ -510,7 +355,6 @@ export default class Tracker extends Plugin {
             processInfo.gotAnyValidYValue ||= gotAnyValue;
           }
 
-          // console.log("Search inline tags");
           if (content && query.type === SearchType.Tag) {
             const gotAnyValue = collecting.collectDataFromInlineTag(
               content,
@@ -522,7 +366,6 @@ export default class Tracker extends Plugin {
             processInfo.gotAnyValidYValue ||= gotAnyValue;
           } // Search inline tags
 
-          // console.log("Search Text");
           if (content && query.type === SearchType.Text) {
             const gotAnyValue = collecting.collectDataFromText(
               content,
@@ -590,10 +433,6 @@ export default class Tracker extends Plugin {
 
       // Check date range
       // minDate and maxDate are collected without knowing startDate and endDate
-      // console.log(`fileTotal: ${processInfo.fileTotal}`);
-      // console.log(`fileAvailable: ${processInfo.fileAvailable}`);
-      // console.log(`fileNotInFormat: ${processInfo.fileNotInFormat}`);
-      // console.log(`fileOutOfDateRange: ${processInfo.fileOutOfDateRange}`);
       let dateErrorMessage = '';
       if (
         !processInfo.minDate.isValid() ||
@@ -639,8 +478,6 @@ export default class Tracker extends Plugin {
       if (dateErrorMessage) {
         return this.renderErrorMessage(dateErrorMessage, container, element);
       }
-      // console.log(renderInfo.startDate);
-      // console.log(renderInfo.endDate);
 
       if (!processInfo.gotAnyValidYValue) {
         return this.renderErrorMessage(
@@ -667,8 +504,6 @@ export default class Tracker extends Plugin {
           curDate <= renderInfo.endDate;
           curDate.add(1, 'days')
         ) {
-          // console.log(curDate);
-
           // dataMap --> {date: [query: value, ...]}
           if (dataMap.has(helper.dateToStr(curDate, renderInfo.dateFormat))) {
             const queryValuePairs = dataMap
@@ -693,8 +528,6 @@ export default class Tracker extends Plugin {
                   }
                 }
               }
-              // console.log(hasValue);
-              // console.log(value);
               if (value !== null) {
                 dataset.setValue(curDate, value);
               }
@@ -703,7 +536,6 @@ export default class Tracker extends Plugin {
         }
       }
       renderInfo.datasets = datasets;
-      // console.log(renderInfo.datasets);
 
       const retRender = renderer.renderTracker(container, renderInfo);
       if (typeof retRender === 'string') {
@@ -723,12 +555,9 @@ export default class Tracker extends Plugin {
     renderInfo: RenderInfo,
     processInfo: ProcessInfo
   ): Promise<void> {
-    // console.log("collectDataFromTable");
-
     const tableQueries = renderInfo.queries.filter(
       (q) => q.type === SearchType.Table
     );
-    // console.log(tableQueries);
     // Separate queries by tables and xDatasets/yDatasets
     const tables: Array<TableData> = [];
     let tableFileNotFound = false;
@@ -764,7 +593,6 @@ export default class Tracker extends Plugin {
         tables.push(tableData);
       }
     }
-    // console.log(tables);
 
     if (tableFileNotFound) {
       processInfo.errorMessage = 'File containing tables not found';
@@ -791,20 +619,17 @@ export default class Tracker extends Plugin {
       if (file && file instanceof TFile) {
         processInfo.fileAvailable++;
         const content = await this.app.vault.adapter.read(file.path);
-        // console.log(content);
 
         // Test this in Regex101
         // This is a not-so-strict table selector
         // ((\r?\n){2}|^)([^\r\n]*\|[^\r\n]*(\r?\n)?)+(?=(\r?\n){2}|$)
         const strMDTableRegex =
           '((\\r?\\n){2}|^)([^\\r\\n]*\\|[^\\r\\n]*(\\r?\\n)?)+(?=(\\r?\\n){2}|$)';
-        // console.log(strMDTableRegex);
         const mdTableRegex = new RegExp(strMDTableRegex, 'gm');
         let match;
         let indTable = 0;
 
         while ((match = mdTableRegex.exec(content))) {
-          // console.log(match);
           if (indTable === tableIndex) {
             textTable = match[0];
             break;
@@ -815,7 +640,6 @@ export default class Tracker extends Plugin {
         // file not exists
         continue;
       }
-      // console.log(textTable);
 
       let tableLines = textTable.split(/\r?\n/);
       tableLines = tableLines.filter((line) => {
@@ -823,7 +647,6 @@ export default class Tracker extends Plugin {
       });
       let numColumns = 0;
       let numDataRows = 0;
-      // console.log(tableLines);
 
       // Make sure it is a valid table first
       if (tableLines.length >= 2) {
@@ -837,9 +660,7 @@ export default class Tracker extends Plugin {
         sepLine = helper.trimByChar(sepLine, '|');
         const sepLineSplitted = sepLine.split('|');
         for (const col of sepLineSplitted) {
-          if (!col.includes('-')) {
-            break; // Not a valid sep
-          }
+          if (!col.includes('-')) break; // Not a valid sep
         }
 
         numDataRows = tableLines.length;
@@ -888,7 +709,6 @@ export default class Tracker extends Plugin {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         indLine++;
       }
-      // console.log(xValues);
 
       if (
         xValues.every((v) => {
@@ -904,7 +724,6 @@ export default class Tracker extends Plugin {
       // get y data
       for (const yDatasetQuery of yDatasetQueries) {
         const columnOfInterest = yDatasetQuery.getAccessor(1);
-        // console.log(`columnOfInterest: ${columnOfInterest}, numColumns: ${numColumns}`);
         if (columnOfInterest >= numColumns) continue;
 
         let indLine = 0;
@@ -914,14 +733,12 @@ export default class Tracker extends Plugin {
           if (columnOfInterest < dataRowSplitted.length) {
             const data = dataRowSplitted[columnOfInterest].trim();
             const splitted = data.split(yDatasetQuery.getSeparator());
-            // console.log(splitted);
             if (!splitted) continue;
             if (splitted.length === 1) {
               const retParse = helper.parseFloatFromAny(
                 splitted[0],
                 renderInfo.textValueMap
               );
-              // console.log(retParse);
               if (retParse.value !== null) {
                 if (retParse.type === ValueType.Time) {
                   yDatasetQuery.valueType = ValueType.Time;
@@ -942,12 +759,10 @@ export default class Tracker extends Plugin {
               let value = null;
               const splittedPart =
                 splitted[yDatasetQuery.getAccessor(2)].trim();
-              // console.log(splittedPart);
               const retParse = helper.parseFloatFromAny(
                 splittedPart,
                 renderInfo.textValueMap
               );
-              // console.log(retParse);
               if (retParse.value !== null) {
                 if (retParse.type === ValueType.Time) {
                   yDatasetQuery.valueType = ValueType.Time;

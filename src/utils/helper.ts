@@ -32,7 +32,6 @@ const makeTimeFormat = (): string[] => {
       }
     }
   }
-  //console.log(timeFormat);
   return timeFormat;
 };
 const timeFormat = makeTimeFormat();
@@ -48,27 +47,22 @@ export const getDateStringFromInputString = (
   if (dateString.startsWith('^')) {
     dateString = dateString.slice(1);
   }
-  // console.log(dateString);
 
   if (dateFormatPrefix) {
     const strRegex = '^(' + dateFormatPrefix + ')';
-    // console.log(strRegex);
     const regex = new RegExp(strRegex, 'gm');
     if (regex.test(dateString)) {
       dateString = dateString.replace(regex, '');
     }
   }
-  // console.log(dateString);
 
   if (dateFormatSuffix) {
     const strRegex = '(' + dateFormatSuffix + ')$';
-    // console.log(strRegex);
     const regex = new RegExp(strRegex, 'gm');
     if (regex.test(dateString)) {
       dateString = dateString.replace(regex, '');
     }
   }
-  // console.log(dateString);
 
   return dateString;
 };
@@ -108,7 +102,6 @@ const extractValueFromDurationString = (
 
   let value = null;
   const strRegex = '^(?<value>[0-9]+)(' + units.join('|') + ')$';
-  // console.log(strRegex);
   const regex = new RegExp(strRegex, 'gm');
   const match = regex.exec(strDuration);
   if (
@@ -116,14 +109,11 @@ const extractValueFromDurationString = (
     typeof match.groups !== 'undefined' &&
     typeof match.groups.value !== 'undefined'
   ) {
-    // console.log(match);
     value = parseFloat(match.groups.value);
     if (Number.isNumber(value) && !Number.isNaN(value)) {
       if (removePattern) {
         strDuration = strDuration.replace(regex, '');
       }
-      // console.log(value);
-      // console.log(strDuration);
       return [value, strDuration];
     }
   }
@@ -341,7 +331,6 @@ export const replaceImgTagByAlt = (input: string): string => {
   // <img[^>]*?alt\s*=\s*[""']?(?<emoji>[^'"" >]+?)[ '""][^>]*?>
   const strRegex =
     '<img[^>]*?alt\\s*=\\s*[""\']?(?<emoji>[^\'"" >]+?)[ \'""][^>]*?>';
-  // console.log(strRegex);
   const regex = new RegExp(strRegex, 'g');
 
   const output = input.replace(regex, (...args) => {
@@ -360,9 +349,6 @@ export const parseFloatFromAny = (
   toParse: any,
   textValueMap: TTextValueMap = null
 ): { type: ValueType.Number | ValueType.Time; value: number } => {
-  // console.log("parseFloatFromAny");
-  // console.log(toParse);
-
   let value = null;
   let valueType = ValueType.Number;
   if (typeof toParse === 'string') {
@@ -390,11 +376,9 @@ export const parseFloatFromAny = (
         for (const key of keys) {
           if (typeof key === 'string') {
             const regex = new RegExp(key, 'gm');
-            // console.log(toParse);
             if (regex.test(toParse) && Number.isNumber(textValueMap[key])) {
               const strReplacedValue = textValueMap[key].toString();
               toParse = toParse.replace(regex, strReplacedValue);
-              // console.log(toParse);
               break;
             }
           }

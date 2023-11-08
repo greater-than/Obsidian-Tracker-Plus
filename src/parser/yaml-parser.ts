@@ -42,7 +42,7 @@ import {
 export const getRenderInfo = (
   yamlText: string,
   plugin: Tracker
-): RenderInfo | string => {
+): RenderInfo => {
   let yaml;
 
   try {
