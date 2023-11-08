@@ -9,6 +9,7 @@ export enum SearchType {
   Table = 'table',
   FileMeta = 'fileMeta',
   Task = 'task',
+  TaskAll = 'task.all',
   TaskDone = 'task.done',
   TaskNotDone = 'task.notdone',
 }

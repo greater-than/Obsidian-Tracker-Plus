@@ -286,7 +286,7 @@ export const getSearchTypes = (
       case 'task':
         return SearchType.Task;
       case 'task.all':
-        return SearchType.Task;
+        return SearchType.TaskAll;
       case 'task.done':
         return SearchType.TaskDone;
       case 'task.notdone':

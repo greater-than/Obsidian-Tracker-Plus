@@ -328,6 +328,7 @@ export default class Tracker extends Plugin {
             type === SearchType.Text ||
             type === SearchType.DataviewField ||
             type === SearchType.Task ||
+            type === SearchType.TaskAll ||
             type === SearchType.TaskDone ||
             type === SearchType.TaskNotDone
           ) {
@@ -399,6 +400,7 @@ export default class Tracker extends Plugin {
                   );
                   break;
                 case SearchType.Task:
+                case SearchType.TaskAll:
                 case SearchType.TaskDone:
                 case SearchType.TaskNotDone:
                   xDate = collecting.getDateFromTask(
@@ -558,6 +560,7 @@ export default class Tracker extends Plugin {
           if (
             content &&
             (query.type === SearchType.Task ||
+              query.type === SearchType.TaskAll ||
               query.type === SearchType.TaskDone ||
               query.type === SearchType.TaskNotDone)
           ) {
