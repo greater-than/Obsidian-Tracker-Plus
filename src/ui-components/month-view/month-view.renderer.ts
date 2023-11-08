@@ -117,7 +117,6 @@ const createAreas = (
     // d3.select(chartElements[props[i]]).remove();
     delete chartElements[props[i]];
   }
-  // console.log(chartElements);
 
   // whole area for plotting, includes margins
   const svg = d3
@@ -166,9 +165,7 @@ const clearSelection = (
   monthInfo: MonthView
 ) => {
   const circles = chartElements.svg.selectAll('circle');
-  // console.log(circles);
   for (const circle of circles) {
-    // console.log(circle);
     const id = d3.select(circle).attr('id');
     if (id && id.startsWith('tracker-selected-circle-')) {
       d3.select(circle).style('stroke', 'none');
@@ -187,8 +184,6 @@ const renderMonthHeader = (
   monthInfo: MonthView,
   curMonthDate: Moment
 ): void => {
-  // console.log("renderMonthHeader")
-
   if (!renderInfo || !monthInfo) return;
 
   const curDatasetId = monthInfo.selectedDataset;
@@ -364,7 +359,6 @@ const renderMonthHeader = (
     .attr('class', 'tracker-month-title-arrow')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
-      // console.log("left arrow clicked");
       clearSelection(chartElements, monthInfo);
       monthInfo.selectedDate = '';
       const prevMonthDate = curMonthDate.clone().add(-1, 'month');
@@ -388,7 +382,6 @@ const renderMonthHeader = (
     .attr('class', 'tracker-month-title-arrow')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
-      // console.log("right arrow clicked");
       clearSelection(chartElements, monthInfo);
 
       const nextMonthDate = curMonthDate.clone().add(1, 'month');
@@ -412,7 +405,6 @@ const renderMonthHeader = (
     .attr('class', 'tracker-month-title-arrow')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     .on('click', (_event: any) => {
-      // console.log("today arrow clicked");
       clearSelection(chartElements, monthInfo);
 
       const todayDate = helper.getDateToday(renderInfo.dateFormat);
@@ -494,9 +486,6 @@ function renderMonthDays(
   monthInfo: MonthView,
   curMonthDate: Moment
 ): string {
-  // console.log("renderMonthDays");
-  // console.log(renderInfo);
-  // console.log(monthInfo);
   if (!renderInfo || !monthInfo) return;
 
   const mode = monthInfo.mode;
@@ -508,7 +497,6 @@ function renderMonthDays(
   if (curDatasetId === null) return;
   const dataset = renderInfo.datasets.getDatasetById(curDatasetId);
   if (!dataset) return;
-  // console.log(dataset);
 
   let curDatasetIndex = monthInfo.dataset.findIndex((id) => {
     return id === curDatasetId;
@@ -538,12 +526,10 @@ function renderMonthDays(
   if (monthInfo.yMax[curDatasetIndex] !== null) {
     yMax = monthInfo.yMax[curDatasetIndex];
   }
-  // console.log(`yMin:${yMin}, yMax:${yMax}`);
   let allowScaledValue = true;
   if (yMax === null || yMin === null || yMax <= yMin) {
     // scaledValue can not be calculated, do not use gradient color
     allowScaledValue = false;
-    // console.log("scaledValue not allowed");
   }
 
   // Start and end
@@ -559,8 +545,6 @@ function renderMonthDays(
   }
   const dataStartDate = dataset.startDate;
   const dataEndDate = dataset.endDate;
-  // console.log(monthStartDate.format("YYYY-MM-DD"));
-  // console.log(startDate.format("YYYY-MM-DD"));
 
   // annotations
   const showAnnotation = monthInfo.showAnnotation;
@@ -1108,7 +1092,6 @@ export const renderMonth = (
     );
     if (!monthDate) {
       const initMonth = window.moment(monthInfo.initMonth, 'YYYY-MM', true);
-      // console.log(initMonth);
       if (initMonth.isValid()) {
         monthDate = initMonth;
       } else {

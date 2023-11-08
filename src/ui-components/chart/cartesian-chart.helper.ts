@@ -195,7 +195,6 @@ export const renderXAxis = (
   renderInfo: RenderInfo,
   chartInfo: CartesianChart
 ): void => {
-  // console.log("renderXAxis");
   if (!renderInfo || !chartInfo) return;
 
   const datasets = renderInfo.datasets;
@@ -287,10 +286,6 @@ export const renderYAxis = (
   yAxisLocation: string,
   datasetIds: Array<number>
 ): string => {
-  // console.log("renderYAxis")
-  // console.log(datasets);
-  // console.log(renderInfo);
-  // console.log(datasetIds);
   if (!renderInfo || !chartInfo) return;
 
   const datasets = renderInfo.datasets;
@@ -505,7 +500,6 @@ export const renderYAxis = (
   // Get max tick label width
   let maxTickLabelWidth = 0;
   for (const label of yAxisTickLabels) {
-    // console.log(label.textContent);
     if (label.textContent) {
       const labelSize = helper.measureTextSize(
         label.textContent,
@@ -516,7 +510,6 @@ export const renderYAxis = (
       }
     }
   }
-  // console.log(maxTickLabelWidth);
   if (yAxisUnitText !== '') {
     yAxisLabelText += ' (' + yAxisUnitText + ')';
   }
@@ -569,8 +562,6 @@ export const renderLine = (
   dataset: Dataset,
   yAxisLocation: string
 ): void => {
-  // console.log(dataset);
-  // console.log(renderInfo);
   if (!renderInfo || !lineInfo) return;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -614,8 +605,6 @@ export const renderPoints = (
   dataset: Dataset,
   yAxisLocation: string
 ): void => {
-  // console.log(lineInfo);
-  // console.log(dataset);
   if (!renderInfo || !lineInfo) return;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -775,9 +764,6 @@ export const renderBar = (
   currBarSet: number,
   totalNumOfBarSets: number
 ): void => {
-  // console.log(dataset);
-  // console.log(barInfo);
-  // console.log("%d/%d", currBarSet, totalNumOfBarSets);
   if (!renderInfo || !barInfo) return;
 
   const barGap = 1;
@@ -859,8 +845,6 @@ export const renderLegend = (
   renderInfo: RenderInfo,
   chartInfo: CartesianChart
 ): void => {
-  // console.log(chartInfo.legendPosition);
-  // console.log(chartInfo.legendOrientation);
   // Get chart elements
   const svg = chartElements.svg;
   // TODO Why is this here?
@@ -889,7 +873,7 @@ export const renderLegend = (
   // Get datasets
   const datasets = renderInfo.datasets;
   const xDatasetIds = datasets.getXDatasetIds();
-  // console.log(xDatasetIds);
+
   // Get names and their dimension
   const names = datasets.names; // xDataset name included
   const nameSizes = names.map((n) => {
@@ -926,11 +910,7 @@ export const renderLegend = (
       d3.sum(nameSizes, (s, i) => (xDatasetIds.includes(i) ? 0 : s.width));
     legendHeight = ySpacing + nameHeight;
   }
-  // console.log(
-  //     `maxName: ${maxName}, characterWidth: ${characterWidth}, maxNameWidth: ${maxNameWidth}`
-  // );
-  // console.log(`xSpacing:${xSpacing}, numNames: ${numNames}, markerWidth: ${markerWidth}`);
-  // console.log(`legendWidth: ${legendWidth}, legendHeight: ${legendHeight}`);
+
   // Calculate legendX and legendY
   let legendX = 0; // relative to graphArea
   let legendY = 0;
@@ -972,12 +952,12 @@ export const renderLegend = (
   } else {
     return;
   }
-  // console.log(`legendX: ${legendX}, legendY: ${legendY}`);
+
   const legend = chartElements.graphArea
     .append('g')
     .attr('id', 'legend')
     .attr('transform', 'translate(' + legendX + ',' + legendY + ')');
-  // console.log('legendX: %d, legendY: %d', legendX, legendY);
+
   const legendBg = legend
     .append('rect')
     .attr('class', 'tracker-legend')
@@ -1255,7 +1235,6 @@ export const renderTitle = (
   renderInfo: RenderInfo,
   chartInfo: CartesianChart
 ): void => {
-  // console.log("renderTitle")
   // under graphArea
   if (!renderInfo || !chartInfo) return;
 

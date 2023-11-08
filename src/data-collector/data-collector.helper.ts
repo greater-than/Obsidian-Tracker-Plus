@@ -23,14 +23,12 @@ export function extractDateUsingRegexWithValue(
   const regex = new RegExp(pattern, 'gm');
   let match;
   while ((match = regex.exec(text))) {
-    // console.log(match);
     if (
       typeof match.groups !== 'undefined' &&
       typeof match.groups.value !== 'undefined'
     ) {
       // must have group name 'value'
       let strDate = match.groups.value.trim();
-      // console.log(strDate);
       strDate = helper.getDateStringFromInputString(
         strDate,
         renderInfo.dateFormatPrefix,
@@ -68,28 +66,21 @@ export const extractDataUsingRegexWithMultipleValues = (
   valueMap: TNumberValueMap,
   renderInfo: RenderInfo
 ): boolean => {
-  // console.log("extractDataUsingRegexWithMultipleValues");
   const regex = new RegExp(pattern, 'gm');
   let match;
   let value = 0;
   let extracted = false;
   while ((match = regex.exec(text))) {
-    // console.log(match);
     if (!renderInfo.ignoreAttachedValue[query.id]) {
       if (
         typeof match.groups !== 'undefined' &&
         typeof match.groups.value !== 'undefined'
       ) {
         const values = match.groups.value.trim();
-        // console.log(values);
-        // console.log(query.getSeparator());
         const splitted = values.split(query.getSeparator());
-        // console.log(splitted);
         if (!splitted) continue;
         if (splitted.length === 1) {
-          // console.log("single-value");
           const toParse = splitted[0].trim();
-          // console.log(toParse);
           const retParse = helper.parseFloatFromAny(
             toParse,
             renderInfo.textValueMap
@@ -115,13 +106,11 @@ export const extractDataUsingRegexWithMultipleValues = (
           splitted.length > query.getAccessor() &&
           query.getAccessor() >= 0
         ) {
-          // console.log("multiple-values");
           const toParse = splitted[query.getAccessor()].trim();
           const retParse = helper.parseFloatFromAny(
             toParse,
             renderInfo.textValueMap
           );
-          //console.log(retParse);
           if (retParse.value !== null) {
             if (retParse.type === ValueType.Time) {
               value = retParse.value;
@@ -137,14 +126,12 @@ export const extractDataUsingRegexWithMultipleValues = (
         }
       } else {
         // no named groups, count occurrences
-        // console.log("count occurrences");
         value += renderInfo.constValue[query.id];
         extracted = true;
         query.incrementTargetCount();
       }
     } else {
       // force to count occurrences
-      // console.log("forced count occurrences");
       value += renderInfo.constValue[query.id];
       extracted = true;
       query.incrementTargetCount();

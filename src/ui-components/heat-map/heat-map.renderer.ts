@@ -27,7 +27,6 @@ const createAreas = (
     // d3.select(chartElements[props[i]]).remove();
     delete chartElements[props[i]];
   }
-  // console.log(chartElements);
 
   // whole area for plotting, includes margins
   const svg = d3
@@ -79,8 +78,6 @@ const renderHeatmapHeader = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ): void => {
-  // console.log("renderMonthHeader")
-
   if (!renderInfo || !heatmapInfo) return;
   // TODO What does this do?
 };
@@ -92,8 +89,6 @@ const renderHeatmapDays = (
   heatmapInfo: HeatMap,
   dataset: Dataset
 ) => {
-  // console.log("renderHeatmapDays");
-
   if (!renderInfo || !heatmapInfo) return;
 
   const cellSize = 20;
@@ -108,7 +103,6 @@ const renderHeatmapDays = (
   if (heatmapInfo.yMax !== null) {
     yMax = heatmapInfo.yMax;
   }
-  // console.log(`yMin:${yMin}, yMax:${yMax}`);
 
   // Prepare data for graph
   const daysInHeatmapView: Array<DayInfo> = [];
@@ -122,8 +116,6 @@ const renderHeatmapDays = (
   if (heatmapInfo.startWeekOn.toLowerCase() === 'mon') {
     endDate = endDate.add(1, 'days');
   }
-  // console.log(startDate.format("YYYY-MM-DD"));
-  // console.log(endDate.format("YYYY-MM-DD"));
 
   let indCol = 0;
   let indRow = 0;
@@ -161,7 +153,6 @@ const renderHeatmapDays = (
 
     ind++;
   }
-  // console.log(daysInHeatmapView);
 
   // scale
   const totalDayBlockWidth = (indCol + 1) * cellSize;
@@ -229,8 +220,6 @@ export const renderHeatMap = (
   renderInfo: RenderInfo,
   heatmapInfo: HeatMap
 ) => {
-  // console.log("renderHeatmap");
-  // console.log(renderInfo);
   if (!renderInfo || !renderHeatMap) return;
 
   return 'Under construction';

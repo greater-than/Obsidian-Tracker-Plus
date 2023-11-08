@@ -22,9 +22,7 @@ export const getDateFromFilename = (
   file: TFile,
   renderInfo: RenderInfo
 ): Moment => {
-  // console.log(`getDateFromFilename: ${file.name}`);
   // Get date form fileBaseName
-
   const fileBaseName = file.basename;
 
   const dateString = helper.getDateStringFromInputString(
@@ -32,10 +30,8 @@ export const getDateFromFilename = (
     renderInfo.dateFormatPrefix,
     renderInfo.dateFormatSuffix
   );
-  // console.log(dateString);
 
   const fileDate = helper.strToDate(dateString, renderInfo.dateFormat);
-  // console.log(fileDate);
 
   return fileDate;
 };
@@ -47,7 +43,6 @@ export const getDateFromFrontmatter = (
   query: Query,
   renderInfo: RenderInfo
 ): Moment => {
-  // console.log("getDateFromFrontmatter");
   // Get date from 'frontMatterKey: date'
 
   let date = window.moment('');
@@ -66,7 +61,6 @@ export const getDateFromFrontmatter = (
         );
 
         date = helper.strToDate(strDate, renderInfo.dateFormat);
-        // console.log(date);
       }
     }
   }
@@ -115,7 +109,6 @@ export const getDateFromText = (
   const date = window.moment('');
 
   const strRegex = query.target;
-  // console.log(strTextRegex);
 
   return extractDateUsingRegexWithValue(content, strRegex, renderInfo);
 };
@@ -127,7 +120,6 @@ export const getDateFromDvField = (
   query: Query,
   renderInfo: RenderInfo
 ): Moment => {
-  // console.log("getDateFromDvField");
   // Get date form 'targetName:: date'
 
   // TODO Why is this here?
@@ -674,7 +666,6 @@ export const collectDataFromTask = (
     // all
     strRegex = '\\[[\\sx]\\]\\s' + strRegex;
   }
-  // console.log(strRegex);
 
   return extractDataUsingRegexWithMultipleValues(
     content,

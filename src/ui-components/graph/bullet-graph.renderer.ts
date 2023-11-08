@@ -88,7 +88,6 @@ const renderTitle = (
   renderInfo: RenderInfo,
   bulletInfo: BulletGraph
 ): void => {
-  // console.log("renderTitle");
   // under graphArea
 
   if (!renderInfo || !bulletInfo) return;
@@ -122,7 +121,6 @@ const renderTitle = (
       // if label width > dataArea width
       let xMiddle = renderInfo.dataAreaSize.width / 2.0;
       if (titleSize.width > renderInfo.dataAreaSize.width) {
-        // console.log("expand area for vertical title");
         helper.expandArea(
           chartElements.svg,
           titleSize.width - renderInfo.dataAreaSize.width,
@@ -207,10 +205,6 @@ const renderAxis = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ) => {
-  // console.log("renderAxis");
-  // console.log(chartElements);
-  // console.log(dataset);
-
   if (!renderInfo || !bulletInfo) return;
 
   const range = bulletInfo.range;
@@ -313,9 +307,6 @@ const renderBackPanel = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ): void => {
-  // console.log("renderBackPanel");
-  // console.log(dataset);
-
   if (!renderInfo || !bulletInfo) return;
 
   const scale = chartElements.scale;
@@ -383,14 +374,11 @@ const renderBar = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ): string => {
-  // console.log("renderBar");
-  // console.log(dataset);
   let errorMessage = '';
 
   if (!renderInfo || !bulletInfo) return;
 
   const retActualValue = expr.resolveValue(bulletInfo.value, renderInfo);
-  // console.log(retActualValue);
   if (typeof retActualValue === 'string') {
     return retActualValue;
   }
@@ -435,9 +423,6 @@ const renderMark = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ): void => {
-  // console.log("renderMark");
-  // console.log(dataset);
-
   if (!renderInfo || !bulletInfo) return;
 
   const showMarker = bulletInfo.showMarker;
@@ -475,8 +460,6 @@ export const renderBulletGraph = (
   renderInfo: RenderInfo,
   bulletInfo: BulletGraph
 ): string => {
-  // console.log("renderBullet");
-  // console.log(renderInfo);
   if (!renderInfo || !bulletInfo) return;
 
   const datasetId = parseFloat(bulletInfo.dataset);
