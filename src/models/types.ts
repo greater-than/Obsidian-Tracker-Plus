@@ -45,8 +45,11 @@ export type ComponentElements = {
 };
 
 export type TTextValueMap = { [key: string]: number };
+
 export type TNumberValueMap = Map<number, string>;
+
 export type TDataMap = Map<string, Array<IQueryValuePair>>;
+
 export interface IDataMap extends TDataMap {
   add: (date: string, value: IQueryValuePair) => TDataMap;
 }

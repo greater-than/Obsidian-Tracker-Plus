@@ -121,7 +121,6 @@ export class Dataset implements IterableIterator<DataPoint> {
 
   public setValue(date: Moment, value: number) {
     const ind = this._parent.getIndexOfDate(date);
-    // console.log(ind);
     if (ind >= 0 && ind < this._values.length) {
       // Set value
       this._values[ind] = value;

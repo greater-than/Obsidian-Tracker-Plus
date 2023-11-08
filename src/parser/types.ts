@@ -10,3 +10,5 @@ export interface INumberValueOptions extends IValueOptions {
 export interface IStringValueOptions extends IValueOptions {
   defaultValue: string;
 }
+
+export type TValueValidator = (value: object | string | number) => boolean;
