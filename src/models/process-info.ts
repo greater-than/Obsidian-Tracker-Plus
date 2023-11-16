@@ -5,7 +5,6 @@ export class ProcessInfo {
   fileAvailable: number; // total available count
   fileOutOfDateRange: number;
   fileNotInFormat: number;
-  errorMessage: string;
   minDate: Moment;
   maxDate: Moment;
   gotAnyValidXValue: boolean;
@@ -16,7 +15,6 @@ export class ProcessInfo {
     this.fileAvailable = 0;
     this.fileOutOfDateRange = 0;
     this.fileNotInFormat = 0;
-    this.errorMessage = '';
     this.minDate = window.moment(''); // invalid date
     this.maxDate = window.moment(''); // invalid date
     this.gotAnyValidXValue = false;
