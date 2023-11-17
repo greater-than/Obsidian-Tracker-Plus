@@ -8,7 +8,7 @@ import { ComponentElements } from '../../models/types';
 import { BarChart } from '../../ui-components/chart/bar-chart.model';
 import { CartesianChart } from '../../ui-components/chart/cartesian-chart.model';
 import { LineChart } from '../../ui-components/chart/line-chart.model';
-import * as helper from '../../utils/helper';
+import { DateTimeUtils, DomUtils, UiUtils } from '../../utils';
 import Duration = moment.Duration;
 import Moment = moment.Moment;
 
@@ -51,7 +51,6 @@ export const getXTickValues = (
       tickInterval = d3.timeYear;
     }
   }
-
   return [tickValues, tickInterval];
 };
 
@@ -60,34 +59,30 @@ export const getXTickLabelFormat = (
   inTickLabelFormat: string
 ): ((date: Date) => string) => {
   if (inTickLabelFormat) {
-    const fnTickLabelFormat = (date: Date): string => {
-      return helper.dateToStr(window.moment(date), inTickLabelFormat);
-    };
-    return fnTickLabelFormat;
+    return (date: Date): string =>
+      DateTimeUtils.dateToString(window.moment(date), inTickLabelFormat);
   } else {
-    let tickLabelFormat = null;
     const days = dates.length;
-
     if (days <= 15) {
       // number of ticks: 0-15
-      tickLabelFormat = d3.timeFormat('%y-%m-%d');
+      return d3.timeFormat('%y-%m-%d');
     } else if (days <= 4 * 15) {
       // number of ticks: 4-15
-      tickLabelFormat = d3.timeFormat('%y-%m-%d');
+      return d3.timeFormat('%y-%m-%d');
     } else if (days <= 7 * 15) {
       // number of ticks: 8-15
-      tickLabelFormat = d3.timeFormat('%y-%m-%d');
+      return d3.timeFormat('%y-%m-%d');
     } else if (days <= 15 * 30) {
       // number of ticks: 4-15
-      tickLabelFormat = d3.timeFormat('%y %b');
+      return d3.timeFormat('%y %b');
     } else if (days <= 15 * 60) {
       // number of ticks: 8-15
-      tickLabelFormat = d3.timeFormat('%y %b');
+      return d3.timeFormat('%y %b');
     } else {
-      tickLabelFormat = d3.timeFormat('%Y');
+      return d3.timeFormat('%Y');
     }
 
-    return tickLabelFormat;
+    return null;
   }
 };
 
@@ -195,7 +190,6 @@ export const renderXAxis = (
   renderInfo: RenderInfo,
   chartInfo: CartesianChart
 ): void => {
-  // console.log("renderXAxis");
   if (!renderInfo || !chartInfo) return;
 
   const datasets = renderInfo.datasets;
@@ -206,7 +200,7 @@ export const renderXAxis = (
     .range([0, renderInfo.dataAreaSize.width]);
   chartElements['xScale'] = xScale;
 
-  const tickIntervalInDuration = helper.parseDurationString(
+  const tickIntervalInDuration = DateTimeUtils.parseDuration(
     chartInfo.xAxisTickInterval
   );
 
@@ -241,7 +235,7 @@ export const renderXAxis = (
   }
   chartElements['xAxis'] = xAxis;
 
-  const textSize = helper.measureTextSize('99-99-99');
+  const textSize = UiUtils.getTextDimensions('99-99-99');
 
   const xAxisTickLabels = xAxis
     .selectAll('text')
@@ -276,8 +270,8 @@ export const renderXAxis = (
   xAxis.attr('height', tickLength + tickLabelHeight);
 
   // Expand areas
-  helper.expandArea(chartElements.svg, 0, tickLength + tickLabelHeight);
-  helper.expandArea(chartElements.graphArea, 0, tickLength + tickLabelHeight);
+  DomUtils.expandArea(chartElements.svg, 0, tickLength + tickLabelHeight);
+  DomUtils.expandArea(chartElements.graphArea, 0, tickLength + tickLabelHeight);
 };
 
 export const renderYAxis = (
@@ -287,10 +281,6 @@ export const renderYAxis = (
   yAxisLocation: string,
   datasetIds: Array<number>
 ): string => {
-  // console.log("renderYAxis")
-  // console.log(datasets);
-  // console.log(renderInfo);
-  // console.log(datasetIds);
   if (!renderInfo || !chartInfo) return;
 
   const datasets = renderInfo.datasets;
@@ -433,7 +423,7 @@ export const renderYAxis = (
   // get interval from string
   let tickInterval = null;
   if (valueIsTime) {
-    tickInterval = helper.parseDurationString(yAxisTickInterval);
+    tickInterval = DateTimeUtils.parseDuration(yAxisTickInterval);
   } else {
     tickInterval = parseFloat(yAxisTickInterval);
     if (!Number.isNumber(tickInterval) || Number.isNaN(tickInterval)) {
@@ -505,9 +495,8 @@ export const renderYAxis = (
   // Get max tick label width
   let maxTickLabelWidth = 0;
   for (const label of yAxisTickLabels) {
-    // console.log(label.textContent);
     if (label.textContent) {
-      const labelSize = helper.measureTextSize(
+      const labelSize = UiUtils.getTextDimensions(
         label.textContent,
         'tracker-axis-label'
       );
@@ -516,12 +505,11 @@ export const renderYAxis = (
       }
     }
   }
-  // console.log(maxTickLabelWidth);
   if (yAxisUnitText !== '') {
     yAxisLabelText += ' (' + yAxisUnitText + ')';
   }
   const yTickLength = 6;
-  const yAxisLabelSize = helper.measureTextSize(yAxisLabelText);
+  const yAxisLabelSize = UiUtils.getTextDimensions(yAxisLabelText);
   const yAxisLabel = yAxis
     .append('text')
     .text(yAxisLabelText)
@@ -547,17 +535,17 @@ export const renderYAxis = (
   yAxis.attr('width', yAxisWidth);
 
   // Expand areas
-  helper.expandArea(chartElements.svg, yAxisWidth, 0);
-  helper.expandArea(chartElements.graphArea, yAxisWidth, 0);
+  DomUtils.expandArea(chartElements.svg, yAxisWidth, 0);
+  DomUtils.expandArea(chartElements.graphArea, yAxisWidth, 0);
 
   // Move areas
   if (yAxisLocation === 'left') {
     // Move dataArea
-    helper.moveArea(chartElements.dataArea, yAxisWidth, 0);
+    DomUtils.moveArea(chartElements.dataArea, yAxisWidth, 0);
 
     // Move title
     if (chartElements.title) {
-      helper.moveArea(chartElements.title, yAxisWidth, 0);
+      DomUtils.moveArea(chartElements.title, yAxisWidth, 0);
     }
   }
 };
@@ -569,8 +557,6 @@ export const renderLine = (
   dataset: Dataset,
   yAxisLocation: string
 ): void => {
-  // console.log(dataset);
-  // console.log(renderInfo);
   if (!renderInfo || !lineInfo) return;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -614,8 +600,6 @@ export const renderPoints = (
   dataset: Dataset,
   yAxisLocation: string
 ): void => {
-  // console.log(lineInfo);
-  // console.log(dataset);
   if (!renderInfo || !lineInfo) return;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -693,7 +677,7 @@ export function renderTooltip(
       // Date
       const labelDateText = 'date: ' + d3.select(this).attr('date');
       // labelDateText = x.toString();// debug
-      const labelDateSize = helper.measureTextSize(
+      const labelDateSize = UiUtils.getTextDimensions(
         labelDateText,
         'tracker-tooltip-label'
       );
@@ -719,7 +703,7 @@ export function renderTooltip(
         labelValueText += strValue;
         tooltipLabelValue.text(labelValueText);
       }
-      const labelValueSize = helper.measureTextSize(
+      const labelValueSize = UiUtils.getTextDimensions(
         labelValueText,
         'tracker-tooltip-label'
       );
@@ -775,9 +759,6 @@ export const renderBar = (
   currBarSet: number,
   totalNumOfBarSets: number
 ): void => {
-  // console.log(dataset);
-  // console.log(barInfo);
-  // console.log("%d/%d", currBarSet, totalNumOfBarSets);
   if (!renderInfo || !barInfo) return;
 
   const barGap = 1;
@@ -859,8 +840,6 @@ export const renderLegend = (
   renderInfo: RenderInfo,
   chartInfo: CartesianChart
 ): void => {
-  // console.log(chartInfo.legendPosition);
-  // console.log(chartInfo.legendOrientation);
   // Get chart elements
   const svg = chartElements.svg;
   // TODO Why is this here?
@@ -889,11 +868,11 @@ export const renderLegend = (
   // Get datasets
   const datasets = renderInfo.datasets;
   const xDatasetIds = datasets.getXDatasetIds();
-  // console.log(xDatasetIds);
+
   // Get names and their dimension
   const names = datasets.names; // xDataset name included
   const nameSizes = names.map((n) => {
-    return helper.measureTextSize(n, 'tracker-legend-label');
+    return UiUtils.getTextDimensions(n, 'tracker-legend-label');
   });
   let indMaxName = 0;
   let maxNameWidth = 0;
@@ -926,11 +905,7 @@ export const renderLegend = (
       d3.sum(nameSizes, (s, i) => (xDatasetIds.includes(i) ? 0 : s.width));
     legendHeight = ySpacing + nameHeight;
   }
-  // console.log(
-  //     `maxName: ${maxName}, characterWidth: ${characterWidth}, maxNameWidth: ${maxNameWidth}`
-  // );
-  // console.log(`xSpacing:${xSpacing}, numNames: ${numNames}, markerWidth: ${markerWidth}`);
-  // console.log(`legendWidth: ${legendWidth}, legendHeight: ${legendHeight}`);
+
   // Calculate legendX and legendY
   let legendX = 0; // relative to graphArea
   let legendY = 0;
@@ -940,9 +915,9 @@ export const renderLegend = (
       leftYAxisWidth + renderInfo.dataAreaSize.width / 2 - legendWidth / 2;
     legendY = titleHeight;
     // Expand svg
-    helper.expandArea(svg, 0, legendHeight + ySpacing);
+    DomUtils.expandArea(svg, 0, legendHeight + ySpacing);
     // Move dataArea down
-    helper.moveArea(dataArea, 0, legendHeight + ySpacing);
+    DomUtils.moveArea(dataArea, 0, legendHeight + ySpacing);
   } else if (chartInfo.legendPosition === 'bottom') {
     // bellow x-axis label
     legendX =
@@ -950,15 +925,15 @@ export const renderLegend = (
     legendY =
       titleHeight + renderInfo.dataAreaSize.height + xAxisHeight + ySpacing;
     // Expand svg
-    helper.expandArea(svg, 0, legendHeight + ySpacing);
+    DomUtils.expandArea(svg, 0, legendHeight + ySpacing);
   } else if (chartInfo.legendPosition === 'left') {
     legendX = 0;
     legendY =
       titleHeight + renderInfo.dataAreaSize.height / 2 - legendHeight / 2;
     // Expand svg
-    helper.expandArea(svg, legendWidth + xSpacing, 0);
+    DomUtils.expandArea(svg, legendWidth + xSpacing, 0);
     // Move dataArea right
-    helper.moveArea(dataArea, legendWidth + xSpacing, 0);
+    DomUtils.moveArea(dataArea, legendWidth + xSpacing, 0);
   } else if (chartInfo.legendPosition === 'right') {
     legendX =
       renderInfo.dataAreaSize.width +
@@ -968,16 +943,16 @@ export const renderLegend = (
     legendY =
       titleHeight + renderInfo.dataAreaSize.height / 2 - legendHeight / 2;
     // Expand svg
-    helper.expandArea(svg, legendWidth + xSpacing, 0);
+    DomUtils.expandArea(svg, legendWidth + xSpacing, 0);
   } else {
     return;
   }
-  // console.log(`legendX: ${legendX}, legendY: ${legendY}`);
+
   const legend = chartElements.graphArea
     .append('g')
     .attr('id', 'legend')
     .attr('transform', 'translate(' + legendX + ',' + legendY + ')');
-  // console.log('legendX: %d, legendY: %d', legendX, legendY);
+
   const legendBg = legend
     .append('rect')
     .attr('class', 'tracker-legend')
@@ -1255,12 +1230,11 @@ export const renderTitle = (
   renderInfo: RenderInfo,
   chartInfo: CartesianChart
 ): void => {
-  // console.log("renderTitle")
   // under graphArea
   if (!renderInfo || !chartInfo) return;
 
   if (!chartInfo.title) return;
-  const titleSize = helper.measureTextSize(chartInfo.title, 'tracker-title');
+  const titleSize = UiUtils.getTextDimensions(chartInfo.title, 'tracker-title');
 
   // Append title
   const title = chartElements.graphArea
@@ -1280,11 +1254,11 @@ export const renderTitle = (
   chartElements['title'] = title;
 
   // Expand parent areas
-  helper.expandArea(chartElements.svg, 0, titleSize.height);
-  helper.expandArea(chartElements.graphArea, 0, titleSize.height);
+  DomUtils.expandArea(chartElements.svg, 0, titleSize.height);
+  DomUtils.expandArea(chartElements.graphArea, 0, titleSize.height);
 
   // Move sibling areas
-  helper.moveArea(chartElements.dataArea, 0, titleSize.height);
+  DomUtils.moveArea(chartElements.dataArea, 0, titleSize.height);
 
   return;
 };

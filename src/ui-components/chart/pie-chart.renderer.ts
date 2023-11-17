@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import * as expr from '../../expressions/resolver';
 import { RenderInfo } from '../../models/render-info';
 import { ComponentElements } from '../../models/types';
-import * as helper from '../../utils/helper';
+import { DomUtils, UiUtils } from '../../utils';
 import { PieChart } from './pie-chart.model';
 
 const setChartScale = (
@@ -99,7 +99,7 @@ const renderTitle = (
   if (!renderInfo || !pieInfo) return;
 
   if (!pieInfo.title) return;
-  const titleSize = helper.measureTextSize(pieInfo.title, 'tracker-title');
+  const titleSize = UiUtils.getTextDimensions(pieInfo.title, 'tracker-title');
 
   // Append title
   const title = chartElements.graphArea
@@ -119,11 +119,11 @@ const renderTitle = (
   chartElements['title'] = title;
 
   // Expand parent areas
-  helper.expandArea(chartElements.svg, 0, titleSize.height);
-  helper.expandArea(chartElements.graphArea, 0, titleSize.height);
+  DomUtils.expandArea(chartElements.svg, 0, titleSize.height);
+  DomUtils.expandArea(chartElements.graphArea, 0, titleSize.height);
 
   // Move sibling areas
-  helper.moveArea(chartElements.dataArea, 0, titleSize.height);
+  DomUtils.moveArea(chartElements.dataArea, 0, titleSize.height);
 
   return;
 };
@@ -153,7 +153,7 @@ const renderLegend = (
   // Get names and their dimension
   const names = pieInfo.dataName;
   const nameSizes = names.map((n) => {
-    return helper.measureTextSize(n, 'tracker-legend-label');
+    return UiUtils.getTextDimensions(n, 'tracker-legend-label');
   });
   let indMaxName = 0;
   let maxNameWidth = 0.0;
@@ -195,29 +195,29 @@ const renderLegend = (
     legendX = renderInfo.dataAreaSize.width / 2.0 - legendWidth / 2.0;
     legendY = titleHeight;
     // Expand svg
-    helper.expandArea(svg, 0, legendHeight + ySpacing);
+    DomUtils.expandArea(svg, 0, legendHeight + ySpacing);
     // Move dataArea down
-    helper.moveArea(dataArea, 0, legendHeight + ySpacing);
+    DomUtils.moveArea(dataArea, 0, legendHeight + ySpacing);
   } else if (pieInfo.legendPosition === 'bottom') {
     // bellow x-axis label
     legendX = renderInfo.dataAreaSize.width / 2.0 - legendWidth / 2.0;
     legendY = titleHeight + renderInfo.dataAreaSize.height + ySpacing;
     // Expand svg
-    helper.expandArea(svg, 0, legendHeight + ySpacing);
+    DomUtils.expandArea(svg, 0, legendHeight + ySpacing);
   } else if (pieInfo.legendPosition === 'left') {
     legendX = 0;
     legendY =
       titleHeight + renderInfo.dataAreaSize.height / 2.0 - legendHeight / 2.0;
     // Expand svg
-    helper.expandArea(svg, legendWidth + xSpacing, 0);
+    DomUtils.expandArea(svg, legendWidth + xSpacing, 0);
     // Move dataArea right
-    helper.moveArea(dataArea, legendWidth + xSpacing, 0);
+    DomUtils.moveArea(dataArea, legendWidth + xSpacing, 0);
   } else if (pieInfo.legendPosition === 'right') {
     legendX = renderInfo.dataAreaSize.width + xSpacing;
     legendY =
       titleHeight + renderInfo.dataAreaSize.height / 2.0 - legendHeight / 2.0;
     // Expand svg
-    helper.expandArea(svg, legendWidth + xSpacing, 0);
+    DomUtils.expandArea(svg, legendWidth + xSpacing, 0);
   } else {
     return;
   }
@@ -378,7 +378,7 @@ const renderPie = (
 
   // label sizes
   const labelSizes = labels.map((n) =>
-    helper.measureTextSize(n, 'tracker-tick-label')
+    UiUtils.getTextDimensions(n, 'tracker-tick-label')
   );
 
   // extLabel
@@ -397,7 +397,7 @@ const renderPie = (
 
   // extLabel sizes
   const extLabelSizes = extLabels.map((n) => {
-    return helper.measureTextSize(n, 'tracker-pie-label');
+    return UiUtils.getTextDimensions(n, 'tracker-pie-label');
   });
 
   const showExtLabelOnlyIfNoLabel = pieInfo.showExtLabelOnlyIfNoLabel;

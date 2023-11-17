@@ -1,4 +1,4 @@
-import { Orientation, Position, ValueType } from '../enums';
+import { Orientation, Position, TypeOf } from '../enums';
 import {
   ArgumentError,
   EmptySearchTargetError,
@@ -45,7 +45,7 @@ export const setCartesianChartInfo = (
   chart: CartesianChart
 ): void => {
   // single value, use default value if no value from YAML
-  const { BOOLEAN, STRING } = ValueType;
+  const { BOOLEAN, STRING } = TypeOf;
   if (yaml) {
     // title
     chart.title = getString(yaml.title, chart.title);

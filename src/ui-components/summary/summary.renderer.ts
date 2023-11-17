@@ -12,11 +12,8 @@ export const renderSummary = (
   renderInfo: RenderInfo,
   summaryInfo: Summary
 ): string => {
-  // console.log("renderSummary");
-  // console.log(renderInfo);
   if (!renderInfo || !summaryInfo) return;
 
-  // console.log(summaryInfo.template);
   let outputSummary = '';
   if (checkSummaryTemplateValid(summaryInfo.template)) {
     outputSummary = summaryInfo.template;
@@ -25,7 +22,6 @@ export const renderSummary = (
   }
 
   const retResolvedTemplate = expr.resolveTemplate(outputSummary, renderInfo);
-  // console.log(retResolvedTemplate);
   if (retResolvedTemplate.startsWith('Error:')) {
     return retResolvedTemplate;
   }
@@ -35,7 +31,6 @@ export const renderSummary = (
     const textBlock = d3.select(canvas).append('div');
     if (outputSummary.includes('\n') || outputSummary.includes('\\n')) {
       const outputLines = outputSummary.split(/(\n|\\n)/);
-      // console.log(outputLines);
       for (const outputLine of outputLines) {
         if (outputLine !== '\n' && outputLine !== '\\n')
           textBlock.append('div').text(outputLine);

@@ -1,21 +1,16 @@
-import { Transform } from '../models/transform';
+import { Transformer } from '../models/transformer';
 
-// dom
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const expandArea = (area: any, addW: number, addH: number): void => {
-  const oriWidth = parseFloat(area.attr('width')) | 0;
-  const oriHeight = parseFloat(area.attr('height')) | 0;
-  const newWidth = oriWidth + addW;
-  const newHeight = oriHeight + addH;
-  area.attr('width', newWidth);
-  area.attr('height', newHeight);
+  area.attr('width', (parseFloat(area.attr('width')) | 0) + addW);
+  area.attr('height', (parseFloat(area.attr('height')) | 0) + addH);
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const moveArea = (area: any, shiftX: number, shiftY: number): void => {
-  const trans = new Transform(area.attr('transform'));
+  const transformed = new Transformer(area.attr('transform'));
   area.attr(
     'transform',
-    `translate(${trans.translateX + shiftX}, ${trans.translateY + shiftY})`
+    `translate(${transformed.x + shiftX}, ${transformed.y + shiftY})`
   );
 };

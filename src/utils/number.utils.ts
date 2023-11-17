@@ -23,10 +23,9 @@ export const parseFloatFromAny = (
         negativeValue = true;
         toParse = toParse.substring(1);
       }
-      const m = window.moment;
-      const timeValue = m(toParse, timeFormats, true);
+      const timeValue = window.moment(toParse, timeFormats, true);
       if (timeValue.isValid()) {
-        const input = (m('00:00', 'HH:mm', true), 'seconds');
+        const input = window.moment('00:00', 'HH:mm', true);
         value = timeValue.diff(input, 'seconds');
         if (negativeValue) value = -1 * value;
         type = ValueType.Time;

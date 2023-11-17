@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { Dataset } from '../../models/dataset';
 import { RenderInfo } from '../../models/render-info';
 import { ComponentElements } from '../../models/types';
-import * as helper from '../../utils/helper';
+import { DateTimeUtils, DomUtils } from '../../utils';
 import { HeatMap } from './heat-map.model';
 
 interface DayInfo {
@@ -27,7 +27,6 @@ const createAreas = (
     // d3.select(chartElements[props[i]]).remove();
     delete chartElements[props[i]];
   }
-  // console.log(chartElements);
 
   // whole area for plotting, includes margins
   const svg = d3
@@ -79,8 +78,6 @@ const renderHeatmapHeader = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _dataset: Dataset
 ): void => {
-  // console.log("renderMonthHeader")
-
   if (!renderInfo || !heatmapInfo) return;
   // TODO What does this do?
 };
@@ -92,8 +89,6 @@ const renderHeatmapDays = (
   heatmapInfo: HeatMap,
   dataset: Dataset
 ) => {
-  // console.log("renderHeatmapDays");
-
   if (!renderInfo || !heatmapInfo) return;
 
   const cellSize = 20;
@@ -108,7 +103,6 @@ const renderHeatmapDays = (
   if (heatmapInfo.yMax !== null) {
     yMax = heatmapInfo.yMax;
   }
-  // console.log(`yMin:${yMin}, yMax:${yMax}`);
 
   // Prepare data for graph
   const daysInHeatmapView: Array<DayInfo> = [];
@@ -122,8 +116,6 @@ const renderHeatmapDays = (
   if (heatmapInfo.startWeekOn.toLowerCase() === 'mon') {
     endDate = endDate.add(1, 'days');
   }
-  // console.log(startDate.format("YYYY-MM-DD"));
-  // console.log(endDate.format("YYYY-MM-DD"));
 
   let indCol = 0;
   let indRow = 0;
@@ -152,7 +144,7 @@ const renderHeatmapDays = (
     }
 
     daysInHeatmapView.push({
-      date: helper.dateToStr(curDate, renderInfo.dateFormat),
+      date: DateTimeUtils.dateToString(curDate, renderInfo.dateFormat),
       value: curValue,
       scaledValue: scaledValue,
       row: indRow,
@@ -161,7 +153,6 @@ const renderHeatmapDays = (
 
     ind++;
   }
-  // console.log(daysInHeatmapView);
 
   // scale
   const totalDayBlockWidth = (indCol + 1) * cellSize;
@@ -207,20 +198,20 @@ const renderHeatmapDays = (
   const totalHeight = (indRow + 2) * cellSize; // + parseFloat(chartElements.header.attr("height"));
   const totalWidth = (indCol + 1) * cellSize;
   if (totalHeight > svgHeight) {
-    helper.expandArea(chartElements.svg, 0, totalHeight - svgHeight);
+    DomUtils.expandArea(chartElements.svg, 0, totalHeight - svgHeight);
   }
   if (totalWidth > svgWidth) {
-    helper.expandArea(chartElements.svg, totalWidth - svgWidth, 0);
+    DomUtils.expandArea(chartElements.svg, totalWidth - svgWidth, 0);
   }
   if (totalHeight > graphAreaHeight) {
-    helper.expandArea(
+    DomUtils.expandArea(
       chartElements.graphArea,
       0,
       totalHeight - graphAreaHeight
     );
   }
   if (totalWidth > graphAreaWidth) {
-    helper.expandArea(chartElements.svg, totalWidth - graphAreaWidth, 0);
+    DomUtils.expandArea(chartElements.svg, totalWidth - graphAreaWidth, 0);
   }
 };
 
@@ -229,8 +220,6 @@ export const renderHeatMap = (
   renderInfo: RenderInfo,
   heatmapInfo: HeatMap
 ) => {
-  // console.log("renderHeatmap");
-  // console.log(renderInfo);
   if (!renderInfo || !renderHeatMap) return;
 
   return 'Under construction';

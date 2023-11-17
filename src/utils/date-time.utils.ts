@@ -46,7 +46,7 @@ export const timeFormats = ((): string[] => {
  * @param {string} suffixToStrip
  * @returns {string}
  */
-export const getDateStringFromInput = (
+export const getDateString = (
   input: string,
   prefixToStrip: string,
   suffixToStrip: string
@@ -56,13 +56,11 @@ export const getDateStringFromInput = (
   let dateString = input;
   if (dateString.startsWith('^')) dateString = dateString.slice(1);
   if (prefixToStrip) {
-    const pattern = '^(' + prefixToStrip + ')';
-    const regex = new RegExp(pattern, 'gm');
+    const regex = new RegExp(`^(${prefixToStrip})`, 'gm');
     if (regex.test(dateString)) dateString = dateString.replace(regex, '');
   }
   if (suffixToStrip) {
-    const pattern = '(' + suffixToStrip + ')$';
-    const regex = new RegExp(pattern, 'gm');
+    const regex = new RegExp(`^(${suffixToStrip})`, 'gm');
     if (regex.test(dateString)) dateString = dateString.replace(regex, '');
   }
   return dateString;
@@ -70,12 +68,12 @@ export const getDateStringFromInput = (
 
 /**
  * @summary
- * @param duration
- * @param units
- * @param removePattern
+ * @param {string} duration
+ * @param {string[]} units
+ * @param {boolean} removePattern
  * @returns {[number, string]}
  */
-export const extractValueFromDuration = (
+export const getValueAndDuration = (
   duration: string,
   units: string[],
   removePattern: boolean = true
@@ -136,62 +134,13 @@ export const parseDuration = (duration: string): Duration => {
   const mDuration = window.moment.duration(0);
 
   formats.forEach((format) => {
-    let { value } = extractValueFromDuration(duration, format.units);
+    let { value } = getValueAndDuration(duration, format.units);
     if (value !== null) {
       if (isNegative) value *= -1;
       mDuration.add(value, format.unit as DurationInputArg2);
       hasValue = true;
     }
   });
-
-  // [value, duration] = extractValueFromDurationString(duration, years);
-  // if (value !== null) {
-  //   if (isNegative) value *= -1;
-  //   mDuration.add(value, 'years');
-  //   hasValue = true;
-  // }
-
-  // [value, duration] = extractValueFromDurationString(duration, months);
-  // if (value !== null) {
-  //   if (isNegative) value *= -1;
-  //   mDuration.add(value, 'months');
-  //   hasValue = true;
-  // }
-
-  // [value, duration] = extractValueFromDurationString(duration, weeks);
-  // if (value !== null) {
-  //   if (isNegative) value *= -1;
-  //   mDuration.add(value, 'weeks');
-  //   hasValue = true;
-  // }
-
-  // [value, duration] = extractValueFromDurationString(duration, days);
-  // if (value !== null) {
-  //   if (isNegative) value *= -1;
-  //   mDuration.add(value, 'days');
-  //   hasValue = true;
-  // }
-
-  // [value, duration] = extractValueFromDurationString(duration, hours);
-  // if (value !== null) {
-  //   if (isNegative) value *= -1;
-  //   mDuration.add(value, 'hours');
-  //   hasValue = true;
-  // }
-
-  // [value, duration] = extractValueFromDurationString(duration, minutes);
-  // if (value !== null) {
-  //   if (isNegative) value *= -1;
-  //   mDuration.add(value, 'minutes');
-  //   hasValue = true;
-  // }
-
-  // [value, duration] = extractValueFromDurationString(duration, seconds);
-  // if (value !== null) {
-  //   if (isNegative) value *= -1;
-  //   mDuration.add(value, 'seconds');
-  //   hasValue = true;
-  // }
 
   return hasValue ? mDuration : null;
 };

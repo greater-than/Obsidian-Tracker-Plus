@@ -1,42 +1,36 @@
+import { AllAccessorsPattern, FirstAccessorPattern } from '../regex-patterns';
 import { SearchType, ValueType } from './enums';
 
 export class Query {
-  constructor(id: number, searchType: SearchType, searchTarget: string) {
-    this._type = searchType;
-    this._target = searchTarget;
-    this._separator = ''; // separator to separate multiple values
-    this._id = id;
-    this._accessor = -1;
-    this._accessor1 = -1;
-    this._accessor2 = -1;
+  constructor(
+    readonly id: number,
+    readonly type: SearchType,
+    readonly target: string
+  ) {
+    this._separator = ''; // separator for multiple values
     this.valueType = ValueType.Number;
     this.usedAsXDataset = false;
     this._numTargets = 0;
+    this.accessors = new Array(...[-1, -1, -1]);
 
-    if (searchType === SearchType.Table) {
+    if (type === SearchType.Table) {
       // searchTarget --> {{filePath}}[{{table}}][{{column}}]
-      const strRegex =
-        '\\[(?<accessor>[0-9]+)\\]\\[(?<accessor1>[0-9]+)\\](\\[(?<accessor2>[0-9]+)\\])?';
-      const regex = new RegExp(strRegex, 'gm');
+      const regex = new RegExp(AllAccessorsPattern, 'gm');
       let match;
-      while ((match = regex.exec(searchTarget))) {
+      while ((match = regex.exec(target))) {
         if (typeof match.groups.accessor !== 'undefined') {
-          const accessor = parseFloat(match.groups.accessor);
-          if (Number.isNumber(accessor)) {
+          const accessor0 = parseFloat(match.groups.accessor);
+          if (Number.isNumber(accessor0)) {
             if (typeof match.groups.accessor1 !== 'undefined') {
               const accessor1 = parseFloat(match.groups.accessor1);
               if (Number.isNumber(accessor1)) {
-                let accessor2;
                 if (typeof match.groups.accessor2 !== 'undefined') {
-                  accessor2 = parseFloat(match.groups.accessor2);
+                  const accessor2 = parseFloat(match.groups.accessor2);
+                  if (Number.isNumber(accessor2)) this.accessors[2] = accessor2;
                 }
-
-                this._accessor = accessor;
-                this._accessor1 = accessor1;
-                if (Number.isNumber(accessor2)) {
-                  this._accessor2 = accessor2;
-                }
-                this._parentTarget = searchTarget.replace(regex, '');
+                this.accessors[0] = accessor0;
+                this.accessors[1] = accessor1;
+                this._parentTarget = target.replace(regex, '');
               }
               break;
             }
@@ -44,15 +38,14 @@ export class Query {
         }
       }
     } else {
-      const strRegex = '\\[(?<accessor>[0-9]+)\\]';
-      const regex = new RegExp(strRegex, 'gm');
+      const regex = new RegExp(FirstAccessorPattern, 'gm');
       let match;
-      while ((match = regex.exec(searchTarget))) {
+      while ((match = regex.exec(target))) {
         if (typeof match.groups.accessor !== 'undefined') {
           const accessor = parseFloat(match.groups.accessor);
           if (Number.isNumber(accessor)) {
-            this._accessor = accessor;
-            this._parentTarget = searchTarget.replace(regex, '');
+            this.accessors[0] = accessor;
+            this._parentTarget = target.replace(regex, '');
           }
           break;
         }
@@ -60,35 +53,19 @@ export class Query {
     }
   }
 
-  private _type: SearchType | null;
-  private _target: string;
   private _parentTarget: string | null;
   private _separator: string; // multiple value separator
-  private _id: number;
-  private _accessor: number;
-  private _accessor1: number;
-  private _accessor2: number;
   private _numTargets: number;
+
+  //#region Properties
+
+  readonly accessors: number[];
 
   valueType: ValueType;
   usedAsXDataset: boolean;
 
-  //#region Properties
-
-  public get type() {
-    return this._type;
-  }
-
-  public get target() {
-    return this._target;
-  }
-
   public get parentTarget() {
     return this._parentTarget;
-  }
-
-  public get id() {
-    return this._id;
   }
 
   public get numTargets() {
@@ -104,36 +81,20 @@ export class Query {
   }
 
   // #endregion
+  // #region Methods
 
-  public equalTo(other: Query): boolean {
-    if (this._type === other._type && this._target === other._target) {
-      return true;
-    }
-    return false;
-  }
+  public equalTo = (other: Query): boolean =>
+    this.type === other.type && this.target === other.target ? true : false;
 
-  public getAccessor(index = 0) {
-    switch (index) {
-      case 0:
-        return this._accessor;
-      case 1:
-        return this._accessor1;
-      case 2:
-        return this._accessor2;
-    }
-
-    return null;
-  }
-
-  public getSeparator(isForFrontmatterTags: boolean = false) {
-    return this.separator === ''
+  public getSeparator = (isForFrontmatterTags: boolean = false) =>
+    this.separator === ''
       ? isForFrontmatterTags
         ? ','
         : '/'
       : this._separator;
-  }
 
-  public incrementTargetCount(num: number = 1) {
-    this._numTargets = this._numTargets + num;
-  }
+  public incrementTargetCount = (num: number = 1) =>
+    (this._numTargets = this._numTargets + num);
+
+  // #endregion
 }

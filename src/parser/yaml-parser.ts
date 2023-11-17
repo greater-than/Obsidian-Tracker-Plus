@@ -11,7 +11,7 @@ import Tracker from '../main';
 import { AspectRatio } from '../models/aspect-ratio';
 import { CustomDatasetInfo } from '../models/custom-dataset';
 import { RenderInfo } from '../models/render-info';
-import * as helper from '../utils/helper';
+import { DateTimeUtils } from '../utils';
 import {
   getBarCharts,
   getBulletGraphs,
@@ -42,7 +42,7 @@ import {
 export const getRenderInfo = (
   yamlText: string,
   plugin: Tracker
-): RenderInfo | string => {
+): RenderInfo => {
   let yaml;
 
   try {
@@ -197,7 +197,7 @@ export const getRenderInfo = (
         `'m' for 'minute' is too small for 'startDate', please use 'd' for 'day' or 'M' for month`
       );
     }
-    const strStartDate = helper.getDateStringFromInputString(
+    const strStartDate = DateTimeUtils.getDateString(
       yaml.startDate,
       renderInfo.dateFormatPrefix,
       renderInfo.dateFormatSuffix
@@ -206,7 +206,7 @@ export const getRenderInfo = (
     // relative date
     let startDate = null;
     let isStartDateValid = false;
-    startDate = helper.getDateByDurationToToday(
+    startDate = DateTimeUtils.getDateByDurationToToday(
       strStartDate,
       renderInfo.dateFormat
     );
@@ -214,7 +214,7 @@ export const getRenderInfo = (
     if (startDate) {
       isStartDateValid = true;
     } else {
-      startDate = helper.strToDate(strStartDate, renderInfo.dateFormat);
+      startDate = DateTimeUtils.toMoment(strStartDate, renderInfo.dateFormat);
       if (startDate.isValid()) {
         isStartDateValid = true;
       }
@@ -234,7 +234,7 @@ export const getRenderInfo = (
         `'m' for 'minute' is too small for 'endDate', please use 'd' for 'day' or 'M' for month`
       );
     }
-    const strEndDate = helper.getDateStringFromInputString(
+    const strEndDate = DateTimeUtils.getDateString(
       yaml.endDate,
       renderInfo.dateFormatPrefix,
       renderInfo.dateFormatSuffix
@@ -242,14 +242,14 @@ export const getRenderInfo = (
 
     let endDate = null;
     let isEndDateValid = false;
-    endDate = helper.getDateByDurationToToday(
+    endDate = DateTimeUtils.getDateByDurationToToday(
       strEndDate,
       renderInfo.dateFormat
     );
     if (endDate) {
       isEndDateValid = true;
     } else {
-      endDate = helper.strToDate(strEndDate, renderInfo.dateFormat);
+      endDate = DateTimeUtils.toMoment(strEndDate, renderInfo.dateFormat);
       if (endDate.isValid()) {
         isEndDateValid = true;
       }

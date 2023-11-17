@@ -6,5 +6,3 @@ export * as NumberUtils from './number.utils';
 export * as ObjectUtils from './object.utils';
 export * as StringUtils from './string.utils';
 export * as UiUtils from './ui.utils';
-
-export * as HelperUtils from './helper';
