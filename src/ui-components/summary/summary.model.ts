@@ -11,7 +11,7 @@ export class Summary implements IComponent {
     this.style = '';
   }
 
-  public componentType() {
+  get componentType() {
     return ComponentType.Summary;
   }
 }

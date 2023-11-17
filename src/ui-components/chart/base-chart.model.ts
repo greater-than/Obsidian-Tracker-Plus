@@ -20,5 +20,5 @@ export abstract class BaseChart implements IComponent, ILegend {
     this.legendBorderColor = '';
   }
 
-  abstract componentType(): ComponentType;
+  abstract componentType: ComponentType;
 }

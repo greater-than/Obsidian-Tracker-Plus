@@ -281,9 +281,7 @@ export class DatasetCollection implements IterableIterator<Dataset> {
     for (const dataset of this._datasets) {
       if (dataset.query.usedAsXDataset) {
         const id = dataset.query.id;
-        if (!ids.includes(id) && id !== -1) {
-          ids.push(id);
-        }
+        if (!ids.includes(id) && id !== -1) ids.push(id);
       }
     }
     return ids;
