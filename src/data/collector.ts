@@ -14,7 +14,11 @@ import {
   TaskPattern,
 } from '../regex-patterns';
 import { DateTimeUtils, NumberUtils, StringUtils } from '../utils';
-import { getSentenceCount, getWordCount } from '../utils/count.utils';
+import {
+  getCharacterCount,
+  getSentenceCount,
+  getWordCount,
+} from '../utils/count.utils';
 import { getDateFromUnixTime } from '../utils/date-time.utils';
 import { getDeepValue } from '../utils/object.utils';
 import { addMultipleValues, extractDate } from './collector.helper';
@@ -340,9 +344,10 @@ export const addFrontmatterData = (
     const { type, value } = parsed;
     if (value === null) return false;
     // Try parsing as a boolean: true means 1, false means 0.
-    if (toParse !== 'true' && toParse !== 'false') return false;
-    parsed.type = ValueType.Number;
-    parsed.value = toParse === 'true' ? 1 : 0;
+    if (toParse === 'true' || toParse === 'false') {
+      parsed.type = ValueType.Number;
+      parsed.value = toParse === 'true' ? 1 : 0;
+    }
     return addToDataMap(dataMap, type, query, value);
   }
 
@@ -537,6 +542,9 @@ export const addFileMetaData = (
       return true;
     case 'numWords':
       dataMap.add(date, { query, value: getWordCount(note) });
+      return true;
+    case 'numChars':
+      dataMap.add(date, { query, value: getCharacterCount(note) });
       return true;
     case 'numSentences':
       query.incrementTargetCount();
