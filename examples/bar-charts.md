@@ -1,4 +1,4 @@
-# Test Bar Chart
+# Bar Charts
 
 ```tracker
 searchType: tag

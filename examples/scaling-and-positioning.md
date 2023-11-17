@@ -1,4 +1,4 @@
-# Scaling, Width, Positioning, and Aspect Ratios
+# Scaling, Width, Positioning, & Aspect Ratios
 
 ## Scaling
 

@@ -1,4 +1,4 @@
-# Test Pie Chart
+# Pie Charts
 
 Expressions could be used in parameter `data`, `label`, and `extLabel`.
 

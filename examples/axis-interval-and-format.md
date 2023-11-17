@@ -1,4 +1,4 @@
-# Test Axis Interval and Tick Label Format
+# Axis Interval and Tick Label Format
 
 ## Y Axis Interval
 

@@ -41,35 +41,50 @@ Check where (Location) and what (Target to Track) is your target and find the se
 
 ## Tracker Examples
 
-Full tracker code blocks can be found in folder [examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples) and the corresponding notes (data) can be found under folder '[diary](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/diary)' and '[data](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/data)'.
+The notes and data used for the [tracker examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples) listed below can be found in the '[diary](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/diary)' and '[data](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/data)' folders.
 
-List of all examples
+Common Trackers
 
-- [BloodPressure Tracker](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/BloodPressureTracker.md)
-- [Error Messages](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/ErrorMessages.md)
-- [Finance Tracker](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/FinanceTracker.md)
-- [Habit Tracker](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/HabitTracker.md)
-- [Star Tracker](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/StarTracker.md)
-- [Bar Chart](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestBarChart.md)
-- [Axis Interval and Format](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestAxisIntervalAndFormat.md)
-- [Bullet Chart](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestBullet.md)
-- [Calendar](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestCalendar.md)
-- [Date Formats](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestDateFormats.md)
-- [DataView Inline Field](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestDvField.md)
-- [Expression](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestExpression.md)
-- [File Meta](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestFileMeta.md)
-- [Legends](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestLegends.md)
-- [Multiple Targets / Multiple Values](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestMultipleTargetsMultipleValues.md)
-- [Pie Chart](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestPieChart.md)
-- [Scaling and Positioning](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestScalingAndPositioning.md)
+- [Blood Pressure Trackers](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/blood-pressure-trackers.md)
+- [Finance Trackers](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/finance-trackers.md)
+- [Habit Trackers](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/habit-trackers.md)
+- [Star Trackers](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/star-trackers.md)
+- [Weight Trackers](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/weight-trackers.md)
+- [Wiki Trackers](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/wiki-trackers.md)
+
+---
+
+Additional Examples
+
+- [Bar Charts](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/bar-charts.md)
+- [Pie Charts](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/pie-charts.md)
+- [Bullet Graphs](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/bullet-graphs.md)
+- [Month Views](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/month-views.md)
+- [Summaries](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/summaries.md)
+
+---
+
+Advanced Tracker Configuration
+
+- [Axis Intervals and Formats](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/axis-interval-and-format.md)
+- [Date Formats](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/date-formats.md)
+- [DataView Inline Field](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/dataview-fields.md)
+- [Expression](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/expressions.md)
+- [File Metadata](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/file-metadata.md)
+- [Legends](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/legends.md)
+- [Multiple Targets & Multiple Values](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/multiple-targets-and-values.md)
+- [Regular Expressions](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/regex.md)
+- [Scaling and Positioning](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/scaling-and-positioning.md)
 - [Specified Files](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestSpecifiedFiles.md)
-- [Summary](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestSummary.md)
-- [Table](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestTable.md)
-- [Task](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestTask.md)
-- [Text-value Map/Mood Tracker](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestTextValueMap.md)
-- [Time Values](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestTimeValues.md)
-- [Word Counting](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestWordCounting.md)
-- [X Dataset](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestXDataset.md)
-- [Regular Expression](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestRegex.md)
-- [Weight Tracker](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/WeightTracker.md)
-- [Wiki](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/WikiTracker.md)
+- [Tables](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/tables.md)
+- [Tasks](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/tasks.md)
+- [Text-value Map/Mood Tracker](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/text-value-map.md)
+- [Time Values](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/time-values.md)
+- [Word Counting](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/counting-words.md)
+- [X Datasets](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/x-datasets.md)
+
+---
+
+When Things Don't Go as Planned
+
+- [Error Messages](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/ErrorMessages.md)

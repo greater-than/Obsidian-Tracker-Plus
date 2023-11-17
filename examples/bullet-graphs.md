@@ -1,4 +1,4 @@
-# Test Bullet
+# Bullet Graphs
 
 ## Manual Input Data
 

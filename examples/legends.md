@@ -1,4 +1,4 @@
-# Test Legends
+# Legends
 
 ## Position and Orientation
 

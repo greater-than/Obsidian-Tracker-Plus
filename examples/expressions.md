@@ -1,4 +1,4 @@
-# Test Expression
+# Expressions
 
 All examples here using the output type `summary`.
 To see examples of `bullet` and `pie`, please check [bullet examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestBullet.md) and [pie examples](https://github.com/greater-than/Obsidian-Tracker-Plus/blob/main/examples/TestPieChart.md).
