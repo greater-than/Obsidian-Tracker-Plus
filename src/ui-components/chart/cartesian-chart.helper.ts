@@ -1,5 +1,7 @@
 import * as d3 from 'd3';
 import { sprintf } from 'sprintf-js';
+import { Position } from '../../enums';
+import { TrackerError } from '../../errors';
 import { DataPoint } from '../../models/data-point.model';
 import { Dataset } from '../../models/dataset';
 import { ComponentType, ValueType } from '../../models/enums';
@@ -12,10 +14,10 @@ import { DateTimeUtils, DomUtils, UiUtils } from '../../utils';
 import Duration = moment.Duration;
 import Moment = moment.Moment;
 
-export const getXTickValues = (
+export const getXTicks = (
   dates: Moment[],
   interval: Duration
-): [Array<Date>, d3.TimeInterval] => {
+): { tickValues: Array<Date>; tickInterval: d3.TimeInterval } => {
   // The input interval could be null,
   // generate tick values even if interval is null
   let tickValues: Array<Date> = [];
@@ -51,10 +53,10 @@ export const getXTickValues = (
       tickInterval = d3.timeYear;
     }
   }
-  return [tickValues, tickInterval];
+  return { tickValues, tickInterval };
 };
 
-export const getXTickLabelFormat = (
+export const getXTickLabelFormatter = (
   dates: Moment[],
   inTickLabelFormat: string
 ): ((date: Date) => string) => {
@@ -86,7 +88,7 @@ export const getXTickLabelFormat = (
   }
 };
 
-export const getYTickValues = (
+export const getYTicks = (
   yLower: number,
   yUpper: number,
   interval: number | Duration,
@@ -131,7 +133,7 @@ export const getYTickValues = (
   return tickValues;
 };
 
-export const getYTickLabelFormat = (
+export const getYTickLabelFormatter = (
   yLower: number,
   yUpper: number,
   inTickLabelFormat: string,
@@ -204,11 +206,11 @@ export const renderXAxis = (
     chartInfo.xAxisTickInterval
   );
 
-  const [tickValues, tickInterval] = getXTickValues(
+  const { tickValues, tickInterval } = getXTicks(
     datasets.dates,
     tickIntervalInDuration
   );
-  const tickFormat = getXTickLabelFormat(
+  const tickFormat = getXTickLabelFormatter(
     datasets.dates,
     chartInfo.xAxisTickLabelFormat
   );
@@ -274,281 +276,214 @@ export const renderXAxis = (
   DomUtils.expandArea(chartElements.graphArea, 0, tickLength + tickLabelHeight);
 };
 
+/**
+ * @summary Renders the Y-Axis for Cartesian Charts
+ * @param {ComponentElements} elements
+ * @param {RenderInfo} renderInfo
+ * @param {CartesianChart} component
+ * @param {'left' | 'right'} position
+ * @param {number[]} datasetIds
+ */
 export const renderYAxis = (
-  chartElements: ComponentElements,
+  elements: ComponentElements,
   renderInfo: RenderInfo,
-  chartInfo: CartesianChart,
-  yAxisLocation: string,
+  component: CartesianChart,
+  position: 'left' | 'right',
   datasetIds: Array<number>
-): string => {
-  if (!renderInfo || !chartInfo) return;
+): void => {
+  if (!renderInfo || !component || datasetIds.length === 0) return;
+  if (![Position.LEFT, Position.RIGHT].includes(position))
+    throw new TrackerError(`Y-Axis location must be either 'left' or 'right'`);
 
-  const datasets = renderInfo.datasets;
-  if (datasetIds.length === 0) {
-    return;
-  }
+  const { datasets, dataAreaSize } = renderInfo;
+  const { height, width } = dataAreaSize;
 
-  if (yAxisLocation !== 'left' && yAxisLocation !== 'right') return;
+  if (position !== Position.LEFT && position !== Position.RIGHT) return;
 
-  let yMinOfDatasets = null;
-  let yMaxOfDatasets = null;
+  let axisMin = null;
+  let axisMax = null;
   let tmpValueIsTime = null;
   let valueIsTime = false;
   for (const datasetId of datasetIds) {
     const dataset = datasets.getDatasetById(datasetId);
     if (dataset.query.usedAsXDataset) continue;
-
-    if (yMinOfDatasets === null || dataset.yMin < yMinOfDatasets) {
-      yMinOfDatasets = dataset.yMin;
-    }
-    if (yMaxOfDatasets === null || dataset.yMax > yMaxOfDatasets) {
-      yMaxOfDatasets = dataset.yMax;
-    }
+    if (axisMin === null || dataset.yMin < axisMin) axisMin = dataset.yMin;
+    if (axisMax === null || dataset.yMax > axisMax) axisMax = dataset.yMax;
 
     // Need all datasets have same settings for time value
     valueIsTime = dataset.valueType === ValueType.Time;
-    if (tmpValueIsTime === null) {
-      tmpValueIsTime = valueIsTime;
-    } else {
-      if (valueIsTime !== tmpValueIsTime) {
-        return 'Not all values in time format';
-      }
-    }
+    if (tmpValueIsTime === null) tmpValueIsTime = valueIsTime;
+    else if (valueIsTime !== tmpValueIsTime)
+      throw new TrackerError('Not all values in time format');
   }
-  let yMin = null;
-  if (yAxisLocation === 'left') {
-    yMin = chartInfo.yMin[0];
-  } else if (yAxisLocation === 'right') {
-    yMin = chartInfo.yMin[1];
-  }
-  let yMinAssigned = false;
-  if (typeof yMin !== 'number') {
-    yMin = yMinOfDatasets;
-  } else {
-    yMinAssigned = true;
+  let min = null;
+  if (position === Position.LEFT) min = component.yMin[0];
+  else if (position === Position.RIGHT) min = component.yMin[1];
+
+  let minAssigned = false;
+  if (typeof min !== 'number') min = axisMin;
+  else minAssigned = true;
+
+  let max = null;
+  if (position === Position.LEFT) max = component.yMax[0];
+  else if (position === Position.RIGHT) max = component.yMax[1];
+
+  let maxAssigned = false;
+  if (typeof max !== 'number') max = axisMax;
+  else maxAssigned = true;
+
+  if (max < min) {
+    const yTmp = min;
+    min = max;
+    max = yTmp;
+    const yTmpAssigned = minAssigned;
+    minAssigned = maxAssigned;
+    maxAssigned = yTmpAssigned;
   }
 
-  let yMax = null;
-  if (yAxisLocation === 'left') {
-    yMax = chartInfo.yMax[0];
-  } else if (yAxisLocation === 'right') {
-    yMax = chartInfo.yMax[1];
-  }
-  let yMaxAssigned = false;
-  if (typeof yMax !== 'number') {
-    yMax = yMaxOfDatasets;
-  } else {
-    yMaxAssigned = true;
-  }
-  if (yMax < yMin) {
-    const yTmp = yMin;
-    yMin = yMax;
-    yMax = yTmp;
-    const yTmpAssigned = yMinAssigned;
-    yMinAssigned = yMaxAssigned;
-    yMaxAssigned = yTmpAssigned;
-  }
+  const extent = max - min;
 
-  const yExtent = yMax - yMin;
+  let lower = minAssigned ? min : min - extent * 0.2;
+  let upper = maxAssigned ? max : max + extent * 0.2;
 
-  const yScale = d3.scaleLinear();
-  let yLower, yUpper;
-  if (yMinAssigned) {
-    yLower = yMin;
-  } else {
-    yLower = yMin - yExtent * 0.2;
-  }
-  if (yMaxAssigned) {
-    yUpper = yMax;
-  } else {
-    yUpper = yMax + yExtent * 0.2;
-  }
   // if it is bar chart, zero must be contained in the range
-  if (chartInfo.componentType() === ComponentType.Bar) {
-    if (yUpper < 0) {
-      yUpper = 0;
-    }
-    if (yLower > 0) {
-      yLower = 0;
-    }
-  }
-  let domain = [yLower, yUpper];
-  if (
-    (yAxisLocation === 'left' && chartInfo.reverseYAxis[0]) ||
-    (yAxisLocation === 'right' && chartInfo.reverseYAxis[1])
-  ) {
-    domain = [yUpper, yLower];
-  }
-  yScale.domain(domain).range([renderInfo.dataAreaSize.height, 0]);
-
-  if (yAxisLocation === 'left') {
-    chartElements['leftYScale'] = yScale;
-  } else if (yAxisLocation === 'right') {
-    chartElements['rightYScale'] = yScale;
+  if (component.componentType === ComponentType.BarChart) {
+    if (upper < 0) upper = 0;
+    if (lower > 0) lower = 0;
   }
 
-  let yAxisColor = '';
-  if (yAxisLocation === 'left') {
-    yAxisColor = chartInfo.yAxisColor[0];
-  } else if (yAxisLocation === 'right') {
-    yAxisColor = chartInfo.yAxisColor[1];
+  const domain =
+    (position === Position.LEFT && component.reverseYAxis[0]) ||
+    (position === Position.RIGHT && component.reverseYAxis[1])
+      ? [upper, lower]
+      : [lower, upper];
+
+  const scale = d3.scaleLinear();
+  scale.domain(domain).range([height, 0]);
+  elements[`${position}YScale`] = scale;
+
+  let axisColor = '';
+  if (position === Position.LEFT) axisColor = component.yAxisColor[0];
+  else if (position === Position.RIGHT) axisColor = component.yAxisColor[1];
+
+  let labelColor = '';
+  if (position === Position.LEFT) labelColor = component.yAxisLabelColor[0];
+  else if (position === Position.RIGHT)
+    labelColor = component.yAxisLabelColor[1];
+
+  let labelText = '';
+  if (position === Position.LEFT) labelText = component.yAxisLabel[0];
+  else if (position === Position.RIGHT) labelText = component.yAxisLabel[1];
+
+  let unitText = '';
+  let interval = null;
+  let labelFormat = null;
+  if (position === Position.LEFT) {
+    unitText = component.yAxisUnit[0];
+    interval = component.yAxisTickInterval[0]; // string
+    labelFormat = component.yAxisTickLabelFormat[0];
+  } else if (position === Position.RIGHT) {
+    unitText = component.yAxisUnit[1];
+    interval = component.yAxisTickInterval[1]; // string
+    labelFormat = component.yAxisTickLabelFormat[1];
   }
 
-  let yAxisLabelColor = '';
-  if (yAxisLocation === 'left') {
-    yAxisLabelColor = chartInfo.yAxisLabelColor[0];
-  } else if (yAxisLocation === 'right') {
-    yAxisLabelColor = chartInfo.yAxisLabelColor[1];
-  }
-
-  let yAxisLabelText = '';
-  if (yAxisLocation === 'left') {
-    yAxisLabelText = chartInfo.yAxisLabel[0];
-  } else if (yAxisLocation === 'right') {
-    yAxisLabelText = chartInfo.yAxisLabel[1];
-  }
-
-  let yAxisUnitText = '';
-  let yAxisTickInterval = null;
-  let yAxisTickLabelFormat = null;
-  if (yAxisLocation === 'left') {
-    yAxisUnitText = chartInfo.yAxisUnit[0];
-    yAxisTickInterval = chartInfo.yAxisTickInterval[0]; // string
-    yAxisTickLabelFormat = chartInfo.yAxisTickLabelFormat[0];
-  } else if (yAxisLocation === 'right') {
-    yAxisUnitText = chartInfo.yAxisUnit[1];
-    yAxisTickInterval = chartInfo.yAxisTickInterval[1]; // string
-    yAxisTickLabelFormat = chartInfo.yAxisTickLabelFormat[1];
-  }
-  // get interval from string
   let tickInterval = null;
-  if (valueIsTime) {
-    tickInterval = DateTimeUtils.parseDuration(yAxisTickInterval);
-  } else {
-    tickInterval = parseFloat(yAxisTickInterval);
-    if (!Number.isNumber(tickInterval) || Number.isNaN(tickInterval)) {
+  if (valueIsTime) tickInterval = DateTimeUtils.parseDuration(interval);
+  else {
+    tickInterval = parseFloat(interval);
+    if (!Number.isNumber(tickInterval) || Number.isNaN(tickInterval))
       tickInterval = null;
-    }
   }
 
-  let yAxisGen;
-  if (yAxisLocation === 'left') {
-    yAxisGen = d3.axisLeft(yScale);
-  } else if (yAxisLocation === 'right') {
-    yAxisGen = d3.axisRight(yScale);
-  }
-  if (yAxisGen) {
-    const tickLabelFormat = getYTickLabelFormat(
-      yLower,
-      yUpper,
-      yAxisTickLabelFormat,
+  let axisGen;
+  if (position === Position.LEFT) axisGen = d3.axisLeft(scale);
+  else if (position === Position.RIGHT) axisGen = d3.axisRight(scale);
+
+  if (axisGen) {
+    const labelFormatter = getYTickLabelFormatter(
+      lower,
+      upper,
+      labelFormat,
       valueIsTime
     );
-    if (tickLabelFormat) {
-      yAxisGen.tickFormat(tickLabelFormat);
-    }
-    const tickValues = getYTickValues(
-      yLower,
-      yUpper,
-      tickInterval,
-      valueIsTime
-    );
-    if (tickValues) {
-      yAxisGen.tickValues(tickValues);
-    }
+    if (labelFormatter) axisGen.tickFormat(labelFormatter);
+
+    const tickValues = getYTicks(lower, upper, tickInterval, valueIsTime);
+    if (tickValues) axisGen.tickValues(tickValues);
   }
 
-  const yAxis = chartElements.dataArea
+  const axis = elements.dataArea
     .append('g')
     .attr('id', 'yAxis')
-    .call(yAxisGen)
+    .call(axisGen)
     .attr('class', 'tracker-axis');
-  if (yAxisLocation == 'right') {
-    yAxis.attr(
-      'transform',
-      'translate(' + renderInfo.dataAreaSize.width + ' ,0)'
-    );
-  }
-  if (yAxisLocation === 'left') {
-    chartElements['leftYAxis'] = yAxis;
-  } else if (yAxisLocation === 'right') {
-    chartElements['rightYAxis'] = yAxis;
+  if (position == Position.RIGHT)
+    axis.attr('transform', 'translate(' + width + ' ,0)');
+
+  elements[`${position}YAxis`] = axis;
+
+  if (axisColor) {
+    axis.selectAll('path').style('stroke', axisColor);
+    axis.selectAll('line').style('stroke', axisColor);
   }
 
-  const yAxisLine = yAxis.selectAll('path');
-  if (yAxisColor) {
-    yAxisLine.style('stroke', yAxisColor);
-  }
-
-  const yAxisTicks = yAxis.selectAll('line');
-  if (yAxisColor) {
-    yAxisTicks.style('stroke', yAxisColor);
-  }
-
-  const yAxisTickLabels = yAxis
-    .selectAll('text')
-    .attr('class', 'tracker-tick-label');
-  if (yAxisColor) {
-    yAxisTickLabels.style('fill', yAxisColor);
-  }
+  const tickLabels = axis.selectAll('text').attr('class', 'tracker-tick-label');
+  if (axisColor) tickLabels.style('fill', axisColor);
 
   // Get max tick label width
   let maxTickLabelWidth = 0;
-  for (const label of yAxisTickLabels) {
-    if (label.textContent) {
-      const labelSize = UiUtils.getTextDimensions(
-        label.textContent,
+  for (const tickLabel of tickLabels) {
+    if (tickLabel.textContent) {
+      const tickLabelWidth = UiUtils.getTextDimensions(
+        tickLabel.textContent,
         'tracker-axis-label'
-      );
-      if (labelSize.width > maxTickLabelWidth) {
-        maxTickLabelWidth = labelSize.width;
-      }
+      ).width;
+      if (tickLabelWidth > maxTickLabelWidth)
+        maxTickLabelWidth = tickLabelWidth;
     }
   }
-  if (yAxisUnitText !== '') {
-    yAxisLabelText += ' (' + yAxisUnitText + ')';
-  }
-  const yTickLength = 6;
-  const yAxisLabelSize = UiUtils.getTextDimensions(yAxisLabelText);
-  const yAxisLabel = yAxis
-    .append('text')
-    .text(yAxisLabelText)
-    .attr('transform', 'rotate(-90)')
-    .attr('x', (-1 * renderInfo.dataAreaSize.height) / 2)
-    .attr('class', 'tracker-axis-label');
-  if (yAxisLocation === 'left') {
-    yAxisLabel.attr(
-      'y',
-      -yTickLength - maxTickLabelWidth - yAxisLabelSize.height / 2
-    );
-  } else {
-    yAxisLabel.attr(
-      'y',
-      +yTickLength + maxTickLabelWidth + yAxisLabelSize.height
-    );
-  }
-  if (yAxisLabelColor) {
-    yAxisLabel.style('fill', yAxisLabelColor);
-  }
+  if (unitText !== '') labelText += ' (' + unitText + ')';
 
-  const yAxisWidth = yAxisLabelSize.height + maxTickLabelWidth + yTickLength;
-  yAxis.attr('width', yAxisWidth);
+  const tickLength = 6;
+  const labelHeight = UiUtils.getTextDimensions(labelText).height;
+  const label = axis
+    .append('text')
+    .text(labelText)
+    .attr('transform', 'rotate(-90)')
+    .attr('x', (-1 * height) / 2)
+    .attr('class', 'tracker-axis-label');
+  if (position === Position.LEFT)
+    label.attr('y', -tickLength - maxTickLabelWidth - labelHeight / 2);
+  else label.attr('y', +tickLength + maxTickLabelWidth + labelHeight);
+
+  if (labelColor) label.style('fill', labelColor);
+
+  const axisWidth = labelHeight + maxTickLabelWidth + tickLength;
+  axis.attr('width', axisWidth);
 
   // Expand areas
-  DomUtils.expandArea(chartElements.svg, yAxisWidth, 0);
-  DomUtils.expandArea(chartElements.graphArea, yAxisWidth, 0);
+  DomUtils.expandArea(elements.svg, axisWidth, 0);
+  DomUtils.expandArea(elements.graphArea, axisWidth, 0);
 
   // Move areas
-  if (yAxisLocation === 'left') {
+  if (position === Position.LEFT) {
     // Move dataArea
-    DomUtils.moveArea(chartElements.dataArea, yAxisWidth, 0);
-
+    DomUtils.moveArea(elements.dataArea, axisWidth, 0);
     // Move title
-    if (chartElements.title) {
-      DomUtils.moveArea(chartElements.title, yAxisWidth, 0);
-    }
+    if (elements.title) DomUtils.moveArea(elements.title, axisWidth, 0);
   }
 };
+
+export interface CreateElementsOptions {
+  clearContents?: boolean;
+  elements?: ComponentElements;
+}
+
+export interface RenderTitleOptions {
+  titleSpacing?: number;
+  titleCssClass?: string;
+}
 
 export const renderLine = (
   chartElements: ComponentElements,
@@ -971,7 +906,7 @@ export const renderLegend = (
   const firstLabelY = firstMarkerY;
 
   if (chartInfo.legendOrientation === 'vertical') {
-    if (chartInfo.componentType() === ComponentType.Line) {
+    if (chartInfo.componentType === ComponentType.LineChart) {
       // lines
       legend
         .selectAll('markers')
@@ -1024,7 +959,7 @@ export const renderLegend = (
           if (xDatasetIds.includes(i)) return;
           return (chartInfo as LineChart).pointColor[i];
         });
-    } else if (chartInfo.componentType() === ComponentType.Bar) {
+    } else if (chartInfo.componentType === ComponentType.BarChart) {
       // bars
       legend
         .selectAll('markers')
@@ -1068,19 +1003,19 @@ export const renderLegend = (
       .style('alignment-baseline', 'middle')
       .attr('class', 'tracker-legend-label');
 
-    if (chartInfo.componentType() === ComponentType.Line) {
+    if (chartInfo.componentType === ComponentType.LineChart) {
       nameLabels.style('fill', (name: string, i: number) => {
         if (xDatasetIds.includes(i)) return;
         return (chartInfo as LineChart).lineColor[i];
       });
-    } else if (chartInfo.componentType() === ComponentType.Bar) {
+    } else if (chartInfo.componentType === ComponentType.BarChart) {
       nameLabels.style('fill', (name: string, i: number) => {
         if (xDatasetIds.includes(i)) return;
         return (chartInfo as BarChart).barColor[i];
       });
     }
   } else if (chartInfo.legendOrientation === 'horizontal') {
-    if (chartInfo.componentType() === ComponentType.Line) {
+    if (chartInfo.componentType === ComponentType.LineChart) {
       // lines
       legend
         .selectAll('markers')
@@ -1153,7 +1088,7 @@ export const renderLegend = (
           if (xDatasetIds.includes(i)) return;
           return (chartInfo as LineChart).pointColor[i];
         });
-    } else if (chartInfo.componentType() === ComponentType.Bar) {
+    } else if (chartInfo.componentType === ComponentType.BarChart) {
       // bars
       legend
         .selectAll('markers')
@@ -1211,12 +1146,12 @@ export const renderLegend = (
       .style('alignment-baseline', 'middle')
       .attr('class', 'tracker-legend-label');
 
-    if (chartInfo.componentType() === ComponentType.Line) {
+    if (chartInfo.componentType === ComponentType.LineChart) {
       nameLabels.style('fill', (name: string, i: number) => {
         if (xDatasetIds.includes(i)) return;
         return (chartInfo as LineChart).lineColor[i];
       });
-    } else if (chartInfo.componentType() === ComponentType.Bar) {
+    } else if (chartInfo.componentType === ComponentType.BarChart) {
       nameLabels.style('fill', (name: string, i: number) => {
         if (xDatasetIds.includes(i)) return;
         return (chartInfo as BarChart).barColor[i];

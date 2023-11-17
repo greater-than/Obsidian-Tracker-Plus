@@ -41,5 +41,5 @@ export abstract class CartesianChart extends BaseChart {
     this.allowInspectData = true;
   }
 
-  abstract componentType(): ComponentType;
+  abstract componentType: ComponentType;
 }

@@ -39,7 +39,7 @@ export class PieChart implements IComponent, ILegend {
     this.legendBorderColor = '';
   }
 
-  public componentType() {
-    return ComponentType.Pie;
+  get componentType() {
+    return ComponentType.PieChart;
   }
 }

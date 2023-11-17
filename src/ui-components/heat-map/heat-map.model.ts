@@ -18,7 +18,7 @@ export class HeatMap implements IComponent {
     this.color = null;
   }
 
-  public componentType() {
+  get componentType() {
     return ComponentType.Heatmap;
   }
 }

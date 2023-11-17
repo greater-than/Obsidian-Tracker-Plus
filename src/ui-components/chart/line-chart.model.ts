@@ -27,7 +27,7 @@ export class LineChart extends CartesianChart {
     this.yAxisLocation = []; // left, for each target
   }
 
-  public componentType() {
-    return ComponentType.Line;
+  get componentType() {
+    return ComponentType.LineChart;
   }
 }

@@ -74,7 +74,7 @@ export class MonthView implements IComponent {
     this.selectedDataset = null; // selected index of dataset
   }
 
-  public componentType() {
-    return ComponentType.Month;
+  get componentType() {
+    return ComponentType.MonthView;
   }
 }

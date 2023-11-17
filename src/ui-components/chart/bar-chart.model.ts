@@ -11,7 +11,7 @@ export class BarChart extends CartesianChart {
     this.yAxisLocation = []; // left, for each target
   }
 
-  public componentType() {
-    return ComponentType.Bar;
+  get componentType() {
+    return ComponentType.BarChart;
   }
 }

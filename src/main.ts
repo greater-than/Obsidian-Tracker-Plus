@@ -79,13 +79,13 @@ export default class Tracker extends Plugin {
     this.addCommand({
       id: 'add-line-chart-tracker',
       name: 'Add Line Chart Tracker',
-      callback: () => this.addCodeBlock(ComponentType.Line),
+      callback: () => this.addCodeBlock(ComponentType.LineChart),
     });
 
     this.addCommand({
       id: 'add-bar-chart-tracker',
       name: 'Add Bar Chart Tracker',
-      callback: () => this.addCodeBlock(ComponentType.Bar),
+      callback: () => this.addCodeBlock(ComponentType.BarChart),
     });
 
     this.addCommand({
@@ -587,7 +587,7 @@ export default class Tracker extends Plugin {
 
     let codeBlock = '';
     switch (outputType) {
-      case ComponentType.Line:
+      case ComponentType.LineChart:
         codeBlock = `\`\`\` tracker
 searchType: tag
 searchTarget: tagName
@@ -600,7 +600,7 @@ line:
     yAxisLabel: Value
 \`\`\``;
         break;
-      case ComponentType.Bar:
+      case ComponentType.BarChart:
         codeBlock = `\`\`\` tracker
 searchType: tag
 searchTarget: tagName

@@ -25,15 +25,15 @@ export enum YAxisLocation {
 export const YAxisLocationValues: string[] = Object.values(YAxisLocation);
 
 export enum ComponentType {
-  Line,
-  Bar,
-  Pie,
+  LineChart,
+  BarChart,
+  PieChart,
   Radar,
   Summary,
   Table,
-  Month,
+  MonthView,
   Heatmap,
-  Bullet,
+  BulletGraph,
   Unknown,
 }
 

@@ -28,7 +28,7 @@ export class BulletGraph implements IComponent {
     this.markerColor = '';
   }
 
-  public componentType() {
-    return ComponentType.Bullet;
+  get componentType() {
+    return ComponentType.BulletGraph;
   }
 }

@@ -22,7 +22,7 @@ export interface IQueryValuePair {
 }
 
 export interface IComponent {
-  componentType(): ComponentType;
+  componentType: ComponentType;
 }
 
 export interface ILegend {

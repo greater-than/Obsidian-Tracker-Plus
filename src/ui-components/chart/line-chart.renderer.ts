@@ -22,7 +22,6 @@ export const renderLineChart = (
   const chartElements = createAreas(canvas, renderInfo);
 
   renderTitle(chartElements, renderInfo, lineInfo);
-
   renderXAxis(chartElements, renderInfo, lineInfo);
 
   const datasetOnLeftYAxis = [];
@@ -38,53 +37,35 @@ export const renderLineChart = (
     }
   }
 
-  const retRenderLeftYAxis = renderYAxis(
-    chartElements,
-    renderInfo,
-    lineInfo,
-    'left',
-    datasetOnLeftYAxis
-  );
-  if (typeof retRenderLeftYAxis === 'string') {
-    return retRenderLeftYAxis;
-  }
+  renderYAxis(chartElements, renderInfo, lineInfo, 'left', datasetOnLeftYAxis);
 
   if (chartElements.leftYAxis && chartElements.leftYScale) {
     for (const datasetId of datasetOnLeftYAxis) {
       const dataset = renderInfo.datasets.getDatasetById(datasetId);
       if (dataset.query.usedAsXDataset) continue;
-
       renderLine(chartElements, renderInfo, lineInfo, dataset, 'left');
-
       renderPoints(chartElements, renderInfo, lineInfo, dataset, 'left');
     }
   }
 
-  const retRenderRightYAxis = renderYAxis(
+  renderYAxis(
     chartElements,
     renderInfo,
     lineInfo,
     'right',
     datasetOnRightYAxis
   );
-  if (typeof retRenderRightYAxis === 'string') {
-    return retRenderRightYAxis;
-  }
 
   if (chartElements.rightYAxis && chartElements.rightYScale) {
     for (const datasetId of datasetOnRightYAxis) {
       const dataset = renderInfo.datasets.getDatasetById(datasetId);
       if (dataset.query.usedAsXDataset) continue;
-
       renderLine(chartElements, renderInfo, lineInfo, dataset, 'right');
-
       renderPoints(chartElements, renderInfo, lineInfo, dataset, 'right');
     }
   }
 
-  if (lineInfo.showLegend) {
-    renderLegend(chartElements, renderInfo, lineInfo);
-  }
+  if (lineInfo.showLegend) renderLegend(chartElements, renderInfo, lineInfo);
 
   setChartScale(canvas, chartElements, renderInfo);
 };
