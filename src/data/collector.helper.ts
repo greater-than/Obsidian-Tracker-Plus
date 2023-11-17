@@ -13,13 +13,11 @@ import Moment = moment.Moment;
  * @param {RenderInfo} renderInfo
  * @returns {Moment}
  */
-export function extractDateUsingRegexWithValue(
+export function extractDate(
   text: string,
   pattern: string,
   renderInfo: RenderInfo
 ): Moment {
-  let date = window.moment('');
-
   const regex = new RegExp(pattern, 'gm');
   let match;
   while ((match = regex.exec(text))) {
@@ -28,21 +26,16 @@ export function extractDateUsingRegexWithValue(
       typeof match.groups.value !== 'undefined'
     ) {
       // must have group name 'value'
-      let strDate = match.groups.value.trim();
-      strDate = DateTimeUtils.getDateStringFromInput(
-        strDate,
+      const dateString = DateTimeUtils.getDateString(
+        match.groups.value.trim(),
         renderInfo.dateFormatPrefix,
         renderInfo.dateFormatSuffix
       );
-
-      date = DateTimeUtils.toMoment(strDate, renderInfo.dateFormat);
-      if (date.isValid()) {
-        return date;
-      }
+      const date = DateTimeUtils.toMoment(dateString, renderInfo.dateFormat);
+      if (date.isValid()) return date;
     }
   }
-
-  return date;
+  return window.moment('');
 }
 
 /**
@@ -58,7 +51,7 @@ export function extractDateUsingRegexWithValue(
  * @param {RenderInfo} renderInfo
  * @returns {boolean} Returns true if data added to dataMap
  */
-export const extractDataWithMultipleValues = (
+export const addMultipleValues = (
   text: string,
   pattern: string,
   query: Query,
@@ -78,40 +71,37 @@ export const extractDataWithMultipleValues = (
     xDataset,
   } = renderInfo;
   const accessor = query.accessors[0];
+  const { Time } = ValueType;
   while ((match = regex.exec(text))) {
     if (!ignoreAttachedValue[query.id]) {
       if (
         typeof match.groups !== 'undefined' &&
         typeof match.groups.value !== 'undefined'
       ) {
-        const values = match.groups.value.trim();
-        const splitValues = values.split(query.getSeparator());
-        if (!splitValues) continue;
-        if (splitValues.length === 1) {
-          const toParse = splitValues[0].trim();
+        const values = match.groups.value.trim().split(query.getSeparator());
+        if (!values) continue;
+        if (values.length === 1) {
+          const toParse = values[0].trim();
           const parsed = NumberUtils.parseFloatFromAny(toParse, textValueMap);
           if (parsed.value !== null) {
-            if (parsed.type === ValueType.Time) {
+            if (parsed.type === Time) {
               value = parsed.value;
               extracted = true;
-              query.valueType = ValueType.Time;
+              query.valueType = Time;
               query.incrementTargetCount();
-            } else {
-              if (!ignoreZeroValue[query.id] || parsed.value !== 0) {
-                value += parsed.value;
-                extracted = true;
-                query.incrementTargetCount();
-              }
+            } else if (!ignoreZeroValue[query.id] || parsed.value !== 0) {
+              value += parsed.value;
+              extracted = true;
+              query.incrementTargetCount();
             }
           }
-        } else if (splitValues.length > accessor && accessor >= 0) {
-          const toParse = splitValues[accessor].trim();
+        } else if (values.length > accessor && accessor >= 0) {
+          const toParse = values[accessor].trim();
           const parsed = NumberUtils.parseFloatFromAny(toParse, textValueMap);
           if (parsed.value !== null) {
             value = parsed.value;
             extracted = true;
-            if (parsed.type === ValueType.Time)
-              query.valueType = ValueType.Time;
+            if (parsed.type === Time) query.valueType = Time;
             query.incrementTargetCount();
           }
         }

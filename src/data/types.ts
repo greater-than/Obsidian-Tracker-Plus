@@ -7,7 +7,13 @@ export interface ITrackerSettings {
   dateFormat: string;
 }
 
-export type TDateSearchIn = string | CachedMetadata | TFile;
+export interface ISearchIn {
+  metadata: CachedMetadata;
+  note: string;
+  file: TFile;
+}
+
+export type TDateSearchIn = CachedMetadata | string | TFile;
 
 export type TDateGetter = (
   searchIn: TDateSearchIn,

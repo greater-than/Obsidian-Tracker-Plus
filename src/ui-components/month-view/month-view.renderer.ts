@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { ValueType } from '../../models/enums';
 import { RenderInfo } from '../../models/render-info';
 import { ComponentElements } from '../../models/types';
-import * as helper from '../../utils/helper';
+import { DateTimeUtils, DomUtils, UiUtils } from '../../utils';
 import { MonthView } from './month-view.model';
 import Moment = moment.Moment;
 
@@ -200,7 +200,7 @@ const renderMonthHeader = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const curYear = curMonthDate.year();
 
-  const maxDayTextSize = helper.measureTextSize('30', 'tracker-month-label');
+  const maxDayTextSize = UiUtils.getTextDimensions('30', 'tracker-month-label');
   const cellSize =
     Math.max(maxDayTextSize.width, maxDayTextSize.height) * ratioCellToText;
 
@@ -210,11 +210,11 @@ const renderMonthHeader = (
 
   const headerYearText = curMonthDate.format('YYYY');
   const headerMonthText = curMonthDate.format('MMM');
-  const headerYearSize = helper.measureTextSize(
+  const headerYearSize = UiUtils.getTextDimensions(
     headerYearText,
     'tracker-month-header-year'
   );
-  const headerMonthSize = helper.measureTextSize(
+  const headerMonthSize = UiUtils.getTextDimensions(
     headerMonthText,
     'tracker-month-header-month'
   );
@@ -290,7 +290,7 @@ const renderMonthHeader = (
   headerHeight += headerYearSize.height;
 
   // dataset rotator
-  const datasetNameSize = helper.measureTextSize(
+  const datasetNameSize = UiUtils.getTextDimensions(
     datasetName,
     'tracker-month-title-rotator'
   );
@@ -321,7 +321,7 @@ const renderMonthHeader = (
   }
 
   // value monitor
-  const monitorTextSize = helper.measureTextSize(
+  const monitorTextSize = UiUtils.getTextDimensions(
     '0.0000',
     'tracker-month-title-monitor'
   );
@@ -343,7 +343,7 @@ const renderMonthHeader = (
   chartElements['monitor'] = monitor;
 
   // arrow left
-  const arrowSize = helper.measureTextSize('<', 'tracker-month-title-arrow');
+  const arrowSize = UiUtils.getTextDimensions('<', 'tracker-month-title-arrow');
   headerGroup
     .append('text')
     .text('<') // pivot at center
@@ -407,7 +407,7 @@ const renderMonthHeader = (
     .on('click', (_event: any) => {
       clearSelection(chartElements, monthInfo);
 
-      const todayDate = helper.getDateToday(renderInfo.dateFormat);
+      const todayDate = DateTimeUtils.getDateToday(renderInfo.dateFormat);
       refresh(canvas, chartElements, renderInfo, monthInfo, todayDate);
     })
     .style('cursor', 'pointer');
@@ -419,7 +419,7 @@ const renderMonthHeader = (
   if (monthInfo.startWeekOn.toLowerCase() === 'mon') {
     weekdayNames.push(weekdayNames.shift());
   }
-  const weekdayNameSize = helper.measureTextSize(
+  const weekdayNameSize = UiUtils.getTextDimensions(
     weekdayNames[0],
     'tracker-month-weekday'
   );
@@ -476,7 +476,7 @@ const renderMonthHeader = (
   chartElements['header'] = headerGroup;
 
   // Move sibling areas
-  helper.moveArea(chartElements.dataArea, 0, headerHeight);
+  DomUtils.moveArea(chartElements.dataArea, 0, headerHeight);
 };
 
 function renderMonthDays(
@@ -510,7 +510,7 @@ function renderMonthDays(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const curDaysInMonth = curMonthDate.daysInMonth(); // 28~31
 
-  const maxDayTextSize = helper.measureTextSize('30', 'tracker-month-label');
+  const maxDayTextSize = UiUtils.getTextDimensions('30', 'tracker-month-label');
   const cellSize =
     Math.max(maxDayTextSize.width, maxDayTextSize.height) * ratioCellToText;
   const dotRadius = ((cellSize / ratioCellToText) * ratioDotToText) / 2.0;
@@ -564,8 +564,8 @@ function renderMonthDays(
   ) {
     // not sure why we need to do this to stabilize the date
     // sometimes, curValue is wrong without doing this
-    curDate = helper.strToDate(
-      helper.dateToStr(curDate, renderInfo.dateFormat),
+    curDate = DateTimeUtils.toMoment(
+      DateTimeUtils.dateToString(curDate, renderInfo.dateFormat),
       renderInfo.dateFormat
     );
     if (curDate.format('YYYY-MM-DD') === '2021-09-13') {
@@ -602,7 +602,7 @@ function renderMonthDays(
     const curValue = dataset.getValue(curDate);
     if (logToConsole) {
       console.log(dataset);
-      console.log(helper.dateToStr(curDate, renderInfo.dateFormat));
+      console.log(DateTimeUtils.dateToString(curDate, renderInfo.dateFormat));
       console.log(curValue);
     }
 
@@ -688,7 +688,7 @@ function renderMonthDays(
     }
 
     daysInMonthView.push({
-      date: helper.dateToStr(curDate, renderInfo.dateFormat),
+      date: DateTimeUtils.dateToString(curDate, renderInfo.dateFormat),
       value: curValue,
       scaledValue: scaledValue,
       dayInMonth: curDate.date(),
@@ -876,7 +876,10 @@ function renderMonthDays(
   }
 
   // today rings
-  const today = helper.dateToStr(window.moment(), renderInfo.dateFormat);
+  const today = DateTimeUtils.dateToString(
+    window.moment(),
+    renderInfo.dateFormat
+  );
   if (mode === 'circle' && monthInfo.showTodayRing) {
     const todayRings = chartElements.dataArea
       .selectAll('todayRing')
@@ -1020,20 +1023,20 @@ function renderMonthDays(
     7 * cellSize + parseFloat(chartElements.header.attr('height'));
   const totalWidth = 7 * cellSize;
   if (totalHeight > svgHeight) {
-    helper.expandArea(chartElements.svg, 0, totalHeight - svgHeight);
+    DomUtils.expandArea(chartElements.svg, 0, totalHeight - svgHeight);
   }
   if (totalWidth > svgWidth) {
-    helper.expandArea(chartElements.svg, totalWidth - svgWidth, 0);
+    DomUtils.expandArea(chartElements.svg, totalWidth - svgWidth, 0);
   }
   if (totalHeight > graphAreaHeight) {
-    helper.expandArea(
+    DomUtils.expandArea(
       chartElements.graphArea,
       0,
       totalHeight - graphAreaHeight
     );
   }
   if (totalWidth > graphAreaWidth) {
-    helper.expandArea(chartElements.svg, totalWidth - graphAreaWidth, 0);
+    DomUtils.expandArea(chartElements.svg, totalWidth - graphAreaWidth, 0);
   }
 }
 
@@ -1086,7 +1089,7 @@ export const renderMonth = (
 
   let monthDate: Moment = null;
   if (monthInfo.initMonth) {
-    monthDate = helper.getDateByDurationToToday(
+    monthDate = DateTimeUtils.getDateByDurationToToday(
       monthInfo.initMonth,
       renderInfo.dateFormat
     );

@@ -7,8 +7,7 @@ import {
   ValueError,
 } from '../errors';
 import { SearchTypeValues, YAxisLocationValues } from '../models/enums';
-import { DateTimeUtils, StringUtils } from '../utils';
-import * as helper from '../utils/helper';
+import { DateTimeUtils, NumberUtils, StringUtils } from '../utils';
 import { isNullOrUndefined } from '../utils/object.utils';
 import {
   INumberValueOptions,
@@ -65,7 +64,7 @@ export const formatDate = (
         `'m' for 'minute' is too small for '${date}', please use 'd' for 'day' or 'M' for month`
       );
     }
-    const dateString = DateTimeUtils.getDateStringFromInput(
+    const dateString = DateTimeUtils.getDateString(
       date,
       prefixToStrip,
       suffixToStrip
@@ -141,7 +140,7 @@ export const convertToArray = (
 /**
  * @summary Returns a boolean array from the provided input property
  * @param {string} name
- * @param {any} input
+ * @param {T} input
  * @param {number} valueCount
  * @param {boolean} defaultValue
  * @param {boolean} allowInvalidValue
@@ -250,7 +249,7 @@ export const getString = <T extends string | number>(
   input: T,
   defaultValue: string
 ): string => {
-  if (typeof input === 'string') return helper.replaceImgTagByAlt(input);
+  if (typeof input === 'string') return StringUtils.replaceImgTagByAlt(input);
   else if (typeof input === 'number') return input.toString();
   return defaultValue;
 };
@@ -351,7 +350,6 @@ export const getStringArray = <T extends object | string | number>(
   input: T
 ): string[] => {
   if (isNullOrUndefined(input)) return [];
-
   if (typeof input === 'object' && Array.isArray(input)) {
     return input.map((value) => {
       if (typeof value === 'string')
@@ -359,7 +357,6 @@ export const getStringArray = <T extends object | string | number>(
     });
   } else if (typeof input === 'string') {
     if (input.trim() === '') throw new ParameterError(name, Reason.IS_EMPTY);
-
     return splitByComma(input).map((value) => {
       if (typeof value === 'string')
         return StringUtils.replaceImgTagByAlt(value.trim());
@@ -423,13 +420,13 @@ export function getNumbers(
           const curr = values[ind].trim();
           let prev = null;
           if (ind > 0) {
-            prev = helper.parseFloatFromAny(values[ind - 1].trim()).value;
+            prev = NumberUtils.parseFloatFromAny(values[ind - 1].trim()).value;
           }
           if (curr === '') {
             numbers[ind] =
               prev !== null && Number.isNumber(prev) ? prev : defaultValue;
           } else {
-            const currNum = helper.parseFloatFromAny(curr).value;
+            const currNum = NumberUtils.parseFloatFromAny(curr).value;
             if (currNum !== null) {
               numbers[ind] = currNum;
               validValueCount++;
@@ -437,7 +434,7 @@ export function getNumbers(
           }
         } else {
           // Exceeds the length of input, use prev value
-          const last = helper.parseFloatFromAny(
+          const last = NumberUtils.parseFloatFromAny(
             values[input.length - 1].trim()
           ).value;
           numbers[ind] =
@@ -445,7 +442,7 @@ export function getNumbers(
         }
       }
     } else if (input !== '') {
-      const parsed = helper.parseFloatFromAny(input).value;
+      const parsed = NumberUtils.parseFloatFromAny(input).value;
       if (parsed === null) throw new ValueError(name);
       numbers[0] = parsed;
       validValueCount++;

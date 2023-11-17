@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { Dataset } from '../../models/dataset';
 import { RenderInfo } from '../../models/render-info';
 import { ComponentElements } from '../../models/types';
-import * as helper from '../../utils/helper';
+import { DateTimeUtils, DomUtils } from '../../utils';
 import { HeatMap } from './heat-map.model';
 
 interface DayInfo {
@@ -144,7 +144,7 @@ const renderHeatmapDays = (
     }
 
     daysInHeatmapView.push({
-      date: helper.dateToStr(curDate, renderInfo.dateFormat),
+      date: DateTimeUtils.dateToString(curDate, renderInfo.dateFormat),
       value: curValue,
       scaledValue: scaledValue,
       row: indRow,
@@ -198,20 +198,20 @@ const renderHeatmapDays = (
   const totalHeight = (indRow + 2) * cellSize; // + parseFloat(chartElements.header.attr("height"));
   const totalWidth = (indCol + 1) * cellSize;
   if (totalHeight > svgHeight) {
-    helper.expandArea(chartElements.svg, 0, totalHeight - svgHeight);
+    DomUtils.expandArea(chartElements.svg, 0, totalHeight - svgHeight);
   }
   if (totalWidth > svgWidth) {
-    helper.expandArea(chartElements.svg, totalWidth - svgWidth, 0);
+    DomUtils.expandArea(chartElements.svg, totalWidth - svgWidth, 0);
   }
   if (totalHeight > graphAreaHeight) {
-    helper.expandArea(
+    DomUtils.expandArea(
       chartElements.graphArea,
       0,
       totalHeight - graphAreaHeight
     );
   }
   if (totalWidth > graphAreaWidth) {
-    helper.expandArea(chartElements.svg, totalWidth - graphAreaWidth, 0);
+    DomUtils.expandArea(chartElements.svg, totalWidth - graphAreaWidth, 0);
   }
 };
 

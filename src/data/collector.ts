@@ -1,4 +1,5 @@
 import { CachedMetadata, TFile, Vault, normalizePath } from 'obsidian';
+import { WordCharacterPattern } from 'src/regex-patterns';
 import { TrackerError } from '../errors';
 import { DataMap } from '../models/data-map';
 import { SearchType, ValueType } from '../models/enums';
@@ -7,23 +8,20 @@ import { Query } from '../models/query';
 import { RenderInfo } from '../models/render-info';
 import { TableData } from '../models/table-data';
 import { TNumberValueMap } from '../models/types';
-import { PropertyValuePattern, TaskPattern } from '../regex-patterns';
+import {
+  PropertyValuePattern,
+  TableSelectorPattern,
+  TaskPattern,
+} from '../regex-patterns';
 import { DateTimeUtils, NumberUtils, StringUtils } from '../utils';
-import {
-  getCharacterCount,
-  getSentenceCount,
-  getWordCount,
-} from '../utils/count.utils';
+import { getSentenceCount, getWordCount } from '../utils/count.utils';
+import { getDateFromUnixTime } from '../utils/date-time.utils';
 import { getDeepValue } from '../utils/object.utils';
-import {
-  extractDataWithMultipleValues,
-  extractDateUsingRegexWithValue,
-} from './collector.helper';
-import { WordCharacters } from './constants';
-import { TDateGetter, TDateSearchIn } from './types';
+import { addMultipleValues, extractDate } from './collector.helper';
+import { ISearchIn, TDateGetter, TDateSearchIn } from './types';
 import Moment = moment.Moment;
 
-// Date Collectors
+// #region Date Collectors
 
 /**
  * @summary Returns a Moment object from a note file name
@@ -37,7 +35,7 @@ export const getFilenameDate = (
 ): Moment => {
   const { basename } = file;
   const { dateFormat, dateFormatPrefix, dateFormatSuffix } = renderInfo;
-  const dateString = DateTimeUtils.getDateStringFromInput(
+  const dateString = DateTimeUtils.getDateString(
     basename,
     dateFormatPrefix,
     dateFormatSuffix
@@ -58,19 +56,19 @@ export const getFrontmatterDate = (
   renderInfo: RenderInfo,
   query: Query
 ): Moment => {
-  // Get date from 'frontMatterKey: date'
-  const frontMatter = metadata.frontmatter;
-  if (frontMatter) {
-    if (getDeepValue(frontMatter, query.target)) {
-      let dateString = getDeepValue(frontMatter, query.target);
-      // We only support single value for now
-      if (typeof dateString === 'string') {
-        dateString = DateTimeUtils.getDateStringFromInput(
-          dateString,
-          renderInfo.dateFormatPrefix,
-          renderInfo.dateFormatSuffix
+  const { frontmatter } = metadata;
+  if (frontmatter) {
+    if (getDeepValue(frontmatter, query.target)) {
+      const value = getDeepValue(frontmatter, query.target);
+      // Only a single value is supported for now
+      if (typeof value === 'string') {
+        const { dateFormat, dateFormatPrefix, dateFormatSuffix } = renderInfo;
+        const date = DateTimeUtils.getDateString(
+          value,
+          dateFormatPrefix,
+          dateFormatSuffix
         );
-        return DateTimeUtils.toMoment(dateString, renderInfo.dateFormat);
+        return DateTimeUtils.toMoment(date, dateFormat);
       }
     }
   }
@@ -93,9 +91,9 @@ export const getTagDate = (
   // Get date from '#tagName: date'
   // Inline value-attached tag only
   // use parent tag name for multiple values
-  const tagName = query.parentTarget ?? query.target;
-  const pattern = `(^|\\s)#${tagName}${PropertyValuePattern}`;
-  return extractDateUsingRegexWithValue(note, pattern, renderInfo);
+  const target = query.parentTarget ?? query.target;
+  const pattern = `(^|\\s)#${target}${PropertyValuePattern}`;
+  return extractDate(note, pattern, renderInfo);
 };
 
 /**
@@ -110,12 +108,18 @@ export const getTextDate = (
   note: string,
   renderInfo: RenderInfo,
   query: Query
-): Moment => extractDateUsingRegexWithValue(note, query.target, renderInfo);
+): Moment => extractDate(note, query.target, renderInfo);
 
-// Not support multiple targets
-// In form 'key::value', named group 'value' from plugin
+/**
+ * @summary Returns a Moment object from a dataview field
+ * @description No support for multiple targets. In form 'regex with value', name group 'value' from users
+ * @param {string} note
+ * @param {RenderInfo} renderInfo
+ * @param {Query} query
+ * @returns {Moment}
+ */
 export const getDataviewFieldDate = (
-  content: string,
+  note: string,
   renderInfo: RenderInfo,
   query: Query
 ): Moment => {
@@ -128,117 +132,97 @@ export const getDataviewFieldDate = (
 
   // Test this in Regex101
   // remember '\s' includes new line
-  // (^| |\t)\*{0,2}dvTarget\*{0,2}(::[ |\t]*(?<value>[\d\.\/\-\w,@; \t:]*))(\r?\n|\r|$)
-  const pattern =
-    '(^| |\\t)\\*{0,2}' +
-    target +
-    '\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-\\w,@; \\t:]*))(\\r\\?\\n|\\r|$)';
-
-  return extractDateUsingRegexWithValue(content, pattern, renderInfo);
+  // (^| |\t)\*{0,2}target\*{0,2}(::[ |\t]*(?<value>[\d\.\/\-\w,@; \t:]*))(\r?\n|\r|$)
+  const pattern = `(^| |\\t)\\*{0,2}${target}\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-\\w,@; \\t:]*))(\\r\\?\\n|\\r|$)`;
+  return extractDate(note, pattern, renderInfo);
 };
 
-// Not support multiple targets
-// In form 'regex with value', name group 'value' from users
+/**
+ * @summary Returns the first date as a Moment object from Wiki metadata
+ * @description No support for multiple targets. In form 'regex with value', name group 'value' from users
+ * @param metadata
+ * @param renderInfo
+ * @param query
+ * @returns
+ */
 export const getWikiDate = (
   metadata: CachedMetadata,
   renderInfo: RenderInfo,
   query: Query
 ): Moment => {
-  // Get date from '[[regex with value]]'
-
-  const date = window.moment('');
-
-  const links = metadata.links;
-  if (!links) return date;
-
-  const searchTarget = query.target;
-  const searchType = query.type;
-
-  for (const link of links) {
-    if (!link) continue;
-
-    let wikiText = '';
-    if (searchType === SearchType.Wiki) {
-      if (link.displayText) {
-        wikiText = link.displayText;
-      } else {
-        wikiText = link.link;
-      }
-    } else if (searchType === SearchType.WikiLink) {
-      // wiki.link point to a file name
-      // a colon is not allowed be in file name
-      wikiText = link.link;
-    } else if (searchType === SearchType.WikiDisplay) {
-      if (link.displayText) {
-        wikiText = link.displayText;
-      }
-    } else {
-      if (link.displayText) {
-        wikiText = link.displayText;
-      } else {
-        wikiText = link.link;
-      }
-    }
-    wikiText = wikiText.trim();
-
-    const pattern = `^${searchTarget}$`;
-    return extractDateUsingRegexWithValue(wikiText, pattern, renderInfo);
+  if (!metadata.links) return window.moment('');
+  for (const ref of metadata.links) {
+    if (!ref) continue;
+    const { WikiLink, WikiDisplay } = SearchType;
+    const wikiText = (
+      query.type === WikiLink
+        ? ref.link
+        : query.type === WikiDisplay && ref.displayText
+        ? ref.displayText
+        : ref.displayText ?? ref.link
+    ).trim();
+    return extractDate(wikiText, `^${query.target}$`, renderInfo);
   }
-
-  return date;
+  return window.moment('');
 };
 
-// Not support multiple targets
+/**
+ * @summary Returns a Moment object from a file's metadata
+ * @description No support for multiple targets
+ * @param {TFile} file
+ * @param {RenderInfo} renderInfo
+ * @param {Query }query
+ * @returns {Moment}
+ */
 export const getFileMetaDataDate = (
   file: TFile,
   renderInfo: RenderInfo,
   query: Query
 ): Moment => {
-  // Get date from cDate, mDate or baseFileName
-
-  let date = window.moment('');
-
-  if (file && file instanceof TFile) {
-    const target = query.target;
-    if (target === 'cDate') {
-      const ctime = file.stat.ctime; // unix time
-      date = DateTimeUtils.getDateFromUnixTime(ctime, renderInfo.dateFormat);
-    } else if (target === 'mDate') {
-      const mtime = file.stat.mtime; // unix time
-      date = DateTimeUtils.getDateFromUnixTime(mtime, renderInfo.dateFormat);
-    } else if (target === 'name') {
-      date = getFilenameDate(file, renderInfo);
-    }
+  if (!(file && file instanceof TFile)) return window.moment('');
+  // Get date from cDate, mDate or filename
+  switch (query.target) {
+    case 'cDate':
+      return getDateFromUnixTime(file.stat.ctime, renderInfo.dateFormat);
+    case 'mDate':
+      return getDateFromUnixTime(file.stat.mtime, renderInfo.dateFormat);
+    default:
+      return getFilenameDate(file, renderInfo);
   }
-  return date;
 };
 
-// Not support multiple targets
-// In form 'regex with value', name group 'value' from users
+/**
+ * @summary Returns a Moment object from a task
+ * @description No support for multiple targets. In form 'regex with value', name group 'value' from users
+ * @param {string} note
+ * @param {RenderInfo} renderInfo
+ * @param {Query} query
+ * @returns {Moment}
+ */
 export const getTaskDate = (
-  content: string,
+  note: string,
   renderInfo: RenderInfo,
   query: Query
 ): Moment => {
   // Get date from '- [ ] regex with value' or '- [x] regex with value'
-  return extractDateUsingRegexWithValue(
-    content,
+  return extractDate(
+    note,
     `${TaskPattern[query.type]}${query.target}`,
     renderInfo
   );
 };
 
 /**
- * @summary Returns a callable and location to retrieve the xDate
+ * @summary Returns a callable and location to retrieve the a date
  * @param {RenderInfo} renderInfo
  * @param {number} datasetId
- * @param searchIn
+ * @param {ISearchIn} searchIn
  * @returns {[TDateGetter, TDateSearchIn]}
  */
 export const getXDateGetterArgs = (
   renderInfo: RenderInfo,
   datasetId: number,
-  searchIn: { metadata: CachedMetadata; content: string; file: TFile }
+  searchIn: ISearchIn
 ): readonly [TDateGetter, TDateSearchIn] => {
   if (datasetId === -1) return [getFilenameDate, searchIn.file] as const;
 
@@ -247,13 +231,13 @@ export const getXDateGetterArgs = (
       return [getFrontmatterDate, searchIn.metadata] as const;
 
     case SearchType.Tag:
-      return [getTagDate, searchIn.content] as const;
+      return [getTagDate, searchIn.note] as const;
 
     case SearchType.Text:
-      return [getTextDate, searchIn.content] as const;
+      return [getTextDate, searchIn.note] as const;
 
     case SearchType.DataviewField:
-      return [getDataviewFieldDate, searchIn.content] as const;
+      return [getDataviewFieldDate, searchIn.note] as const;
 
     case SearchType.FileMeta:
       return [getFileMetaDataDate, searchIn.file] as const;
@@ -261,7 +245,7 @@ export const getXDateGetterArgs = (
     case SearchType.Task:
     case SearchType.TaskDone:
     case SearchType.TaskNotDone:
-      return [getTaskDate, searchIn.content] as const;
+      return [getTaskDate, searchIn.note] as const;
 
     default:
       return null;
@@ -287,31 +271,31 @@ export const getXDate = (
     : getDate(searchIn, renderInfo, renderInfo.queries[datasetId]);
 };
 
-// -----
+// #endregion
 
 /**
- * @summary
- * @description Get data from '- [ ] regex with value' or '- [x] regex with value'
- * @param {string} content
+ * @summary Adds task data to the dataMap
+ * @description Collects data from '- [ ] regex with value' or '- [x] regex with value'
+ * @param {string} note
  * @param {Query} query
  * @param {RenderInfo} renderInfo
  * @param {DataMap} dataMap
- * @param {TNumberValueMap} xValueMap
+ * @param {TNumberValueMap} valeMap
  * @returns
  */
-export const setTaskData = (
-  content: string,
+export const addTaskData = (
+  note: string,
   query: Query,
   renderInfo: RenderInfo,
   dataMap: DataMap,
-  xValueMap: TNumberValueMap
+  valeMap: TNumberValueMap
 ): boolean =>
-  extractDataWithMultipleValues(
-    content,
+  addMultipleValues(
+    note,
     `${TaskPattern[query.type]}${query.target}`,
     query,
     dataMap,
-    xValueMap,
+    valeMap,
     renderInfo
   );
 
@@ -322,7 +306,7 @@ export const setTaskData = (
  * @param {Query} query
  * @param {RenderInfo} renderInfo
  * @param {DataMap} dataMap
- * @param {TNumberValueMap} xValueMap
+ * @param {TNumberValueMap} valueMap
  * @returns {boolean}
  */
 export const addFrontmatterData = (
@@ -330,13 +314,13 @@ export const addFrontmatterData = (
   query: Query,
   renderInfo: RenderInfo,
   dataMap: DataMap,
-  xValueMap: TNumberValueMap
+  valueMap: TNumberValueMap
 ): boolean => {
   if (!metadata.frontmatter) return false;
   const { textValueMap, xDataset } = renderInfo;
   const { parentTarget, target, accessors } = query;
-  let toParse = getDeepValue(metadata.frontmatter, target);
-
+  const { frontmatter } = metadata;
+  let toParse = getDeepValue(frontmatter, target);
   const addToDataMap = (
     dataMap: DataMap,
     type: ValueType,
@@ -346,19 +330,19 @@ export const addFrontmatterData = (
     if (value === null) return false;
     if (type === ValueType.Time) query.valueType = ValueType.Time;
     query.incrementTargetCount();
-    const date = xValueMap.get(xDataset[query.id]);
+    const date = valueMap.get(xDataset[query.id]);
     dataMap.add(date, { query, value });
     return true;
   };
 
   if (toParse) {
     const parsed = NumberUtils.parseFloatFromAny(toParse, textValueMap);
-    if (parsed.value === null) return false;
+    const { type, value } = parsed;
+    if (value === null) return false;
     // Try parsing as a boolean: true means 1, false means 0.
     if (toParse !== 'true' && toParse !== 'false') return false;
     parsed.type = ValueType.Number;
     parsed.value = toParse === 'true' ? 1 : 0;
-    const { type, value } = parsed;
     return addToDataMap(dataMap, type, query, value);
   }
 
@@ -383,316 +367,224 @@ export const addFrontmatterData = (
 };
 
 /**
- * @summary
+ * @summary Adds frontmatter tag count to dataMap
  * @description No value, count occurrences only
  * @param {CachedMetadata} metadata
  * @param {Query} query
  * @param {RenderInfo} renderInfo
  * @param {DataMap} dataMap
- * @param {TNumberValueMap} xValueMap
+ * @param {TNumberValueMap} valueMap
  * @returns {boolean}
  */
-export const setFrontmatterTagData = (
+export const addFrontmatterTagData = (
   metadata: CachedMetadata,
   query: Query,
   renderInfo: RenderInfo,
   dataMap: DataMap,
-  xValueMap: TNumberValueMap
+  valueMap: TNumberValueMap
 ): boolean => {
   const frontMatter = metadata.frontmatter;
-  let frontMatterTags: string[] = [];
+  let tags: string[] = [];
   if (frontMatter && frontMatter.tags) {
     let tagMeasure = 0.0;
-    let tagExist = false;
-    if (Array.isArray(frontMatter.tags)) {
-      frontMatterTags = frontMatterTags.concat(frontMatter.tags);
-    } else if (typeof frontMatter.tags === 'string') {
-      const splitted = frontMatter.tags.split(query.getSeparator(true));
-      for (const splittedPart of splitted) {
-        const part = splittedPart.trim();
-        if (part !== '') {
-          frontMatterTags.push(part);
-        }
-      }
+    let exists = false;
+    if (Array.isArray(frontMatter.tags)) tags = tags.concat(frontMatter.tags);
+    else if (typeof frontMatter.tags === 'string') {
+      const values = frontMatter.tags.split(query.getSeparator(true));
+      for (const value of values)
+        if (value.trim() !== '') tags.push(value.trim());
     }
 
-    for (const tag of frontMatterTags) {
-      if (tag === query.target) {
-        // simple tag
+    for (const tag of tags) {
+      // Simple or Nested target
+      if (tag === query.target || tag.startsWith(query.target + '/')) {
         tagMeasure = tagMeasure + renderInfo.constValue[query.id];
-        tagExist = true;
+        exists = true;
         query.incrementTargetCount();
-      } else if (tag.startsWith(query.target + '/')) {
-        // nested tag
-        tagMeasure = tagMeasure + renderInfo.constValue[query.id];
-        tagExist = true;
-        query.incrementTargetCount();
-      } else {
-        continue;
-      }
+      } else continue;
 
       // valued-tag in frontmatter is not supported
       // because the "tag:value" in frontmatter will be consider as a new tag for each existing value
-
-      let value = null;
-      if (tagExist) {
-        value = tagMeasure;
-      }
-      const xValue = xValueMap.get(renderInfo.xDataset[query.id]);
-      dataMap.add(xValue, { query, value });
+      const value = exists ? tagMeasure : null;
+      const date = valueMap.get(renderInfo.xDataset[query.id]);
+      dataMap.add(date, { query, value });
       return true;
     }
   }
-
   return false;
 };
 
-// In form 'key: value', name group 'value' from plugin, not from users
-export const setInlineTagData = (
-  content: string,
+/**
+ * @summary Adds inline tag data to the dataMap
+ * @description In form 'key: value', name group 'value' from plugin, not from users
+ * @param {string} note
+ * @param {Query} query
+ * @param {RenderInfo} renderInfo
+ * @param {DataMap} dataMap
+ * @param {TNumberValueMap} valueMap
+ * @returns {boolean}
+ */
+export const addInlineTagData = (
+  note: string,
   query: Query,
   renderInfo: RenderInfo,
   dataMap: DataMap,
-  xValueMap: TNumberValueMap
+  valueMap: TNumberValueMap
 ): boolean => {
   // Test this in Regex101
   // (^|\s)#tagName(\/[\w-]+)*(:(?<value>[\d\.\/-]*)[a-zA-Z]*)?([\\.!,\\?;~-]*)?(\s|$)
-  let tagName = query.target;
-  if (query.parentTarget) {
-    tagName = query.parentTarget; // use parent tag name for multiple values
-  }
-  if (tagName.length > 1 && tagName.startsWith('#')) {
-    tagName = tagName.substring(1);
-  }
-  const pattern = `(^|\\s)#${tagName}${PropertyValuePattern}`;
-
-  return extractDataWithMultipleValues(
-    content,
-    pattern,
-    query,
-    dataMap,
-    xValueMap,
-    renderInfo
-  );
+  let { target } = query;
+  if (query.parentTarget) target = query.parentTarget; // use parent tag name for multiple values
+  if (target.length > 1 && target.startsWith('#')) target = target.substring(1);
+  const pattern = `(^|\\s)#${target}${PropertyValuePattern}`;
+  return addMultipleValues(note, pattern, query, dataMap, valueMap, renderInfo);
 };
 
-// In form 'regex with value', name group 'value' from users
-export const setWikiData = (
+/**
+ * @summary Adds wiki data to the dataMap
+ * @description In form 'regex with value', name group 'value' from users
+ * @param {Cache} metadata
+ * @param {Query} query
+ * @param {RenderInfo} renderInfo
+ * @param {DataMap} dataMap
+ * @param {TNumberValueMap} valueMap
+ * @returns {boolean}
+ */
+export const addWikiData = (
   metadata: CachedMetadata,
   query: Query,
   renderInfo: RenderInfo,
   dataMap: DataMap,
-  xValueMap: TNumberValueMap
+  valueMap: TNumberValueMap
 ): boolean => {
-  const links = metadata.links;
-  if (!links) return false;
+  if (!metadata.links) return false;
+  const { target } = query;
+  const { WikiLink, WikiDisplay } = SearchType;
 
-  const searchTarget = query.target;
-  const searchType = query.type;
+  const text = metadata.links
+    .map((ref) => {
+      if (!ref) return;
+      return (
+        query.type === WikiLink
+          ? ref.link
+          : query.type === WikiDisplay && ref.displayText
+          ? ref.displayText
+          : ref.displayText ?? ref.link
+      ).trim();
+    })
+    .join('\n');
 
-  let textToSearch = '';
-  const pattern = searchTarget;
-
-  // Prepare textToSearch
-  for (const link of links) {
-    if (!link) continue;
-
-    let wikiText = '';
-    if (searchType === SearchType.Wiki) {
-      if (link.displayText) {
-        wikiText = link.displayText;
-      } else {
-        wikiText = link.link;
-      }
-    } else if (searchType === SearchType.WikiLink) {
-      // wiki.link point to a file name
-      // a colon is not allowed be in file name
-      wikiText = link.link;
-    } else if (searchType === SearchType.WikiDisplay) {
-      if (link.displayText) {
-        wikiText = link.displayText;
-      }
-    } else {
-      if (link.displayText) {
-        wikiText = link.displayText;
-      } else {
-        wikiText = link.link;
-      }
-    }
-    wikiText = wikiText.trim();
-
-    textToSearch += wikiText + '\n';
-  }
-
-  return extractDataWithMultipleValues(
-    textToSearch,
-    pattern,
-    query,
-    dataMap,
-    xValueMap,
-    renderInfo
-  );
-};
-
-// In form 'regex with value', name group 'value' from users
-export const setTextData = (
-  content: string,
-  query: Query,
-  renderInfo: RenderInfo,
-  dataMap: DataMap,
-  xValueMap: TNumberValueMap
-): boolean => {
-  const pattern = query.target;
-
-  return extractDataWithMultipleValues(
-    content,
-    pattern,
-    query,
-    dataMap,
-    xValueMap,
-    renderInfo
-  );
+  return addMultipleValues(text, target, query, dataMap, valueMap, renderInfo);
 };
 
 /**
- * Gets timestamp from file and adds it to the dataMap
+ * @summary Adds text data to the dataMap
+ * @description In form 'regex with value', name group 'value' from users
+ * @param {string} note
+ * @param {Query} query
+ * @param {RenderInfo} renderInfo
+ * @param {DataMap} dataMap
+ * @param {TNumberValueMap} valueMap
+ * @returns {boolean}
+ */
+export const addTextData = (
+  note: string,
+  query: Query,
+  renderInfo: RenderInfo,
+  dataMap: DataMap,
+  valueMap: TNumberValueMap
+): boolean => {
+  const pattern = query.target;
+  return addMultipleValues(note, pattern, query, dataMap, valueMap, renderInfo);
+};
+
+/**
+ * Adds a note timestamp to the dataMap
  * @param {TFile} file
- * @param {string} content
+ * @param {string} note
  * @param {Query} query
  * @param {RenderInfo} renderInfo
  * @param {DataMap} dataMap
  * @param {NumberValueMap} valueMap
- * @returns
+ * @returns {boolean}
  */
-export const setDataFromFileMetaData = (
+export const addFileMetaData = (
   file: TFile,
-  content: string,
+  note: string,
   query: Query,
   renderInfo: RenderInfo,
   dataMap: DataMap,
-  xValueMap: TNumberValueMap
+  valueMap: TNumberValueMap
 ): boolean => {
-  if (file && file instanceof TFile) {
-    const target = query.target;
-    const xValue = xValueMap.get(renderInfo.xDataset[query.id]);
+  if (!(file && file instanceof TFile)) return false;
+  const { target } = query;
+  const date = valueMap.get(renderInfo.xDataset[query.id]);
 
-    if (target === 'cDate') {
-      const ctime = file.stat.ctime; // unix time
+  switch (target) {
+    case 'cDate':
       query.valueType = ValueType.Date;
       query.incrementTargetCount();
-      dataMap.add(xValue, { query, value: ctime });
+      dataMap.add(date, { query, value: file.stat.ctime });
       return true;
-    } else if (target === 'mDate') {
-      const mtime = file.stat.mtime; // unix time
+    case 'mDate':
       query.valueType = ValueType.Date;
       query.incrementTargetCount();
-      dataMap.add(xValue, { query, value: mtime });
+      dataMap.add(date, { query, value: file.stat.mtime });
       return true;
-    } else if (target === 'size') {
-      const size = file.stat.size; // number in
+    case 'size':
       query.incrementTargetCount();
-      dataMap.add(xValue, { query, value: size });
+      dataMap.add(date, { query, value: file.stat.size });
       return true;
-    } else if (target === 'numWords') {
-      const numWords = getWordCount(content);
-      dataMap.add(xValue, { query, value: numWords });
+    case 'numWords':
+      dataMap.add(date, { query, value: getWordCount(note) });
       return true;
-    } else if (target === 'numChars') {
-      const numChars = getCharacterCount(content);
+    case 'numSentences':
       query.incrementTargetCount();
-      dataMap.add(xValue, { query, value: numChars });
+      dataMap.add(date, { query, value: getSentenceCount(note) });
       return true;
-    } else if (target === 'numSentences') {
-      const numSentences = getSentenceCount(content);
-      query.incrementTargetCount();
-      dataMap.add(xValue, { query, value: numSentences });
-      return true;
-    } else if (target === 'name') {
+    case 'name':
       let targetMeasure = 0.0;
-      let targetExist = false;
-      const retParse = NumberUtils.parseFloatFromAny(
+      let targetExists = false;
+      const { type, value } = NumberUtils.parseFloatFromAny(
         file.basename,
         renderInfo.textValueMap
       );
-      if (retParse.value !== null) {
-        if (retParse.type === ValueType.Time) {
-          targetMeasure = retParse.value;
-          targetExist = true;
+      if (value !== null) {
+        if (type === ValueType.Time) {
+          targetMeasure = value;
+          targetExists = true;
           query.valueType = ValueType.Time;
           query.incrementTargetCount();
-        } else {
-          if (!renderInfo.ignoreZeroValue[query.id] || retParse.value !== 0) {
-            targetMeasure += retParse.value;
-            targetExist = true;
-            query.incrementTargetCount();
-          }
+        } else if (!renderInfo.ignoreZeroValue[query.id] || value !== 0) {
+          targetMeasure += value;
+          targetExists = true;
+          query.incrementTargetCount();
         }
       }
-
-      let value = null;
-      if (targetExist) {
-        value = targetMeasure;
-      }
-      if (value !== null) {
-        dataMap.add(xValue, { query, value });
+      if (targetExists && targetMeasure !== null) {
+        dataMap.add(date, { query, value: targetMeasure });
         return true;
       }
-    }
   }
-
   return false;
 };
 
-// In form 'key::value', named group 'value' from plugin
-export const setDataviewFieldData = (
-  content: string,
+/**
+ * @summary Adds data from a dataview field to the dataMap
+ * @description In form 'key::value', named group 'value' from plugin
+ * @param {string} note
+ * @param {Query} query
+ * @param {RenderInfo} renderInfo
+ * @param {DataMap} dataMap
+ * @param {TNumberValueMap} valueMap
+ * @returns
+ */
+export const addDataviewFieldData = (
+  note: string,
   query: Query,
   renderInfo: RenderInfo,
   dataMap: DataMap,
-  xValueMap: TNumberValueMap
-): boolean => {
-  let dvTarget = query.target;
-  if (query.parentTarget) {
-    dvTarget = query.parentTarget; // use parent tag name for multiple values
-  }
-  // Dataview ask user to add dashes for spaces as search target
-  // So a dash may stands for a real dash or a space
-  dvTarget = dvTarget.replace('-', '[\\s\\-]');
-
-  // Test this in Regex101
-  // remember '\s' includes new line
-  // (^| |\t)\*{0,2}dvTarget\*{0,2}(::[ |\t]*(?<value>[\d\.\/\-\w,@; \t:]*))(\r?\n|\r|$)
-  const pattern =
-    '(^| |\\t)\\*{0,2}' +
-    dvTarget +
-    '\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-,@; \\t:' +
-    WordCharacters +
-    ']*))(\\r\\?\\n|\\r|$)';
-  const outline = extractDataWithMultipleValues(
-    content,
-    pattern,
-    query,
-    dataMap,
-    xValueMap,
-    renderInfo
-  );
-  const inline = getInlineDataviewFieldData(
-    content,
-    query,
-    renderInfo,
-    dataMap,
-    xValueMap
-  );
-  return outline || inline;
-};
-
-// In form 'key::value', named group 'value' from plugin
-export const getInlineDataviewFieldData = (
-  content: string,
-  query: Query,
-  renderInfo: RenderInfo,
-  dataMap: DataMap,
-  xValueMap: TNumberValueMap
+  valueMap: TNumberValueMap
 ): boolean => {
   let { target } = query;
   if (query.parentTarget) {
@@ -704,26 +596,60 @@ export const getInlineDataviewFieldData = (
 
   // Test this in Regex101
   // remember '\s' includes new line
-  // ^.*?(\[|\()\*{0,2}dvTarget\*{0,2}(::[ |\t]*(?<value>[\d\.\/\-\w,@; \t:]*))(\]|\)).*?
-  const pattern =
-    '^.*?(\\[|\\()\\*{0,2}' +
-    target +
-    '\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-,@; \\t:' +
-    WordCharacters +
-    ']*))(\\]|\\)).*?$';
-
-  return extractDataWithMultipleValues(
-    content,
+  // (^| |\t)\*{0,2}target\*{0,2}(::[ |\t]*(?<value>[\d\.\/\-\w,@; \t:]*))(\r?\n|\r|$)
+  const pattern = `(^| |\\t)\\*{0,2}${target}\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-,@; \\t:${WordCharacterPattern}]*))(\\r\\?\\n|\\r|$)`;
+  const outline = addMultipleValues(
+    note,
     pattern,
     query,
     dataMap,
-    xValueMap,
+    valueMap,
     renderInfo
   );
+  const inline = addInlineDataviewFieldData(
+    note,
+    query,
+    renderInfo,
+    dataMap,
+    valueMap
+  );
+  return outline || inline;
 };
 
 /**
- * @summary
+ * @summary Adds data from an inline dataview to the dataMap
+ * @description In form 'key::value', named group 'value' from plugin
+ * @param {string} note
+ * @param {Query} query
+ * @param {RenderInfo} renderInfo
+ * @param {DataMap} dataMap
+ * @param {TNumberValueMap} valueMap
+ * @returns {boolean}
+ */
+export const addInlineDataviewFieldData = (
+  note: string,
+  query: Query,
+  renderInfo: RenderInfo,
+  dataMap: DataMap,
+  valueMap: TNumberValueMap
+): boolean => {
+  let { target } = query;
+  if (query.parentTarget) target = query.parentTarget; // use parent tag name for multiple values
+
+  // Dataview ask user to add dashes for spaces as search target
+  // So a dash may stands for a real dash or a space
+  target = target.replace('-', '[\\s\\-]');
+
+  // Test this in Regex101
+  // remember '\s' includes new line
+  // ^.*?(\[|\()\*{0,2}dvTarget\*{0,2}(::[ |\t]*(?<value>[\d\.\/\-\w,@; \t:]*))(\]|\)).*?
+  const pattern = `^.*?(\\[|\\()\\*{0,2}${target}\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-,@; \\t:${WordCharacterPattern}]*))(\\]|\\)).*?$`;
+
+  return addMultipleValues(note, pattern, query, dataMap, valueMap, renderInfo);
+};
+
+/**
+ * @summary Collects data from tables in notes
  * @param {Vault} vault
  * @param {RenderInfo} renderInfo
  * @returns {TableData[]}
@@ -744,19 +670,19 @@ export const getTables = (
     if (!file || !(file instanceof TFile))
       throw new TrackerError(`File '${file}' containing tables not found`);
 
-    const tableIndex = query.accessors[0];
-    const isX = query.usedAsXDataset;
+    const accessor = query.accessors[0];
+    const { usedAsXDataset } = query;
 
     const table = tables.find(
-      (t) => t.filePath === filePath && t.tableIndex === tableIndex
+      (t) => t.filePath === filePath && t.tableIndex === accessor
     );
     if (table) {
-      if (isX) table.xQuery = query;
+      if (usedAsXDataset) table.xQuery = query;
       else table.yQueries.push(query);
       continue;
     }
-    const tableData = new TableData(filePath, tableIndex);
-    if (isX) tableData.xQuery = query;
+    const tableData = new TableData(filePath, accessor);
+    if (usedAsXDataset) tableData.xQuery = query;
     else tableData.yQueries.push(query);
     tables.push(tableData);
   }
@@ -772,7 +698,7 @@ export const getTables = (
  * @param {ProcessInfo} processInfo
  * @returns
  */
-export const setDataFromTable = async (
+export const addTableData = async (
   vault: Vault,
   dataMap: DataMap,
   renderInfo: RenderInfo,
@@ -797,14 +723,7 @@ export const setDataFromTable = async (
     if (file && file instanceof TFile) {
       processInfo.fileAvailable++;
       const content = await vault.adapter.read(file.path);
-
-      // Test this in Regex101
-      // This is a not-so-strict table selector
-      // ((\r?\n){2}|^)([^\r\n]*\|[^\r\n]*(\r?\n)?)+(?=(\r?\n){2}|$)
-      const pattern =
-        '((\\r?\\n){2}|^)([^\\r\\n]*\\|[^\\r\\n]*(\\r?\\n)?)+(?=(\\r?\\n){2}|$)';
-
-      const regex = new RegExp(pattern, 'gm');
+      const regex = new RegExp(TableSelectorPattern, 'gm');
       let match;
       let index = 0;
 
@@ -815,10 +734,7 @@ export const setDataFromTable = async (
         }
         index++;
       }
-    } else {
-      // file does not exist
-      continue;
-    }
+    } else continue; // file does not exist
 
     let tableRows = tableContent.split(/\r?\n/);
     tableRows = tableRows.filter((line) => line !== '');
@@ -847,7 +763,7 @@ export const setDataFromTable = async (
     // get x data
     const columnIndex = xQuery.accessors[1];
     if (columnIndex >= columnCount) continue;
-    const xValues = [];
+    const values = [];
 
     for (const row of tableRows) {
       const dataRow = StringUtils.parseMarkdownTableRow(row.trim());
@@ -857,7 +773,7 @@ export const setDataFromTable = async (
         const date = DateTimeUtils.toMoment(data, renderInfo.dateFormat);
 
         if (date.isValid()) {
-          xValues.push(date);
+          values.push(date);
           if (
             !processInfo.minDate.isValid() &&
             !processInfo.maxDate.isValid()
@@ -868,11 +784,11 @@ export const setDataFromTable = async (
             if (date < processInfo.minDate) processInfo.minDate = date.clone();
             if (date > processInfo.maxDate) processInfo.maxDate = date.clone();
           }
-        } else xValues.push(null);
-      } else xValues.push(null);
+        } else values.push(null);
+      } else values.push(null);
     }
 
-    if (xValues.every((v) => v === null))
+    if (values.every((v) => v === null))
       throw new TrackerError('No valid date as X value found in table');
 
     // get y data
@@ -896,10 +812,10 @@ export const setDataFromTable = async (
             );
             if (value !== null) {
               if (type === ValueType.Time) query.valueType = ValueType.Time;
-              if (rowIndex < xValues.length && xValues[rowIndex]) {
+              if (rowIndex < values.length && values[rowIndex]) {
                 dataMap.add(
                   DateTimeUtils.dateToString(
-                    xValues[rowIndex],
+                    values[rowIndex],
                     renderInfo.dateFormat
                   ),
                   { query, value }
@@ -917,10 +833,10 @@ export const setDataFromTable = async (
             if (value !== null) {
               if (type === ValueType.Time) query.valueType = ValueType.Time;
 
-              if (rowIndex < xValues.length && xValues[rowIndex]) {
+              if (rowIndex < values.length && values[rowIndex]) {
                 dataMap.add(
                   DateTimeUtils.dateToString(
-                    xValues[rowIndex],
+                    values[rowIndex],
                     renderInfo.dateFormat
                   ),
                   { query, value }

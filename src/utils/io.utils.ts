@@ -1,29 +1,45 @@
 import { MetadataCache, TFile, TFolder, Vault, normalizePath } from 'obsidian';
+import { TrackerError } from '../errors';
 import { RenderInfo } from '../models/render-info';
+import { LineBreakPattern } from '../regex-patterns';
 import { parseFloatFromAny } from './number.utils';
 
-export const getItemsInFolder = (
+/**
+ * @summary Traverses nested folders and returns all markdown files
+ * @param {TFolder} folder
+ * @param {boolean} includeSubFolders
+ * @returns {TFile[]}
+ */
+export const getFilesInFolder = (
   folder: TFolder,
   includeSubFolders: boolean = true
 ): TFile[] => {
   let files: TFile[] = [];
-
-  folder.children.forEach((item) =>
-    item instanceof TFile && item.extension === 'md'
-      ? files.push(item)
-      : item instanceof TFolder && includeSubFolders
-      ? (files = files.concat(getItemsInFolder(item)))
-      : (files = [])
-  );
+  folder.children.forEach((item) => {
+    if (item instanceof TFile && item.extension === 'md') files.push(item);
+    else if (item instanceof TFolder && includeSubFolders)
+      files = files.concat(getFilesInFolder(item, includeSubFolders));
+  });
   return files;
 };
 
+/**
+ * @summary Returns files to be used to collect data
+ * @param {RenderInfo} renderInfo
+ * @param {Vault} vault
+ * @param {MetadataCache} metadataCache
+ * @param {boolean} includeSubFolders
+ * @returns
+ */
 export const getFiles = async (
   renderInfo: RenderInfo,
   vault: Vault,
   metadataCache: MetadataCache,
-  includeSubFolders: boolean = true
+  includeSubFolders: boolean = true,
+  throwErrors: boolean = true
 ): Promise<TFile[]> => {
+  const files = [];
+
   const {
     folder: rootFolder,
     specifiedFilesOnly,
@@ -33,14 +49,12 @@ export const getFiles = async (
     textValueMap,
   } = renderInfo;
 
-  const files = [];
   // Include files in folder
   if (!specifiedFilesOnly) {
     const folder = vault.getAbstractFileByPath(normalizePath(rootFolder));
     if (folder && folder instanceof TFolder)
-      getItemsInFolder(folder).forEach(
-        (file) => files.push(file),
-        includeSubFolders
+      getFilesInFolder(folder, includeSubFolders).forEach((file) =>
+        files.push(file)
       );
   }
 
@@ -51,7 +65,7 @@ export const getFiles = async (
     if (file && file instanceof TFile) files.push(file);
   });
 
-  // Include files in pointed by links in file
+  // Include linked files
   let linkedFileMultiplier = 1;
   let searchFileMultiplierAfterLink = true;
 
@@ -65,51 +79,53 @@ export const getFiles = async (
     // no 'value' named group
     searchFileMultiplierAfterLink = false;
   }
-
   for (const filePath of linkedFiles) {
-    const path = filePath.endsWith('.md') ? filePath : `${filePath}.md`;
+    const path = !filePath.endsWith('.md') ? `${filePath}.md` : filePath;
+
     const file = vault.getAbstractFileByPath(normalizePath(path));
     if (file && file instanceof TFile) {
       // Get linked files
-      const fileCache = metadataCache.getFileCache(file);
-      const fileContent = await vault.adapter.read(file.path);
-      const lines = fileContent.split(/\r\n|[\n\v\f\r\x85\u2028\u2029]/);
+      const metadata = metadataCache.getFileCache(file);
+      const content = await vault.adapter.read(file.path);
+      const lines = content.split(LineBreakPattern);
 
-      if (!fileCache?.links) continue;
+      if (!metadata?.links) continue;
 
-      for (const link of fileCache.links) {
+      for (const link of metadata.links) {
         if (!link) continue;
         const linkedFile = metadataCache.getFirstLinkpathDest(link.link, path);
         if (linkedFile && linkedFile instanceof TFile) {
-          if (!searchFileMultiplierAfterLink) continue;
+          if (searchFileMultiplierAfterLink) {
+            // Get the line of link in file
+            const lineNumber = link.position.end.line;
+            if (lineNumber >= 0 && lineNumber < lines.length) {
+              const line = lines[lineNumber];
 
-          // Get the line of link in file
-          const lineNumber = link.position.end.line;
-          if (!(lineNumber >= 0 && lineNumber < lines.length)) continue;
-          const line = lines[lineNumber];
-
-          // Extract multiplier
-          const splitLines = line.split(link.original);
-          if (!(splitLines.length === 2)) continue;
-
-          const toParse = splitLines[1].trim();
-          const pattern = fileMultiplierAfterLink;
-          const regex = new RegExp(pattern, 'gm');
-
-          let match;
-          while ((match = regex.exec(toParse))) {
-            if (
-              typeof match.groups !== 'undefined' &&
-              typeof match.groups.value !== 'undefined'
-            ) {
-              // must have group name 'value'
-              const parsed = parseFloatFromAny(
-                match.groups.value.trim(),
-                textValueMap
-              );
-              if (parsed.value === null) {
-                linkedFileMultiplier = parsed.value;
-                break;
+              // Try extract multiplier
+              // if (link.position)
+              const splits = line.split(link.original);
+              if (splits.length === 2) {
+                const toParse = splits[1].trim();
+                const pattern = fileMultiplierAfterLink;
+                const regex = new RegExp(pattern, 'gm');
+                let match;
+                while ((match = regex.exec(toParse))) {
+                  // console.log(match);
+                  if (
+                    typeof match.groups !== 'undefined' &&
+                    typeof match.groups.value !== 'undefined'
+                  ) {
+                    // must have group name 'value'
+                    const parsed = parseFloatFromAny(
+                      match.groups.value.trim(),
+                      textValueMap
+                    );
+                    if (parsed.value !== null) {
+                      linkedFileMultiplier = parsed.value;
+                      break;
+                    }
+                  }
+                }
               }
             }
           }
@@ -118,5 +134,9 @@ export const getFiles = async (
       }
     }
   }
+  if (throwErrors && files.length === 0)
+    throw new TrackerError(
+      `Markdown files not found in folder '${renderInfo.folder}'`
+    );
   return files;
 };

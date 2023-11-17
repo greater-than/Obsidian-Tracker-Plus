@@ -21,7 +21,7 @@ export const renderTracker = (
     // valueShift
     const shiftAmount = valueShift[dataset.id];
     if (shiftAmount !== null && shiftAmount !== 0)
-      dataset.shiftYValues(shiftAmount, shiftOnlyValueLargerThan[dataset.id]);
+      dataset.shiftValues(shiftAmount, shiftOnlyValueLargerThan[dataset.id]);
 
     // penalty
     if (penalty[dataset.id] !== null) dataset.setYPenalty(penalty[dataset.id]);
