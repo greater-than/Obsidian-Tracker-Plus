@@ -18,6 +18,7 @@
     "codemirror",
     "dataview",
     "datetime",
+    "endregion",
     "frontmatter",
     "getFirstLinkpathDest",
     "jsep",
