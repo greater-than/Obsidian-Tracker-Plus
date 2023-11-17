@@ -1,4 +1,4 @@
-# Test Date Formats
+# Date Formats
 
 ## Test Default Date Formats
 

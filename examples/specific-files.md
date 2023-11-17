@@ -1,4 +1,4 @@
-# Test Specified Files
+# Specified Files
 
 ## Collect Data from the Specified Files Only
 

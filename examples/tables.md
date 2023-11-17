@@ -1,4 +1,4 @@
-# Test Table
+# Tables
 
 ## Line Chart
 

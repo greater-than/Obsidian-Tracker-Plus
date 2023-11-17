@@ -1,4 +1,4 @@
-# Test Tab Characters
+# Tab Characters
 
 Tab characters will be replaced by numbers of spaces according to the tabSize defined in your editor settings
 

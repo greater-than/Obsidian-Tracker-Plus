@@ -1,4 +1,4 @@
-# Test Commands
+# Commands
 
 ```tracker
 searchType: tag

@@ -1,4 +1,4 @@
-# Test Multiple Targets and Multiple Values
+# Multiple Targets & Multiple Values
 
 ## Data from Different Value-attached Tags
 

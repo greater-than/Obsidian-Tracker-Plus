@@ -1,4 +1,4 @@
-# Test Relative startDate and endDate
+# Relative Start & End Dates
 
 ```tracker
 searchType: tag

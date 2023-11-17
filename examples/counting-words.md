@@ -1,4 +1,4 @@
-# Test Word Counting
+# Counting Words
 
 ## Word counts of daily notes
 
