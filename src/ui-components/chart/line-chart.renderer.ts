@@ -1,3 +1,4 @@
+import { RenderInfo } from '../../models/render-info';
 import {
   createAreas,
   renderLegend,
@@ -8,8 +9,6 @@ import {
   renderYAxis,
   setChartScale,
 } from './cartesian-chart.helper';
-
-import { RenderInfo } from '../../models/render-info';
 import { LineChart } from './line-chart.model';
 
 export const renderLineChart = (
