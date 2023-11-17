@@ -187,55 +187,52 @@ export const getYTickLabelFormatter = (
   }
 };
 
+/**
+ * @summary Renders the X-Axis for Cartesian Charts
+ * @param {ComponentElements} elements
+ * @param {RenderInfo} renderInfo
+ * @param {CartesianChart} component
+ */
 export const renderXAxis = (
-  chartElements: ComponentElements,
+  elements: ComponentElements,
   renderInfo: RenderInfo,
-  chartInfo: CartesianChart
+  component: CartesianChart
 ): void => {
-  if (!renderInfo || !chartInfo) return;
+  if (!renderInfo || !component) return;
 
-  const datasets = renderInfo.datasets;
-  const xDomain = d3.extent(datasets.dates);
-  const xScale = d3
-    .scaleTime()
-    .domain(xDomain)
-    .range([0, renderInfo.dataAreaSize.width]);
-  chartElements['xScale'] = xScale;
+  const { datasets, dataAreaSize } = renderInfo;
+  const { dates } = datasets;
+  const { height, width } = dataAreaSize;
+  const {
+    xAxisColor,
+    xAxisLabel,
+    xAxisLabelColor,
+    xAxisTickInterval,
+    xAxisTickLabelFormat,
+  } = component;
 
-  const tickIntervalInDuration = DateTimeUtils.parseDuration(
-    chartInfo.xAxisTickInterval
-  );
+  const domain = d3.extent(datasets.dates);
+  const scale = d3.scaleTime().domain(domain).range([0, width]);
+  const axisGen = d3.axisBottom(scale);
+  elements.xScale = scale;
 
-  const { tickValues, tickInterval } = getXTicks(
-    datasets.dates,
-    tickIntervalInDuration
-  );
-  const tickFormat = getXTickLabelFormatter(
-    datasets.dates,
-    chartInfo.xAxisTickLabelFormat
-  );
+  const tickIntervalInDuration = DateTimeUtils.parseDuration(xAxisTickInterval);
 
-  const xAxisGen = d3.axisBottom(xScale);
+  const { tickValues, tickInterval } = getXTicks(dates, tickIntervalInDuration);
+  if (tickValues && tickValues.length !== 0) axisGen.tickValues(tickValues);
+  else if (tickInterval) axisGen.ticks(tickInterval);
 
-  if (tickValues && tickValues.length !== 0) {
-    xAxisGen.tickValues(tickValues);
-  } else if (tickInterval) {
-    xAxisGen.ticks(tickInterval);
-  }
-  if (tickFormat) {
-    xAxisGen.tickFormat(tickFormat);
-  }
+  const formatter = getXTickLabelFormatter(dates, xAxisTickLabelFormat);
+  if (formatter) axisGen.tickFormat(formatter);
 
-  const xAxis = chartElements.dataArea // axis includes ticks
+  const xAxis = elements.dataArea // axis includes ticks
     .append('g')
     .attr('id', 'xAxis')
-    .attr('transform', 'translate(0,' + renderInfo.dataAreaSize.height + ')') // relative to graphArea
-    .call(xAxisGen)
+    .attr('transform', 'translate(0,' + height + ')') // relative to graphArea
+    .call(axisGen)
     .attr('class', 'tracker-axis');
-  if (chartInfo.xAxisColor) {
-    xAxis.style('stroke', chartInfo.xAxisColor);
-  }
-  chartElements['xAxis'] = xAxis;
+  if (xAxisColor) xAxis.style('stroke', xAxisColor);
+  elements.xAxis = xAxis;
 
   const textSize = UiUtils.getTextDimensions('99-99-99');
 
@@ -246,34 +243,29 @@ export const renderXAxis = (
     .attr('transform', 'rotate(-65)')
     .style('text-anchor', 'end')
     .attr('class', 'tracker-tick-label');
-  if (chartInfo.xAxisColor) {
-    xAxisTickLabels.style('fill', chartInfo.xAxisColor);
-  }
+
+  if (xAxisColor) xAxisTickLabels.style('fill', xAxisColor);
 
   const tickLength = 6;
   const tickLabelHeight = textSize.width * Math.sin((65 / 180) * Math.PI);
-  const xAxisLabel = xAxis
+
+  const axisLabel = xAxis
     .append('text')
-    .text(chartInfo.xAxisLabel)
+    .text(xAxisLabel)
     .attr(
       'transform',
-      'translate(' +
-        renderInfo.dataAreaSize.width / 2 +
-        ',' +
-        (tickLength + tickLabelHeight) +
-        ')'
+      'translate(' + width / 2 + ',' + (tickLength + tickLabelHeight) + ')'
     )
     .attr('class', 'tracker-axis-label');
-  if (chartInfo.xAxisLabelColor) {
-    xAxisLabel.style('fill', chartInfo.xAxisLabelColor);
-  }
+
+  if (xAxisLabelColor) axisLabel.style('fill', xAxisLabelColor);
 
   // xAxis height
   xAxis.attr('height', tickLength + tickLabelHeight);
 
   // Expand areas
-  DomUtils.expandArea(chartElements.svg, 0, tickLength + tickLabelHeight);
-  DomUtils.expandArea(chartElements.graphArea, 0, tickLength + tickLabelHeight);
+  DomUtils.expandArea(elements.svg, 0, tickLength + tickLabelHeight);
+  DomUtils.expandArea(elements.graphArea, 0, tickLength + tickLabelHeight);
 };
 
 /**
@@ -486,35 +478,35 @@ export interface RenderTitleOptions {
 }
 
 export const renderLine = (
-  chartElements: ComponentElements,
+  elements: ComponentElements,
   renderInfo: RenderInfo,
-  lineInfo: LineChart,
+  component: LineChart,
   dataset: Dataset,
-  yAxisLocation: string
+  yAxisPosition: string
 ): void => {
-  if (!renderInfo || !lineInfo) return;
+  if (!renderInfo || !component) return;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let yScale: any = null;
-  if (yAxisLocation === 'left') {
-    yScale = chartElements.leftYScale;
-  } else if (yAxisLocation === 'right') {
-    yScale = chartElements.rightYScale;
+  if (yAxisPosition === Position.LEFT) {
+    yScale = elements.leftYScale;
+  } else if (yAxisPosition === Position.RIGHT) {
+    yScale = elements.rightYScale;
   }
 
-  if (lineInfo.showLine[dataset.id]) {
+  if (component.showLine[dataset.id]) {
     const lineGen = d3
       .line<DataPoint>()
       .defined((p: DataPoint) => p.value !== null)
-      .x((p: DataPoint) => chartElements.xScale(p.date))
+      .x((p: DataPoint) => elements.xScale(p.date))
       .y((p: DataPoint) => yScale(p.value));
 
-    const line = chartElements.dataArea
+    const line = elements.dataArea
       .append('path')
       .attr('class', 'tracker-line')
-      .style('stroke-width', lineInfo.lineWidth[dataset.id]);
+      .style('stroke-width', component.lineWidth[dataset.id]);
 
-    if (lineInfo.fillGap[dataset.id]) {
+    if (component.fillGap[dataset.id]) {
       line
         .datum(Array.from(dataset).filter((p) => p.value !== null))
         .attr('d', lineGen);
@@ -522,8 +514,8 @@ export const renderLine = (
       line.datum(dataset).attr('d', lineGen);
     }
 
-    if (lineInfo.lineColor[dataset.id]) {
-      line.style('stroke', lineInfo.lineColor[dataset.id]);
+    if (component.lineColor[dataset.id]) {
+      line.style('stroke', component.lineColor[dataset.id]);
     }
   }
 };
