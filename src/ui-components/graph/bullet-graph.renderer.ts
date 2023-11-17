@@ -391,9 +391,7 @@ const renderBar = (
   if (!renderInfo || !bulletInfo) return;
 
   const retActualValue = expr.resolveValue(bulletInfo.value, renderInfo);
-  if (typeof retActualValue === 'string') {
-    return retActualValue;
-  }
+
   const actualValue = retActualValue;
   if (Number.isNaN(actualValue)) {
     errorMessage = 'Invalid input value: ' + retActualValue;

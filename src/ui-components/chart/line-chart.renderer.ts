@@ -22,7 +22,6 @@ export const renderLineChart = (
   const chartElements = createAreas(canvas, renderInfo);
 
   renderTitle(chartElements, renderInfo, lineInfo);
-
   renderXAxis(chartElements, renderInfo, lineInfo);
 
   const datasetOnLeftYAxis = [];
@@ -38,16 +37,7 @@ export const renderLineChart = (
     }
   }
 
-  const retRenderLeftYAxis = renderYAxis(
-    chartElements,
-    renderInfo,
-    lineInfo,
-    'left',
-    datasetOnLeftYAxis
-  );
-  if (typeof retRenderLeftYAxis === 'string') {
-    return retRenderLeftYAxis;
-  }
+  renderYAxis(chartElements, renderInfo, lineInfo, 'left', datasetOnLeftYAxis);
 
   if (chartElements.leftYAxis && chartElements.leftYScale) {
     for (const datasetId of datasetOnLeftYAxis) {
@@ -60,16 +50,13 @@ export const renderLineChart = (
     }
   }
 
-  const retRenderRightYAxis = renderYAxis(
+  renderYAxis(
     chartElements,
     renderInfo,
     lineInfo,
     'right',
     datasetOnRightYAxis
   );
-  if (typeof retRenderRightYAxis === 'string') {
-    return retRenderRightYAxis;
-  }
 
   if (chartElements.rightYAxis && chartElements.rightYScale) {
     for (const datasetId of datasetOnRightYAxis) {

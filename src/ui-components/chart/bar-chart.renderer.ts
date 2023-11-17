@@ -36,16 +36,7 @@ export const renderBarChart = (
       datasetOnRightYAxis.push(ind);
   }
 
-  const renderLeftYAxis = renderYAxis(
-    elements,
-    renderInfo,
-    component,
-    'left',
-    datasetOnLeftYAxis
-  );
-  if (typeof renderLeftYAxis === 'string') {
-    return renderLeftYAxis;
-  }
+  renderYAxis(elements, renderInfo, component, 'left', datasetOnLeftYAxis);
 
   const totalNumOfBarSets =
     datasetOnLeftYAxis.length + datasetOnRightYAxis.length;
@@ -70,16 +61,7 @@ export const renderBarChart = (
     }
   }
 
-  const retRenderRightYAxis = renderYAxis(
-    elements,
-    renderInfo,
-    component,
-    'right',
-    datasetOnRightYAxis
-  );
-  if (typeof retRenderRightYAxis === 'string') {
-    return retRenderRightYAxis;
-  }
+  renderYAxis(elements, renderInfo, component, 'right', datasetOnRightYAxis);
 
   if (elements.rightYAxis && elements.rightYScale) {
     for (const datasetId of datasetOnRightYAxis) {
