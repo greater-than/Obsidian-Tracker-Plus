@@ -8,27 +8,24 @@ import {
   TFile,
   Vault,
   Workspace,
-  normalizePath,
 } from 'obsidian';
 import * as Collector from './data/collector';
 import { TrackerError } from './errors';
 import { DataMap } from './models/data-map';
 import { DatasetCollection } from './models/dataset';
-import { ComponentType, SearchType, ValueType } from './models/enums';
+import { ComponentType, SearchType } from './models/enums';
 import { ProcessInfo } from './models/process-info';
 import { Query } from './models/query';
 import { RenderInfo } from './models/render-info';
-import { TableData } from './models/table-data';
 import { IQueryValuePair, TNumberValueMap } from './models/types';
 import { getRenderInfo } from './parser/yaml-parser';
-import { TableSelectorPattern } from './regex-patterns';
 import * as Renderer from './renderer';
 import {
   DEFAULT_SETTINGS,
   TrackerSettingTab,
   TrackerSettings,
 } from './settings';
-import { DateTimeUtils, IoUtils, NumberUtils, StringUtils } from './utils';
+import { DateTimeUtils, IoUtils } from './utils';
 import { dateToString } from './utils/date-time.utils';
 // import { getDailyNoteSettings } from "obsidian-daily-notes-interface";
 
@@ -47,12 +44,25 @@ declare module 'obsidian' {
 }
 
 export default class Tracker extends Plugin {
+  // #region Properties
+
   settings: TrackerSettings;
   workspace: Workspace = this.app.workspace;
   vault: Vault = this.app.vault;
   metadataCache: MetadataCache = this.app.metadataCache;
 
-  async onload(): Promise<void> {
+  get view() {
+    return this.app.workspace.getActiveViewOfType(MarkdownView);
+  }
+
+  get editor(): Editor {
+    return this.view.editor;
+  }
+
+  // #endregion
+  // #region Methods
+
+  onload = async (): Promise<void> => {
     console.log('loading Tracker+ plugin');
     await this.loadSettings();
     this.addSettingTab(new TrackerSettingTab(this.app, this));
@@ -61,7 +71,9 @@ export default class Tracker extends Plugin {
       this.processCodeBlock.bind(this)
     );
     this.addCommands();
-  }
+  };
+
+  onunload = (): void => console.log('unloading Tracker+ plugin');
 
   addCommands = () => {
     this.addCommand({
@@ -83,15 +95,11 @@ export default class Tracker extends Plugin {
     });
   };
 
-  async loadSettings(): Promise<void> {
+  loadSettings = async (): Promise<void> => {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-  }
+  };
 
-  async saveSettings(): Promise<void> {
-    await this.saveData(this.settings);
-  }
-
-  onunload = (): void => console.log('unloading Tracker+ plugin');
+  saveSettings = async (): Promise<void> => await this.saveData(this.settings);
 
   /**
    * Returns true if the searchType is Frontmatter, Wiki, WikiLink, or WikiDisplay
@@ -203,12 +211,12 @@ export default class Tracker extends Plugin {
    * @param {HTMLElement} element
    * @param {MarkdownPostProcessorContext} _context
    */
-  async processCodeBlock(
+  processCodeBlock = async (
     source: string,
     element: HTMLElement,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _context: MarkdownPostProcessorContext
-  ): Promise<void> {
+  ): Promise<void> => {
     const container = document.createElement('div');
     try {
       let yaml = source.trim();
@@ -239,28 +247,30 @@ export default class Tracker extends Plugin {
       processInfo.fileTotal = files.length;
 
       // Collect data from files, each file has one data point for each query
-      const loopFilePromises = files.map(async (file) => {
-        // file cache
-        const metadata = this.needMetadata(renderInfo)
-          ? this.metadataCache.getFileCache(file)
-          : null;
+      await Promise.all(
+        files.map(async (file) => {
+          // file cache
+          const metadata = this.needMetadata(renderInfo)
+            ? this.metadataCache.getFileCache(file)
+            : null;
 
-        // content
-        const content: string = this.needContent(renderInfo.queries)
-          ? await this.vault.adapter.read(file.path)
-          : null;
+          // content
+          const content: string = this.needContent(renderInfo.queries)
+            ? await this.vault.adapter.read(file.path)
+            : null;
 
-        // Get xValue and add it into xValueMap for later use
-        const xValueMap: TNumberValueMap = new Map(); // queryId: xValue for this file
-        let skipThisFile = false;
-        for (const xDatasetId of renderInfo.xDataset) {
-          if (!xValueMap.has(xDatasetId)) {
+          // Get xValue and add it into xValueMap for later use
+          const xValues: TNumberValueMap = new Map(); // queryId: xValue for this file
+          let skipThisFile = false;
+          for (const id of renderInfo.xDataset) {
+            if (xValues.has(id)) continue;
+
             let xDate = window.moment('');
-            if (xDatasetId === -1) {
+            if (id === -1) {
               // Default using date in filename as xValue
               xDate = Collector.getFilenameDate(file, renderInfo);
             } else {
-              const xDatasetQuery = renderInfo.queries[xDatasetId];
+              const xDatasetQuery = renderInfo.queries[id];
               switch (xDatasetQuery.type) {
                 case SearchType.Frontmatter:
                   xDate = Collector.getFrontmatterDate(
@@ -330,8 +340,8 @@ export default class Tracker extends Plugin {
 
             if (!skipThisFile) {
               processInfo.gotAnyValidXValue ||= true;
-              xValueMap.set(
-                xDatasetId,
+              xValues.set(
+                id,
                 DateTimeUtils.dateToString(xDate, renderInfo.dateFormat)
               );
               processInfo.fileAvailable++;
@@ -348,130 +358,135 @@ export default class Tracker extends Plugin {
               }
             }
           }
-        }
-        if (skipThisFile) return;
+          if (skipThisFile) return;
 
-        // y-axis queries
-        const yQueries = renderInfo.queries.filter(
-          (q) => q.type !== SearchType.Table && !q.usedAsXDataset
-        );
+          // y-axis queries
+          const yQueries = renderInfo.queries.filter(
+            (q) => q.type !== SearchType.Table && !q.usedAsXDataset
+          );
 
-        const loopQueryPromises = yQueries.map(async (query) => {
-          // Get xValue from file if xDataset assigned
-          // if (renderInfo.xDataset !== null)
-          // let xDatasetId = renderInfo.xDataset;
+          await Promise.all(
+            yQueries.map(async (query) => {
+              // Get xValue from file if xDataset assigned
+              // if (renderInfo.xDataset !== null)
+              // let xDatasetId = renderInfo.xDataset;
 
-          if (metadata && query.type === SearchType.Tag) {
-            // Add frontmatter tags, allow simple tag only
-            const dataAdded = Collector.addFrontmatterTagData(
-              metadata,
-              query,
-              renderInfo,
-              dataMap,
-              xValueMap
-            );
-            processInfo.gotAnyValidYValue ||= dataAdded;
-          } // Search frontmatter tags
+              if (metadata && query.type === SearchType.Tag) {
+                // Add frontmatter tags, allow simple tag only
+                const dataAdded = Collector.addFrontmatterTagData(
+                  metadata,
+                  query,
+                  renderInfo,
+                  dataMap,
+                  xValues
+                );
+                processInfo.gotAnyValidYValue ||= dataAdded;
+              } // Search frontmatter tags
 
-          if (
-            metadata &&
-            query.type === SearchType.Frontmatter &&
-            query.target !== 'tags'
-          ) {
-            const dataAdded = Collector.addFrontmatterData(
-              metadata,
-              query,
-              renderInfo,
-              dataMap,
-              xValueMap
-            );
-            processInfo.gotAnyValidYValue ||= dataAdded;
-          }
+              if (
+                metadata &&
+                query.type === SearchType.Frontmatter &&
+                query.target !== 'tags'
+              ) {
+                const dataAdded = Collector.addFrontmatterData(
+                  metadata,
+                  query,
+                  renderInfo,
+                  dataMap,
+                  xValues
+                );
+                processInfo.gotAnyValidYValue ||= dataAdded;
+              }
 
-          if (
-            metadata &&
-            (query.type === SearchType.Wiki ||
-              query.type === SearchType.WikiLink ||
-              query.type === SearchType.WikiDisplay)
-          ) {
-            const dataAdded = Collector.addWikiData(
-              metadata,
-              query,
-              renderInfo,
-              dataMap,
-              xValueMap
-            );
-            processInfo.gotAnyValidYValue ||= dataAdded;
-          }
+              if (
+                metadata &&
+                (query.type === SearchType.Wiki ||
+                  query.type === SearchType.WikiLink ||
+                  query.type === SearchType.WikiDisplay)
+              ) {
+                const dataAdded = Collector.addWikiData(
+                  metadata,
+                  query,
+                  renderInfo,
+                  dataMap,
+                  xValues
+                );
+                processInfo.gotAnyValidYValue ||= dataAdded;
+              }
 
-          if (content && query.type === SearchType.Tag) {
-            const dataAdded = Collector.addInlineTagData(
-              content,
-              query,
-              renderInfo,
-              dataMap,
-              xValueMap
-            );
-            processInfo.gotAnyValidYValue ||= dataAdded;
-          } // Search inline tags
+              if (content && query.type === SearchType.Tag) {
+                const dataAdded = Collector.addInlineTagData(
+                  content,
+                  query,
+                  renderInfo,
+                  dataMap,
+                  xValues
+                );
+                processInfo.gotAnyValidYValue ||= dataAdded;
+              } // Search inline tags
 
-          if (content && query.type === SearchType.Text) {
-            const dataAdded = Collector.addTextData(
-              content,
-              query,
-              renderInfo,
-              dataMap,
-              xValueMap
-            );
-            processInfo.gotAnyValidYValue ||= dataAdded;
-          } // Search text
+              if (content && query.type === SearchType.Text) {
+                const dataAdded = Collector.addTextData(
+                  content,
+                  query,
+                  renderInfo,
+                  dataMap,
+                  xValues
+                );
+                processInfo.gotAnyValidYValue ||= dataAdded;
+              } // Search text
 
-          if (query.type === SearchType.FileMeta) {
-            const dataAdded = Collector.addFileMetaData(
-              file,
-              content,
-              query,
-              renderInfo,
-              dataMap,
-              xValueMap
-            );
-            processInfo.gotAnyValidYValue ||= dataAdded;
-          } // Search FileMeta
+              if (query.type === SearchType.FileMeta) {
+                const dataAdded = Collector.addFileMetaData(
+                  file,
+                  content,
+                  query,
+                  renderInfo,
+                  dataMap,
+                  xValues
+                );
+                processInfo.gotAnyValidYValue ||= dataAdded;
+              } // Search FileMeta
 
-          if (content && query.type === SearchType.DataviewField) {
-            const dataAdded = Collector.addDataviewFieldData(
-              content,
-              query,
-              renderInfo,
-              dataMap,
-              xValueMap
-            );
-            processInfo.gotAnyValidYValue ||= dataAdded;
-          } // search dvField
+              if (content && query.type === SearchType.DataviewField) {
+                const dataAdded = Collector.addDataviewFieldData(
+                  content,
+                  query,
+                  renderInfo,
+                  dataMap,
+                  xValues
+                );
+                processInfo.gotAnyValidYValue ||= dataAdded;
+              } // search dvField
 
-          if (
-            content &&
-            (query.type === SearchType.Task ||
-              query.type === SearchType.TaskAll ||
-              query.type === SearchType.TaskDone ||
-              query.type === SearchType.TaskNotDone)
-          ) {
-            const dataAdded = Collector.addTaskData(
-              content,
-              query,
-              renderInfo,
-              dataMap,
-              xValueMap
-            );
-            processInfo.gotAnyValidYValue ||= dataAdded;
-          } // search Task
-        });
-        await Promise.all(loopQueryPromises);
-      });
-      await Promise.all(loopFilePromises);
+              if (
+                content &&
+                (query.type === SearchType.Task ||
+                  query.type === SearchType.TaskAll ||
+                  query.type === SearchType.TaskDone ||
+                  query.type === SearchType.TaskNotDone)
+              ) {
+                const dataAdded = Collector.addTaskData(
+                  content,
+                  query,
+                  renderInfo,
+                  dataMap,
+                  xValues
+                );
+                processInfo.gotAnyValidYValue ||= dataAdded;
+              } // search Task
+            })
+          );
+        })
+      );
 
-      // Collect data from a file, one file contains full dataset
-      await this.collectDataFromTable(dataMap, renderInfo, processInfo);
+      // Collect table data from a note, one file contains full dataset
+      await Collector.addTableData(
+        this.app.vault,
+        dataMap,
+        renderInfo,
+        processInfo
+      );
 
       // Check date range
       // minDate and maxDate are collected without knowing startDate and endDate
@@ -565,237 +580,15 @@ export default class Tracker extends Plugin {
       Renderer.renderError(container, e);
       element.appendChild(container);
     }
-  }
+  };
 
-  // TODO: remove this.app and move to collecting.ts
-  async collectDataFromTable(
-    dataMap: DataMap,
-    renderInfo: RenderInfo,
-    processInfo: ProcessInfo
-  ): Promise<void> {
-    const tableQueries = renderInfo.queries.filter(
-      (q) => q.type === SearchType.Table
-    );
-    // Separate queries by tables and xDatasets/yDatasets
-    const tables: Array<TableData> = [];
-    let tableFileNotFound = false;
-    for (const query of tableQueries) {
-      const filePath = query.parentTarget;
-      const file = this.app.vault.getAbstractFileByPath(
-        normalizePath(filePath + '.md')
-      );
-      if (!file || !(file instanceof TFile)) {
-        tableFileNotFound = true;
-        break;
-      }
+  addCodeBlock = (outputType: ComponentType): void => {
+    if (!(this.view instanceof MarkdownView)) return;
 
-      const tableIndex = query.accessors[0];
-      const isX = query.usedAsXDataset;
-
-      const table = tables.find(
-        (t) => t.filePath === filePath && t.tableIndex === tableIndex
-      );
-      if (table) {
-        if (isX) table.xQuery = query;
-        else table.yQueries.push(query);
-      } else {
-        const tableData = new TableData(filePath, tableIndex);
-        if (isX) tableData.xQuery = query;
-        else tableData.yQueries.push(query);
-        tables.push(tableData);
-      }
-    }
-
-    if (tableFileNotFound)
-      throw new TrackerError('File containing tables not found');
-
-    for (const tableData of tables) {
-      //extract xDataset from query
-      const xDatasetQuery = tableData.xQuery;
-      if (!xDatasetQuery) continue; // missing xDataset
-
-      const yDatasetQueries = tableData.yQueries;
-      let filePath = xDatasetQuery.parentTarget;
-      const tableIndex = xDatasetQuery.accessors[0];
-
-      // Get table text
-      let textTable = '';
-      filePath = filePath + '.md';
-      const file = this.app.vault.getAbstractFileByPath(
-        normalizePath(filePath)
-      );
-      if (file && file instanceof TFile) {
-        processInfo.fileAvailable++;
-        const content = await this.app.vault.adapter.read(file.path);
-        const regEx = new RegExp(TableSelectorPattern, 'gm');
-        let match;
-        let indTable = 0;
-
-        while ((match = regEx.exec(content))) {
-          if (indTable === tableIndex) {
-            textTable = match[0];
-            break;
-          }
-          indTable++;
-        }
-      } else continue; // file does not exist
-
-      const tableLines = textTable.split(/\r?\n/).filter((line) => line !== '');
-      let numColumns = 0;
-      let numDataRows = 0;
-
-      // Make sure it is a valid table first
-      if (tableLines.length >= 2) {
-        // Must have header and separator line
-        let headerLine = tableLines.shift().trim();
-        headerLine = StringUtils.parseMarkdownTableRow(headerLine, '|');
-        const headerSplitted = headerLine.split('|');
-        numColumns = headerSplitted.length;
-
-        let sepLine = tableLines.shift().trim();
-        sepLine = StringUtils.parseMarkdownTableRow(sepLine, '|');
-        const sepLineSplitted = sepLine.split('|');
-        for (const col of sepLineSplitted) {
-          if (!col.includes('-')) break; // Not a valid sep
-        }
-
-        numDataRows = tableLines.length;
-      }
-
-      if (numDataRows == 0) continue;
-
-      // get x data
-      const columnXDataset = xDatasetQuery.accessors[1];
-      if (columnXDataset >= numColumns) continue;
-      const xValues = [];
-
-      let indLine = 0;
-      for (const tableLine of tableLines) {
-        const dataRow = StringUtils.parseMarkdownTableRow(
-          tableLine.trim(),
-          '|'
-        );
-        const dataRowSplitted = dataRow.split('|');
-        if (columnXDataset < dataRowSplitted.length) {
-          const data = dataRowSplitted[columnXDataset].trim();
-          const date = DateTimeUtils.toMoment(data, renderInfo.dateFormat);
-
-          if (date.isValid()) {
-            xValues.push(date);
-
-            if (
-              !processInfo.minDate.isValid() &&
-              !processInfo.maxDate.isValid()
-            ) {
-              processInfo.minDate = date.clone();
-              processInfo.maxDate = date.clone();
-            } else {
-              if (date < processInfo.minDate)
-                processInfo.minDate = date.clone();
-
-              if (date > processInfo.maxDate)
-                processInfo.maxDate = date.clone();
-            }
-          } else xValues.push(null);
-        } else xValues.push(null);
-
-        // TODO What is this doing?
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        indLine++;
-      }
-
-      if (xValues.every((v) => v === null))
-        throw new TrackerError('No valid date as X value found in table');
-
-      processInfo.gotAnyValidXValue ||= true;
-
-      // get y data
-      for (const query of yDatasetQueries) {
-        const columnOfInterest = query.accessors[1];
-        if (columnOfInterest >= numColumns) continue;
-
-        let indLine = 0;
-        for (const tableLine of tableLines) {
-          const dataRow = StringUtils.parseMarkdownTableRow(
-            tableLine.trim(),
-            '|'
-          );
-          const dataRowSplitted = dataRow.split('|');
-          if (columnOfInterest < dataRowSplitted.length) {
-            const data = dataRowSplitted[columnOfInterest].trim();
-            const splitted = data.split(query.getSeparator());
-            if (!splitted) continue;
-            if (splitted.length === 1) {
-              const retParse = NumberUtils.parseFloatFromAny(
-                splitted[0],
-                renderInfo.textValueMap
-              );
-              if (retParse.value !== null) {
-                if (retParse.type === ValueType.Time)
-                  query.valueType = ValueType.Time;
-
-                const value = retParse.value;
-                if (indLine < xValues.length && xValues[indLine]) {
-                  processInfo.gotAnyValidYValue ||= true;
-                  dataMap.add(
-                    DateTimeUtils.dateToString(
-                      xValues[indLine],
-                      renderInfo.dateFormat
-                    ),
-                    { query, value }
-                  );
-                }
-              }
-            } else if (
-              splitted.length > query.accessors[2] &&
-              query.accessors[2] >= 0
-            ) {
-              let value = null;
-              const splittedPart = splitted[query.accessors[2]].trim();
-              const retParse = NumberUtils.parseFloatFromAny(
-                splittedPart,
-                renderInfo.textValueMap
-              );
-              if (retParse.value !== null) {
-                if (retParse.type === ValueType.Time) {
-                  query.valueType = ValueType.Time;
-                }
-                value = retParse.value;
-                if (indLine < xValues.length && xValues[indLine]) {
-                  processInfo.gotAnyValidYValue ||= true;
-                  dataMap.add(
-                    DateTimeUtils.dateToString(
-                      xValues[indLine],
-                      renderInfo.dateFormat
-                    ),
-                    { query, value }
-                  );
-                }
-              }
-            }
-          }
-
-          indLine++;
-        } // Loop over tableLines
-      }
-    }
-  }
-
-  getEditor(): Editor {
-    return this.app.workspace.getActiveViewOfType(MarkdownView).editor;
-  }
-
-  addCodeBlock(outputType: ComponentType): void {
-    const currentView = this.app.workspace.activeLeaf.view;
-
-    if (!(currentView instanceof MarkdownView)) {
-      return;
-    }
-
-    let codeblockToInsert = '';
+    let codeBlock = '';
     switch (outputType) {
       case ComponentType.Line:
-        codeblockToInsert = `\`\`\` tracker
+        codeBlock = `\`\`\` tracker
 searchType: tag
 searchTarget: tagName
 folder: /
@@ -808,7 +601,7 @@ line:
 \`\`\``;
         break;
       case ComponentType.Bar:
-        codeblockToInsert = `\`\`\` tracker
+        codeBlock = `\`\`\` tracker
 searchType: tag
 searchTarget: tagName
 folder: /
@@ -821,7 +614,7 @@ bar:
 \`\`\``;
         break;
       case ComponentType.Summary:
-        codeblockToInsert = `\`\`\` tracker
+        codeBlock = `\`\`\` tracker
 searchType: tag
 searchTarget: tagName
 folder: /
@@ -836,28 +629,22 @@ summary:
         break;
     }
 
-    if (codeblockToInsert !== '') {
-      const textInserted = this.insertToNextLine(codeblockToInsert);
-      if (!textInserted) {
-      }
-    }
+    if (codeBlock !== '') this.insertOnNextLine(codeBlock);
+  };
+
+  insertOnNextLine(text: string): boolean {
+    if (!this.editor) return false;
+
+    const cursor = this.editor.getCursor();
+    const lineNumber = cursor.line;
+    const line = this.editor.getLine(lineNumber);
+
+    cursor.ch = line.length;
+    this.editor.setSelection(cursor);
+    this.editor.replaceSelection('\n' + text);
+
+    return true;
   }
 
-  insertToNextLine(text: string): boolean {
-    const editor = this.getEditor();
-
-    if (editor) {
-      const cursor = editor.getCursor();
-      const lineNumber = cursor.line;
-      const line = editor.getLine(lineNumber);
-
-      cursor.ch = line.length;
-      editor.setSelection(cursor);
-      editor.replaceSelection('\n' + text);
-
-      return true;
-    }
-
-    return false;
-  }
+  // #endregion
 }

@@ -438,8 +438,8 @@ export const addInlineTagData = (
 ): boolean => {
   // Test this in Regex101
   // (^|\s)#tagName(\/[\w-]+)*(:(?<value>[\d\.\/-]*)[a-zA-Z]*)?([\\.!,\\?;~-]*)?(\s|$)
-  let { target } = query;
-  if (query.parentTarget) target = query.parentTarget; // use parent tag name for multiple values
+  let target = query.parentTarget ?? query.target;
+  // use parent tag name for multiple values
   if (target.length > 1 && target.startsWith('#')) target = target.substring(1);
   const pattern = `(^|\\s)#${target}${PropertyValuePattern}`;
   return addMultipleValues(note, pattern, query, dataMap, valueMap, renderInfo);
@@ -594,10 +594,8 @@ export const addDataviewFieldData = (
   dataMap: DataMap,
   valueMap: TNumberValueMap
 ): boolean => {
-  let { target } = query;
-  if (query.parentTarget) {
-    target = query.parentTarget; // use parent tag name for multiple values
-  }
+  let target = query.parentTarget ?? query.target;
+
   // Dataview ask user to add dashes for spaces as search target
   // So a dash may stands for a real dash or a space
   target = target.replace('-', '[\\s\\-]');
@@ -641,12 +639,9 @@ export const addInlineDataviewFieldData = (
   dataMap: DataMap,
   valueMap: TNumberValueMap
 ): boolean => {
-  let { target } = query;
-  if (query.parentTarget) target = query.parentTarget; // use parent tag name for multiple values
-
   // Dataview ask user to add dashes for spaces as search target
   // So a dash may stands for a real dash or a space
-  target = target.replace('-', '[\\s\\-]');
+  const target = (query.parentTarget ?? query.target).replace('-', '[\\s\\-]');
 
   // Test this in Regex101
   // remember '\s' includes new line
@@ -666,11 +661,10 @@ export const getTables = (
   vault: Vault,
   renderInfo: RenderInfo
 ): TableData[] => {
-  const queries = renderInfo.queries.filter(
-    (q) => q.type === SearchType.Table && !q.usedAsXDataset
-  );
   // Separate queries by tables and xDatasets/yDatasets
   const tables: Array<TableData> = [];
+
+  const queries = renderInfo.queries.filter((q) => q.type === SearchType.Table);
 
   for (const query of queries) {
     const filePath = query.parentTarget;
@@ -687,12 +681,12 @@ export const getTables = (
     if (table) {
       if (usedAsXDataset) table.xQuery = query;
       else table.yQueries.push(query);
-      continue;
+    } else {
+      const tableData = new TableData(filePath, accessor);
+      if (usedAsXDataset) tableData.xQuery = query;
+      else tableData.yQueries.push(query);
+      tables.push(tableData);
     }
-    const tableData = new TableData(filePath, accessor);
-    if (usedAsXDataset) tableData.xQuery = query;
-    else tableData.yQueries.push(query);
-    tables.push(tableData);
   }
 
   return tables;
@@ -704,7 +698,6 @@ export const getTables = (
  * @param {DataMap} dataMap
  * @param {RenderInfo} renderInfo
  * @param {ProcessInfo} processInfo
- * @returns
  */
 export const addTableData = async (
   vault: Vault,
@@ -713,54 +706,51 @@ export const addTableData = async (
   processInfo: ProcessInfo
 ): Promise<void> => {
   // Separate queries by tables and xDatasets/yDatasets
-  const tables = getTables(vault, renderInfo);
+  const tables: Array<TableData> = getTables(vault, renderInfo);
 
-  for (const table of tables) {
-    //extract xQuery
-    const { xQuery } = table;
+  for (const tableData of tables) {
+    //extract xDataset from query
+    const { xQuery } = tableData;
     if (!xQuery) continue; // missing xDataset
 
-    const { yQueries } = table;
-    let filePath = xQuery.parentTarget;
+    const yQueries = tableData.yQueries;
+    const filePath = xQuery.parentTarget + '.md';
     const tableIndex = xQuery.accessors[0];
 
-    // Get table content
+    // Get table text
     let tableContent = '';
-    filePath = filePath + '.md';
     const file = vault.getAbstractFileByPath(normalizePath(filePath));
     if (file && file instanceof TFile) {
       processInfo.fileAvailable++;
       const content = await vault.adapter.read(file.path);
-      const regex = new RegExp(TableSelectorPattern, 'gm');
+      const regEx = new RegExp(TableSelectorPattern, 'gm');
       let match;
-      let index = 0;
+      let indTable = 0;
 
-      while ((match = regex.exec(content))) {
-        if (index === tableIndex) {
+      while ((match = regEx.exec(content))) {
+        if (indTable === tableIndex) {
           tableContent = match[0];
           break;
         }
-        index++;
+        indTable++;
       }
     } else continue; // file does not exist
 
-    let tableRows = tableContent.split(/\r?\n/);
-    tableRows = tableRows.filter((line) => line !== '');
+    const tableRows = tableContent.split(/\r?\n/).filter((line) => line !== '');
     let columnCount = 0;
     let rowCount = 0;
 
     // Make sure it is a valid table first
     if (tableRows.length >= 2) {
       // Must have header and separator line
-      const headerRow = StringUtils.parseMarkdownTableRow(
-        tableRows.shift().trim()
-      );
+      let headerRow = tableRows.shift().trim();
+      headerRow = StringUtils.parseMarkdownTableRow(headerRow, '|');
       const columns = headerRow.split('|');
       columnCount = columns.length;
 
-      let sepLine = tableRows.shift().trim();
-      sepLine = StringUtils.parseMarkdownTableRow(sepLine);
-      const rows = sepLine.split('|');
+      let separatorRow = tableRows.shift().trim();
+      separatorRow = StringUtils.parseMarkdownTableRow(separatorRow, '|');
+      const rows = separatorRow.split('|');
       for (const col of rows) if (!col.includes('-')) break; // Not a valid separator
 
       rowCount = tableRows.length;
@@ -771,17 +761,17 @@ export const addTableData = async (
     // get x data
     const columnIndex = xQuery.accessors[1];
     if (columnIndex >= columnCount) continue;
-    const values = [];
+    const xValues = [];
 
     for (const row of tableRows) {
-      const dataRow = StringUtils.parseMarkdownTableRow(row.trim());
+      const dataRow = StringUtils.parseMarkdownTableRow(row.trim(), '|');
       const cells = dataRow.split('|');
       if (columnIndex < cells.length) {
         const data = cells[columnIndex].trim();
         const date = DateTimeUtils.toMoment(data, renderInfo.dateFormat);
 
         if (date.isValid()) {
-          values.push(date);
+          xValues.push(date);
           if (
             !processInfo.minDate.isValid() &&
             !processInfo.maxDate.isValid()
@@ -790,14 +780,17 @@ export const addTableData = async (
             processInfo.maxDate = date.clone();
           } else {
             if (date < processInfo.minDate) processInfo.minDate = date.clone();
+
             if (date > processInfo.maxDate) processInfo.maxDate = date.clone();
           }
-        } else values.push(null);
-      } else values.push(null);
+        } else xValues.push(null);
+      } else xValues.push(null);
     }
 
-    if (values.every((v) => v === null))
+    if (xValues.every((v) => v === null))
       throw new TrackerError('No valid date as X value found in table');
+
+    processInfo.gotAnyValidXValue ||= true;
 
     // get y data
     for (const query of yQueries) {
@@ -806,7 +799,7 @@ export const addTableData = async (
 
       let rowIndex = 0;
       for (const row of tableRows) {
-        const dataRow = StringUtils.parseMarkdownTableRow(row.trim());
+        const dataRow = StringUtils.parseMarkdownTableRow(row.trim(), '|');
         const columns = dataRow.split('|');
         if (columnIndex < columns.length) {
           const rowData = columns[columnIndex]
@@ -820,10 +813,11 @@ export const addTableData = async (
             );
             if (value !== null) {
               if (type === ValueType.Time) query.valueType = ValueType.Time;
-              if (rowIndex < values.length && values[rowIndex]) {
+              if (rowIndex < xValues.length && xValues[rowIndex]) {
+                processInfo.gotAnyValidYValue ||= true;
                 dataMap.add(
                   DateTimeUtils.dateToString(
-                    values[rowIndex],
+                    xValues[rowIndex],
                     renderInfo.dateFormat
                   ),
                   { query, value }
@@ -834,17 +828,18 @@ export const addTableData = async (
             rowData.length > query.accessors[2] &&
             query.accessors[2] >= 0
           ) {
+            const splittedPart = rowData[query.accessors[2]].trim();
             const { type, value } = NumberUtils.parseFloatFromAny(
-              rowData[query.accessors[2]].trim(),
+              splittedPart,
               renderInfo.textValueMap
             );
             if (value !== null) {
               if (type === ValueType.Time) query.valueType = ValueType.Time;
-
-              if (rowIndex < values.length && values[rowIndex]) {
+              if (rowIndex < xValues.length && xValues[rowIndex]) {
+                processInfo.gotAnyValidYValue ||= true;
                 dataMap.add(
                   DateTimeUtils.dateToString(
-                    values[rowIndex],
+                    xValues[rowIndex],
                     renderInfo.dateFormat
                   ),
                   { query, value }
@@ -854,7 +849,7 @@ export const addTableData = async (
           }
         }
         rowIndex++;
-      } // Loop over tableRows
+      }
     }
   }
 };

@@ -53,20 +53,15 @@ export const getDeepValue = (
   object: FrontMatterCache,
   property: string
 ): number | string | string[] => {
-  if (Object.keys(object).length === 0) return null;
-  const segments = property
-    .replace(/^\./, '') // strip a leading dot
-    .split('.');
-
-  let value: boolean | number | string | string[] | unknown = null;
-  // for (let i = 0, n = segments.length; i < n; ++i) {}
+  property = property.replace(/^\./, '');
+  const segments = property.split('.');
   segments.forEach((segment) => {
-    if (!(segment in object)) return;
-    value = object[segment];
+    if (!(segment in object)) return null;
+    object = object[segment];
   });
 
-  if (typeof value === 'string' || Array.isArray(value)) return value;
-  if (typeof value === 'number') return value.toString();
-  if (typeof value === 'boolean') return value.toString();
+  if (typeof object === 'string' || Array.isArray(object)) return object;
+  if (typeof object === 'number') return (object as number).toString();
+  if (typeof object === 'boolean') return (object as boolean).toString();
   return null;
 };
