@@ -43,9 +43,7 @@ export const renderLineChart = (
     for (const datasetId of datasetOnLeftYAxis) {
       const dataset = renderInfo.datasets.getDatasetById(datasetId);
       if (dataset.query.usedAsXDataset) continue;
-
       renderLine(chartElements, renderInfo, lineInfo, dataset, 'left');
-
       renderPoints(chartElements, renderInfo, lineInfo, dataset, 'left');
     }
   }
@@ -62,16 +60,12 @@ export const renderLineChart = (
     for (const datasetId of datasetOnRightYAxis) {
       const dataset = renderInfo.datasets.getDatasetById(datasetId);
       if (dataset.query.usedAsXDataset) continue;
-
       renderLine(chartElements, renderInfo, lineInfo, dataset, 'right');
-
       renderPoints(chartElements, renderInfo, lineInfo, dataset, 'right');
     }
   }
 
-  if (lineInfo.showLegend) {
-    renderLegend(chartElements, renderInfo, lineInfo);
-  }
+  if (lineInfo.showLegend) renderLegend(chartElements, renderInfo, lineInfo);
 
   setChartScale(canvas, chartElements, renderInfo);
 };
