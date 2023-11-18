@@ -6,14 +6,14 @@ import { ValueType } from '../../models/enums';
 import { RenderInfo } from '../../models/render-info';
 import { ComponentElements } from '../../models/types';
 import { UiUtils } from '../../utils';
+import { setScale } from '../../utils/ui.utils';
+import { createElements } from './cartesian-chart.helper';
 import {
-  createAreas,
   renderLegend,
   renderTitle,
   renderXAxis,
   renderYAxis,
-  setChartScale,
-} from './cartesian-chart.helper';
+} from './cartesian-chart.renderer';
 import { LineChart } from './line-chart.model';
 
 /**
@@ -29,7 +29,7 @@ export const renderLineChart = (
 ): void => {
   if (!renderInfo || !component) return;
 
-  const elements = createAreas(container, renderInfo);
+  const elements = createElements(container, renderInfo);
 
   renderTitle(elements, renderInfo, component);
   renderXAxis(elements, renderInfo, component);
@@ -69,7 +69,7 @@ export const renderLineChart = (
 
   if (component.showLegend) renderLegend(elements, renderInfo, component);
 
-  setChartScale(container, elements, renderInfo);
+  setScale(container, elements, renderInfo);
 };
 
 /**
@@ -181,6 +181,12 @@ export const renderPoints = (
   }
 };
 
+/**
+ * @summary Renders the tool tip that hovers over data points in the line chart
+ * @param {any} targetElements
+ * @param {ComponentElements} elements
+ * @param {RenderInfo} renderInfo
+ */
 export function renderTooltip(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   targetElements: any,
@@ -224,7 +230,6 @@ export function renderTooltip(
       let labelValueText = 'value: ';
       const valueType = d3.select(this).attr('valueType');
       const strValue = d3.select(this).attr('value');
-      // strValue += y.toString();//debug
       if (valueType === 'Time') {
         const dayStart = window.moment('00:00', 'HH:mm', true);
         const tickTime = dayStart.add(parseFloat(strValue), 'seconds');
