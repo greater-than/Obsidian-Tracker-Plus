@@ -160,7 +160,7 @@ line:
     lineColor: green, red
 ```
 
-Multiple values seprated by 'comma'
+Multiple values separated by 'comma'
 
 ```tracker
 searchType: dvField
