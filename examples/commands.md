@@ -1,11 +1,15 @@
-# Commands
+---
+tags:
+  - LineChart
+  - output-line
+  - commands
+---
 
 ```tracker
 searchType: tag
 searchTarget: weight
 folder: /
-startDate:
-endDate:
+endDate: 2021-02-01
 line:
     title: "Line Chart"
     xAxisLabel: Date
@@ -16,8 +20,7 @@ line:
 searchType: tag
 searchTarget: weight
 folder: /
-startDate:
-endDate:
+endDate: 2021-02-01
 bar:
     title: "Bar Chart"
     xAxisLabel: Date
