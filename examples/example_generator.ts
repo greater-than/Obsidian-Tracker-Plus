@@ -3,10 +3,10 @@ import * as moment from 'moment';
 import * as path from 'path';
 
 const root_folder = __dirname;
-const subfolder = 'diary';
-const dateFormat = 'YYYY-MM-DD';
-const startDate = moment('2021-01-01', dateFormat);
-const endDate = moment('2021-12-31', dateFormat);
+const subfolder = 'Ξdiary';
+const dateFormat = 'YYYY/MM-MMMM/YYYY-MM-DD';
+const startDate = moment(new Date(), dateFormat);
+const endDate = moment(startDate.add(1, 'month').add(-1, 'days'), dateFormat);
 let seed = 1;
 
 const random = (): number => Math.floor(Math.sin(seed++) * 10000);
