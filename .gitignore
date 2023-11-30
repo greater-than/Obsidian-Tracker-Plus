@@ -12,7 +12,8 @@ examples/*.js
 *.zip
 
 # .obsidian
-.obsidian
+sample-vault/.obsidian/plugins
+
 
 # examples for users
 examples/case
