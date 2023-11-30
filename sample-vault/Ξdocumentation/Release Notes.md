@@ -2,11 +2,16 @@
 
 ### v2.0.0
 
+**Housekeeping**
+
 - Organized Tracker+ [[Dashboard|Examples & Documentation]]
   - Separated and renamed files to be more descriptive
   - Added tags to allow for easier discovery while using the example vault in Obsidian
-  - Updates links to be relative
-- Moved documentation to `/examples/Ξdocumentation` so it is available while using the example vault in Obsidian
+  - Updates links to be relative or Obsidian link notation
+- Renamed `examples` directory to `sample-vault`
+- Moved documentation to `/sample-vault/Ξdocumentation` so it is available while using the sample vault in Obsidian
+- Added a dashboard note to the sample-vault, with embedded content from the examples and documentation
+- Moving forward, all documentation will be authored using Obsidian
 
 ### v1.11.0
 
