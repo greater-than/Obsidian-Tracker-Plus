@@ -10,7 +10,7 @@ import { ComponentElements } from '../models/types';
  * @param {string} rotate
  * @returns {Size} The dimensions of text block after applying styles and optionally rotating it
  */
-export const getTextDimensions = (
+export const getDimensions = (
   text: string,
   cssClass: string = '',
   rotate: string = ''
@@ -33,31 +33,29 @@ export const getTextDimensions = (
 
 /**
  * Sets the scale of the chart/graph
- * @param {HTMLElement} component
+ * @param {HTMLElement} container
  * @param {ComponentElements} elements
  * @param {RenderInfo} renderInfo
  */
 export const setScale = (
-  component: HTMLElement,
+  container: HTMLElement,
   elements: ComponentElements,
   renderInfo: RenderInfo
 ): void => {
-  const selection = d3.select(component);
+  const selection = d3.select(container);
   const { svg } = elements;
-  const svgWidth = parseFloat(svg.attr('width'));
-  const svgHeight = parseFloat(svg.attr('height'));
+  const width = parseFloat(svg.attr('width'));
+  const height = parseFloat(svg.attr('height'));
   const { fitPanelWidth, fixedScale } = renderInfo;
-
   svg
     .attr('width', null)
     .attr('height', null)
-    .attr('viewBox', `0 0 ${svgWidth} ${svgHeight}`)
+    .attr('viewBox', `0 0 ${width} ${height}`)
     .attr('preserveAspectRatio', 'xMidYMid meet');
 
-  if (fitPanelWidth) {
-    selection.style('width', '100%');
-  } else {
-    selection.style('width', (svgWidth * fixedScale).toString() + 'px');
-    selection.style('height', (svgHeight * fixedScale).toString() + 'px');
+  if (fitPanelWidth) selection.style('width', '100%');
+  else {
+    selection.style('width', (width * fixedScale).toString() + 'px');
+    selection.style('height', (height * fixedScale).toString() + 'px');
   }
 };

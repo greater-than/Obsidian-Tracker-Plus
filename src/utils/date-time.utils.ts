@@ -1,8 +1,11 @@
-import moment, { ISO_8601 } from 'moment';
-import Duration = moment.Duration;
-import DurationInputArg2 = moment.DurationInputArg2;
-import Moment = moment.Moment;
-import MomentFormatSpecification = moment.MomentFormatSpecification;
+import moment, {
+  Duration,
+  DurationInputArg2,
+  ISO_8601,
+  Moment,
+  MomentFormatSpecification,
+} from 'moment';
+import { stripWikiLinkBrackets } from './string.utils';
 
 export type TMoment = (() => Moment) & typeof moment;
 
@@ -29,15 +32,24 @@ export const timeFormats = ((): string[] => {
   hours.forEach((hour) =>
     mins.forEach((min) =>
       secs.forEach((sec) => {
-        let fmt = `${hour}:${min}`;
-        if (sec !== '') fmt += `:${sec}`;
-        if (hour === 'h') fmt += ' a';
-        formats.push(fmt);
+        let format = `${hour}:${min}`;
+        if (sec !== '') format += `:${sec}`;
+        if (hour === 'h') format += ' a';
+        formats.push(format);
       })
     )
   );
   return formats;
 })();
+
+/**
+ * @summary Checks for case-insensitive date format of 'ISO-8601'
+ * @param {string} format
+ * @returns {boolean}
+ */
+export const isFormatIso8601 = (
+  format: string | MomentFormatSpecification
+): boolean => (format as string).toLowerCase() === 'iso-8601';
 
 /**
  * @summary Returns a date string from the provided input
@@ -67,21 +79,19 @@ export const getDateString = (
 };
 
 /**
- * @summary
+ * @summary Returns the numeric value specified for a duration
  * @param {string} duration
  * @param {string[]} units
- * @param {boolean} removePattern
- * @returns {[number, string]}
+ * @returns {number}
  */
-export const getValueAndDuration = (
+export const getValueFromDuration = (
   duration: string,
-  units: string[],
-  removePattern: boolean = true
-): { value: number; duration: string } => {
-  if (!duration || !units || units.length === 0)
-    return { value: null, duration };
+  units: string[]
+): number => {
+  if (!duration || !units || units.length === 0) return null;
 
-  const pattern = `^(?<value>[0-9]+)(${units.join('|')}')$`;
+  const pattern = `^(?<value>[0-9]+)(${units.join('|')})$`;
+
   const regex = new RegExp(pattern, 'gm');
   const match = regex.exec(duration);
   if (
@@ -91,11 +101,10 @@ export const getValueAndDuration = (
   ) {
     const value = parseFloat(match.groups.value);
     if (Number.isNumber(value) && !Number.isNaN(value)) {
-      if (removePattern) duration = duration.replace(regex, ''); // TODO Why is this here?
-      return { value, duration };
+      return value;
     }
   }
-  return { value: null, duration }; // TODO duration isn't used anywhere. Do we need to return it?
+  return null;
 };
 
 /**
@@ -116,33 +125,30 @@ export const parseDuration = (duration: string): Duration => {
   const seconds = ['second', 'seconds', 'S', 's'];
 
   const formats = [
-    { unit: 'years', units: years },
-    { unit: 'months', units: months },
-    { unit: 'weeks', units: weeks },
-    { unit: 'days', units: days },
-    { unit: 'hours', units: hours },
-    { unit: 'minutes', units: minutes },
-    { unit: 'seconds', units: seconds },
+    { name: 'years', units: years },
+    { name: 'months', units: months },
+    { name: 'weeks', units: weeks },
+    { name: 'days', units: days },
+    { name: 'hours', units: hours },
+    { name: 'minutes', units: minutes },
+    { name: 'seconds', units: seconds },
   ];
-
-  let hasValue = false;
 
   const isNegative = duration.startsWith('-');
   const isPositive = duration.startsWith('+');
   if (isNegative || isPositive) duration = duration.substring(1);
 
-  const mDuration = window.moment.duration(0);
-
-  formats.forEach((format) => {
-    let { value } = getValueAndDuration(duration, format.units);
+  for (const format of formats) {
+    let value = getValueFromDuration(duration, format.units);
     if (value !== null) {
       if (isNegative) value *= -1;
-      mDuration.add(value, format.unit as DurationInputArg2);
-      hasValue = true;
+      const d = window.moment
+        .duration(0)
+        .add(value, format.name as DurationInputArg2);
+      return d;
     }
-  });
-
-  return hasValue ? mDuration : null;
+  }
+  return null;
 };
 
 /**
@@ -155,14 +161,14 @@ export const getDateByDurationToToday = (
   date: string,
   format: string
 ): Moment => {
-  let mDate = null;
   const duration = parseDuration(date);
+  let d = null;
   if (duration && window.moment.isDuration(duration)) {
-    mDate = getDateToday(format);
-    mDate = mDate.add(duration);
-    if (mDate && mDate.isValid()) return mDate;
+    d = getToday(format);
+    d = d.add(duration);
+    if (d && d.isValid()) return d;
   }
-  return mDate;
+  return null;
 };
 
 /**
@@ -175,14 +181,9 @@ export const toMoment = (
   date: string,
   format: MomentFormatSpecification
 ): Moment => {
-  const mFormat =
-    (format as string).toLowerCase() === 'iso-8601' ? ISO_8601 : format;
-
-  const input =
-    date.length > 4 && date.startsWith('[[') && date.endsWith(']]')
-      ? date.substring(2, date.length - 2)
-      : date;
-  return window.moment(input, mFormat, true).startOf('day'); // strip time
+  const f = isFormatIso8601(format) ? ISO_8601 : format;
+  const input = stripWikiLinkBrackets(date);
+  return window.moment(input, f, true).startOf('day'); // strip time
 };
 
 /**
@@ -193,33 +194,25 @@ export const toMoment = (
  */
 export const dateToString = (date: Moment, format: string): string => {
   if (typeof date === 'undefined' || date === null) return null;
-  if (format.toLowerCase() === 'iso-8601') return date.format();
-  return date.format(format);
+  return isFormatIso8601(format) ? date.format() : date.format(format);
 };
 
 /**
  * @summary
  * @param {number} unixTime
- * @param {format} format The
+ * @param {format} format
  * @returns {Moment}
  */
-export const getDateFromUnixTime = (
-  unixTime: number,
-  format: string
-): Moment => {
-  const m = window.moment;
-  const date = m(unixTime);
-  const strDate = dateToString(date, format);
-  return toMoment(strDate, format);
-};
+export const getDateFromUnixTime = (unixTime: number, format: string): Moment =>
+  toMoment(dateToString(window.moment(unixTime), format), format);
 
 /**
  * @summary
  * @param format
  * @returns {Moment}
  */
-export const getDateToday = (format: string): Moment => {
-  const today = window.moment('');
+export const getToday = (format: string): Moment => {
+  const today = window.moment();
   const strToday = dateToString(today, format);
   return toMoment(strToday, format);
 };

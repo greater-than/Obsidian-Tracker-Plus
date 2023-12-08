@@ -280,7 +280,7 @@ export default class Tracker extends Plugin {
                   );
                   break;
                 case SearchType.Tag:
-                  xDate = Collector.getTagDate(
+                  xDate = Collector.getInlineTagDate(
                     content,
                     renderInfo,
                     xDatasetQuery
@@ -497,15 +497,15 @@ export default class Tracker extends Plugin {
         processInfo.fileAvailable === 0 ||
         !processInfo.gotAnyValidXValue
       ) {
-        message = `No valid date as X value found in notes`;
+        message = `No valid date as X value found in notes: `;
         if (processInfo.fileOutOfDateRange > 0)
           throw new TrackerError(
-            `${message}\n${processInfo.fileOutOfDateRange} files are out of the date range.`
+            `${message}${processInfo.fileOutOfDateRange} files are out of the date range.`
           );
 
         if (processInfo.fileNotInFormat)
           throw new TrackerError(
-            `${message}\n${processInfo.fileNotInFormat} files are not in the right format.`
+            `${message}${processInfo.fileNotInFormat} files are not in the right format.`
           );
       }
       if (renderInfo.startDate === null && renderInfo.endDate === null) {

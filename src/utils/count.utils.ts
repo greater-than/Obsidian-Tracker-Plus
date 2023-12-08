@@ -1,4 +1,4 @@
-import { SentenceCountPattern, WordCountPattern } from '../regex-patterns';
+import { SentenceCountPattern, WordCountExpression } from '../regex-patterns';
 import { cleanText } from './string.utils';
 
 /**
@@ -17,7 +17,7 @@ export const getSentenceCount = (text: string): number =>
  * @returns {number}
  */
 export const getWordCount = (text: string): number =>
-  (cleanText(text).match(WordCountPattern) || []).length;
+  (cleanText(text).match(WordCountExpression) || []).length;
 
 /**
  * @summary Returns the number of characters in a string

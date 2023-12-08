@@ -33,9 +33,9 @@ export interface ILegend {
   legendBorderColor: string;
 }
 
-// TODO Can explicit properties be added here or in derived classes? ex: PieChartElements
+// TODO Can explicit properties be added here? ex: svg, dataArea, graphArea
 export type ComponentElements = {
-  // svg: Selection<BaseType, object, null, undefined>;
+  // svg?: Selection<SVGSVGElement, unknown, null, undefined>;
   // // eslint-disable-next-line @typescript-eslint/no-explicit-any
   // dataArea: any;
   // // eslint-disable-next-line @typescript-eslint/no-explicit-any

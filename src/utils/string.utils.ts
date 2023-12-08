@@ -76,3 +76,13 @@ export const toSentenceCase = (value: string): string => {
 
   return all.substring(0, all.length - 1);
 };
+
+/**
+ * Removes leading/trailing brackets from a string
+ * @param {string} value
+ * @returns {string}
+ */
+export const stripWikiLinkBrackets = (value: string): string =>
+  value.length > 4 && value.startsWith('[[') && value.endsWith(']]')
+    ? value.substring(2, value.length - 2)
+    : value;

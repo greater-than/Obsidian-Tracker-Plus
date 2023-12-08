@@ -1,7 +1,7 @@
 {
   "name": "tracker-plus",
   "version": "1.11.1",
-  "description": "Obsidian plugin to track and visualize data from your notes.",
+  "description": "Plugin to track and visualize data from Obsidian notes.",
   "author": "greater-than",
   "license": "MIT",
   "keywords": [
@@ -10,6 +10,14 @@
     "plugin"
   ],
   "main": "main.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/greater-than/Obsidian-Tracker-Plus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/greater-than/Obsidian-Tracker-Plus/issues"
+  },
+  "homepage": "https://github.com/greater-than/Obsidian-Tracker-Plus#readme",
   "scripts": {
     "dev": "rollup --config rollup.config.dev.js -w",
     "build": "rollup --config rollup.config.build.js",

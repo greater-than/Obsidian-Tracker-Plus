@@ -90,7 +90,9 @@ export const formatDate = (
  * @returns {boolean}
  */
 export const isSearchTypeValid = (searchType: string): boolean =>
-  SearchTypeValues.includes(searchType);
+  SearchTypeValues.map((type) => type.toLowerCase()).includes(
+    searchType.toLowerCase()
+  );
 
 /**
  * @summary Returns true if the y-axis location is valid

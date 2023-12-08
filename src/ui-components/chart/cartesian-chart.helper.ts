@@ -1,76 +1,29 @@
 import * as d3 from 'd3';
 import { Duration, Moment } from 'moment';
 import { sprintf } from 'sprintf-js';
-import { RenderInfo } from '../../models/render-info';
-import { ComponentElements } from '../../models/types';
 import { DateTimeUtils } from '../../utils';
+import { fiveHours, halfHour, oneHour, twelveHours } from '../shared';
+import { TTickLabelFormatter } from './types';
 
-export interface CreateElementsOptions {
-  clearContents?: boolean;
-  elements?: ComponentElements;
+export interface ITickInterval {
+  values: Date[];
+  interval: d3.TimeInterval;
 }
-
-export const createElements = (
-  container: HTMLElement,
-  renderInfo: RenderInfo,
-  options: CreateElementsOptions = { clearContents: false }
-): ComponentElements => {
-  if (!renderInfo) return;
-
-  const elements: ComponentElements = options?.elements || {};
-  const { dataAreaSize, margin } = renderInfo;
-  const { height, width } = dataAreaSize;
-
-  // Start with a clean slate
-  if (options?.clearContents) {
-    d3.select(container).select('#svg').remove();
-    Object.getOwnPropertyNames(elements).forEach(
-      (name) => delete elements[name]
-    );
-  }
-  // whole area for plotting, includes margins
-  const svg = d3
-    .select(container)
-    .append('svg')
-    .attr('id', 'svg')
-    .attr('width', width + margin.left + margin.right)
-    .attr('height', height + margin.top + margin.bottom);
-  elements['svg'] = svg;
-
-  // graphArea, includes chartArea, title, legend
-  const graphArea = svg
-    .append('g')
-    .attr('id', 'graphArea')
-    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
-    .attr('width', width + margin.right)
-    .attr('height', height + margin.bottom);
-  elements['graphArea'] = graphArea;
-
-  // dataArea, under graphArea, includes points, lines, xAxis, yAxis
-  const dataArea = graphArea
-    .append('g')
-    .attr('id', 'dataArea')
-    .attr('width', width)
-    .attr('height', height);
-  elements['dataArea'] = dataArea;
-
-  return elements;
-};
 
 export const getXTicks = (
   dates: Moment[],
   interval: Duration
-): { tickValues: Array<Date>; tickInterval: d3.TimeInterval } => {
+): ITickInterval => {
   // The input interval could be null,
   // generate tick values even if interval is null
-  let tickValues: Array<Date> = [];
-  let tickInterval = null;
+  let values: Date[] = [];
+  let step = null;
 
   // y values are time values
   if (interval) {
     const firstDate = dates[0];
     const lastDate = dates[dates.length - 1];
-    tickValues = d3.timeDay.range(
+    values = d3.timeDay.range(
       firstDate.toDate(),
       lastDate.toDate(),
       interval.asDays()
@@ -79,30 +32,30 @@ export const getXTicks = (
     const days = dates.length;
     if (days <= 15) {
       // number of ticks: 0-15
-      tickInterval = d3.timeDay;
+      step = d3.timeDay;
     } else if (days <= 4 * 15) {
       // number of ticks: 4-15
-      tickInterval = d3.timeDay.every(4);
+      step = d3.timeDay.every(4);
     } else if (days <= 7 * 15) {
       // number of ticks: 8-15
-      tickInterval = d3.timeWeek;
+      step = d3.timeWeek;
     } else if (days <= 15 * 30) {
       // number of ticks: 4-15
-      tickInterval = d3.timeMonth;
+      step = d3.timeMonth;
     } else if (days <= 15 * 60) {
       // number of ticks: 8-15
-      tickInterval = d3.timeMonth.every(2);
+      step = d3.timeMonth.every(2);
     } else {
-      tickInterval = d3.timeYear;
+      step = d3.timeYear;
     }
   }
-  return { tickValues, tickInterval };
+  return { values, interval: step };
 };
 
 export const getXTickLabelFormatter = (
   dates: Moment[],
   inTickLabelFormat: string
-): ((date: Date) => string) => {
+): TTickLabelFormatter => {
   if (inTickLabelFormat) {
     return (date: Date): string =>
       DateTimeUtils.dateToString(window.moment(date), inTickLabelFormat);
@@ -126,106 +79,82 @@ export const getXTickLabelFormatter = (
     } else {
       return d3.timeFormat('%Y');
     }
-
-    return null;
   }
 };
 
+/**
+ * @summary Returns an array of values for the y-axis
+ * @description Returns values event if the interval is null
+ * @param {number} start
+ * @param {number} stop
+ * @param {number | Duration} interval
+ * @param {boolean} isTimeValue
+ * @returns
+ */
 export const getYTicks = (
-  yLower: number,
-  yUpper: number,
+  start: number,
+  stop: number,
   interval: number | Duration,
   isTimeValue = false
 ): number[] => {
-  // The input interval could be null,
-  // generate tick values for time values even if interval is null
-  const absExtent = Math.abs(yUpper - yLower);
-  let tickValues: Array<number> = [];
+  let step: number;
 
   if (!isTimeValue) {
     // y values are numbers
-    if (interval && typeof interval === 'number') {
-      // !==null && !== 0
-      tickValues = d3.range(yLower, yUpper, interval);
-    }
-  } else {
+    if (interval && typeof interval === 'number') step = interval;
+  } else if (interval && window.moment.isDuration(interval))
     // y values are time values
-    if (interval && window.moment.isDuration(interval)) {
-      const intervalInSeconds = Math.abs(interval.asSeconds());
-      tickValues = d3.range(yLower, yUpper, intervalInSeconds);
-    } else {
-      // auto interval for time values
-      if (absExtent > 5 * 60 * 60) {
-        // extent over than 5 hours
-        // tick on the hour
-        yLower = Math.floor(yLower / 3600) * 3600;
-        yUpper = Math.ceil(yUpper / 3600) * 3600;
-
-        tickValues = d3.range(yLower, yUpper, 3600);
-      } else {
-        // tick on the half hour
-        yLower = Math.floor(yLower / 1800) * 1800;
-        yUpper = Math.ceil(yUpper / 1800) * 1800;
-
-        tickValues = d3.range(yLower, yUpper, 1800);
-      }
-    }
+    step = Math.abs(interval.asSeconds());
+  else {
+    // auto interval for time values
+    const span = Math.abs(stop - start);
+    step = span > fiveHours ? oneHour : halfHour;
+    start = Math.floor(start / step) * step;
+    stop = Math.ceil(stop / step) * step;
   }
 
-  if (tickValues.length === 0) return null;
-  return tickValues;
+  const ticks = d3.range(start, stop, step);
+  return ticks.length === 0 ? null : ticks;
 };
 
+/**
+ * @summary Returns a function to convert a value to a time string
+ * @param {number} start
+ * @param {number} stop
+ * @param {string} inTickLabelFormat
+ * @param {boolean} isTimeValue
+ * @returns {TTickLabelFormatter}
+ */
 export const getYTickLabelFormatter = (
-  yLower: number,
-  yUpper: number,
+  start: number,
+  stop: number,
   inTickLabelFormat: string,
   isTimeValue = false
-): ((value: number) => string) => {
-  // return a function convert value to time string
+): TTickLabelFormatter => {
   if (!isTimeValue) {
-    if (inTickLabelFormat) {
-      const tickFormat = (value: number): string => {
-        const strValue = sprintf('%' + inTickLabelFormat, value);
-        return strValue;
-      };
-
-      return tickFormat;
-    }
-    return d3.tickFormat(yLower, yUpper, 10);
-  } else {
-    // values in seconds
-    if (inTickLabelFormat) {
-      return (value: number): string => {
-        const dayStart = window.moment('00:00', 'HH:mm', true);
-        const tickTime = dayStart.add(value, 'seconds');
-        const format = tickTime.format(inTickLabelFormat);
-
-        const devHour = (value - yLower) / 3600;
-
-        // TODO Why is this here?
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const interleave = devHour % 2;
-
-        return format;
-      };
-    } else {
-      return (value: number): string => {
-        const absExtent = Math.abs(yUpper - yLower);
-        const dayStart = window.moment('00:00', 'HH:mm', true);
-        const tickTime = dayStart.add(value, 'seconds');
-        let format = tickTime.format('HH:mm');
-        // auto interleave if extent over 12 hours
-        if (absExtent > 12 * 60 * 60) {
-          const devHour = (value - yLower) / 3600;
-          const interleave = devHour % 2;
-          if (value < yLower || value > yUpper || interleave < 1) {
-            format = '';
-          }
-        }
-
-        return format;
-      };
-    }
+    return inTickLabelFormat
+      ? (value: number): string => sprintf('%' + inTickLabelFormat, value)
+      : d3.tickFormat(start, stop, 10);
   }
+  // values in seconds
+  if (inTickLabelFormat) {
+    return (value: number): string =>
+      window
+        .moment('00:00', 'HH:mm', true)
+        .add(value, 'seconds')
+        .format(inTickLabelFormat);
+  }
+
+  return (value: number): string => {
+    // auto interleave if spans more than 12 hours
+    const span = Math.abs(stop - start);
+    if (span > twelveHours) {
+      const interleave = ((value - start) / oneHour) % 2;
+      if (value < start || value > stop || interleave < 1) return '';
+    }
+    return window
+      .moment('00:00', 'HH:mm', true)
+      .add(value, 'seconds')
+      .format('HH:mm');
+  };
 };

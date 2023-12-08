@@ -24,6 +24,8 @@ export enum YAxisLocation {
 
 export const YAxisLocationValues: string[] = Object.values(YAxisLocation);
 
+export type TYAxisLocation = 'left' | 'right';
+
 export enum ComponentType {
   LineChart,
   BarChart,

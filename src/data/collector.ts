@@ -87,7 +87,7 @@ export const getFrontmatterDate = (
  * @param {Query} query
  * @returns {Moment}
  */
-export const getTagDate = (
+export const getInlineTagDate = (
   note: string,
   renderInfo: RenderInfo,
   query: Query
@@ -235,7 +235,7 @@ export const getXDateGetterArgs = (
       return [getFrontmatterDate, searchIn.metadata] as const;
 
     case SearchType.Tag:
-      return [getTagDate, searchIn.note] as const;
+      return [getInlineTagDate, searchIn.note] as const;
 
     case SearchType.Text:
       return [getTextDate, searchIn.note] as const;
@@ -603,7 +603,11 @@ export const addDataviewFieldData = (
   // Test this in Regex101
   // remember '\s' includes new line
   // (^| |\t)\*{0,2}target\*{0,2}(::[ |\t]*(?<value>[\d\.\/\-\w,@; \t:]*))(\r?\n|\r|$)
-  const pattern = `(^| |\\t)\\*{0,2}${target}\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-,@; \\t:${WordCharacterPattern}]*))(\\r\\?\\n|\\r|$)`;
+  const pattern =
+    String.raw`(^| |\t|\|)(\[|\()?\*{0,2}${target}` +
+    String.raw`\*{0,2}(::[ |\t]*(?<value>[\p{ExtPict}\d\.\/\-\w,@; \t:${WordCharacterPattern}` +
+    String.raw`]*)(\]|\))?)`;
+
   const outline = addMultipleValues(
     note,
     pattern,
@@ -646,7 +650,10 @@ export const addInlineDataviewFieldData = (
   // Test this in Regex101
   // remember '\s' includes new line
   // ^.*?(\[|\()\*{0,2}dvTarget\*{0,2}(::[ |\t]*(?<value>[\d\.\/\-\w,@; \t:]*))(\]|\)).*?
-  const pattern = `^.*?(\\[|\\()\\*{0,2}${target}\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-,@; \\t:${WordCharacterPattern}]*))(\\]|\\)).*?$`;
+  const pattern =
+    String.raw`(^| |\t|\|)(\[|\()?\*{0,2}${target}` +
+    String.raw`\*{0,2}(::[ |\t]*(?<value>[\p{ExtPict}\d\.\/\-\w,@; \t:${WordCharacterPattern}` +
+    String.raw`]*))(\]|\)).*?$`;
 
   return addMultipleValues(note, pattern, query, dataMap, valueMap, renderInfo);
 };

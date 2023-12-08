@@ -1,3 +1,4 @@
+import { Orientation } from '../../enums';
 import { ComponentType } from '../../models/enums';
 import { IComponent } from '../../models/types';
 
@@ -12,7 +13,7 @@ export class HeatMap implements IComponent {
   constructor() {
     this.dataset = '0';
     this.startWeekOn = 'Sun';
-    this.orientation = 'vertical';
+    this.orientation = Orientation.HORIZONTAL;
     this.yMin = null;
     this.yMax = null;
     this.color = null;

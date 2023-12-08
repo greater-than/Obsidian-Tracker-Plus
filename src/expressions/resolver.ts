@@ -2,6 +2,7 @@ import jsep from 'jsep';
 import { sprintf } from 'sprintf-js';
 import { TrackerError } from '../errors';
 import { RenderInfo } from '../models/render-info';
+import { ExpressionPattern } from '../regex-patterns';
 import { dateToString } from '../utils/date-time.utils';
 import { evaluate } from './evaluator';
 import { IExprResolved } from './types';
@@ -60,7 +61,7 @@ export const resolveValue = (
 };
 
 /**
- * Returns an array of resolved expressions from the provided RenderInfo
+ * Returns an array of resolved expressions
  * @param {string} text
  * @param {RenderInfo} renderInfo
  * @returns {IExprResolved[]}
@@ -70,26 +71,18 @@ export const getExpressions = (
   renderInfo: RenderInfo
 ): IExprResolved[] => {
   const expressions: Array<IExprResolved> = [];
-
-  // {{(?<expr>[\w+\-*\/0-9\s()\[\]%.]+)(::(?<format>[\w+\-*\/0-9\s()\[\]%.:]+))?}}
-  const pattern =
-    '{{(?<expr>[\\w+\\-*\\/0-9\\s()\\[\\]%.,]+)(::(?<format>[\\w+\\-*\\/0-9\\s()\\[\\]%.:]+))?}}';
-  const regex = new RegExp(pattern, 'gm');
+  const regex = new RegExp(ExpressionPattern, 'gm');
   let match;
   while ((match = regex.exec(text))) {
     const source = match[0];
     if (expressions.some((e) => e.source === source)) continue;
-
     if (
       typeof match.groups !== 'undefined' &&
       typeof match.groups.expr !== 'undefined'
     ) {
-      let value = null;
-
       const expr = jsep(match.groups.expr);
       if (!expr) throw new TrackerError('Failed to parse expression');
-      value = evaluate(expr, renderInfo);
-
+      const value = evaluate(expr, renderInfo);
       if (typeof value === 'number' || window.moment.isMoment(value)) {
         const format =
           typeof match.groups.format !== 'undefined'

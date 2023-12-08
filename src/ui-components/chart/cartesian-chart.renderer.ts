@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
-import { Position } from '../../enums';
+import { Orientation, Position } from '../../enums';
 import { TrackerError } from '../../errors';
-import { ComponentType, ValueType } from '../../models/enums';
+import { ComponentType, TYAxisLocation, ValueType } from '../../models/enums';
 import { RenderInfo } from '../../models/render-info';
 import { ComponentElements } from '../../models/types';
 import { BarChart } from '../../ui-components/chart/bar-chart.model';
@@ -46,9 +46,9 @@ export const renderXAxis = (
 
   const tickIntervalInDuration = DateTimeUtils.parseDuration(xAxisTickInterval);
 
-  const { tickValues, tickInterval } = getXTicks(dates, tickIntervalInDuration);
-  if (tickValues && tickValues.length !== 0) axisGen.tickValues(tickValues);
-  else if (tickInterval) axisGen.ticks(tickInterval);
+  const { values, interval } = getXTicks(dates, tickIntervalInDuration);
+  if (values && values.length !== 0) axisGen.tickValues(values);
+  else if (interval) axisGen.ticks(interval);
 
   const formatter = getXTickLabelFormatter(dates, xAxisTickLabelFormat);
   if (formatter) axisGen.tickFormat(formatter);
@@ -56,17 +56,18 @@ export const renderXAxis = (
   const xAxis = elements.dataArea // axis includes ticks
     .append('g')
     .attr('id', 'xAxis')
-    .attr('transform', 'translate(0,' + height + ')') // relative to graphArea
+    .attr('transform', `translate(0, ${height})`) // relative to graphArea
     .call(axisGen)
     .attr('class', 'tracker-axis');
   if (xAxisColor) xAxis.style('stroke', xAxisColor);
   elements.xAxis = xAxis;
 
-  const textSize = UiUtils.getTextDimensions('99-99-99');
+  const { height: textHeight, width: textWidth } =
+    UiUtils.getDimensions('99-99-99');
 
   const xAxisTickLabels = xAxis
     .selectAll('text')
-    .attr('x', -1 * textSize.height * Math.cos((65 / 180) * Math.PI))
+    .attr('x', -1 * textHeight * Math.cos((65 / 180) * Math.PI))
     .attr('y', 0)
     .attr('transform', 'rotate(-65)')
     .style('text-anchor', 'end')
@@ -75,14 +76,14 @@ export const renderXAxis = (
   if (xAxisColor) xAxisTickLabels.style('fill', xAxisColor);
 
   const tickLength = 6;
-  const tickLabelHeight = textSize.width * Math.sin((65 / 180) * Math.PI);
+  const tickLabelHeight = textWidth * Math.sin((65 / 180) * Math.PI);
 
   const axisLabel = xAxis
     .append('text')
     .text(xAxisLabel)
     .attr(
       'transform',
-      'translate(' + width / 2 + ',' + (tickLength + tickLabelHeight) + ')'
+      `translate(${width / 2}, ${tickLength + tickLabelHeight})`
     )
     .attr('class', 'tracker-axis-label');
 
@@ -108,7 +109,7 @@ export const renderYAxis = (
   elements: ComponentElements,
   renderInfo: RenderInfo,
   component: CartesianChart,
-  position: 'left' | 'right',
+  position: TYAxisLocation,
   datasetIds: Array<number>
 ): void => {
   if (!renderInfo || !component || datasetIds.length === 0) return;
@@ -161,10 +162,10 @@ export const renderYAxis = (
     maxAssigned = yTmpAssigned;
   }
 
-  const extent = max - min;
+  const span = max - min;
 
-  let lower = minAssigned ? min : min - extent * 0.2;
-  let upper = maxAssigned ? max : max + extent * 0.2;
+  let lower = minAssigned ? min : min - span * 0.2;
+  let upper = maxAssigned ? max : max + span * 0.2;
 
   // if it is bar chart, zero must be contained in the range
   if (component.componentType === ComponentType.BarChart) {
@@ -229,8 +230,8 @@ export const renderYAxis = (
     );
     if (labelFormatter) axisGen.tickFormat(labelFormatter);
 
-    const tickValues = getYTicks(lower, upper, tickInterval, valueIsTime);
-    if (tickValues) axisGen.tickValues(tickValues);
+    const ticks = getYTicks(lower, upper, tickInterval, valueIsTime);
+    if (ticks) axisGen.tickValues(ticks);
   }
 
   const axis = elements.dataArea
@@ -255,7 +256,7 @@ export const renderYAxis = (
   let maxTickLabelWidth = 0;
   for (const tickLabel of tickLabels) {
     if (tickLabel.textContent) {
-      const tickLabelWidth = UiUtils.getTextDimensions(
+      const tickLabelWidth = UiUtils.getDimensions(
         tickLabel.textContent,
         'tracker-axis-label'
       ).width;
@@ -266,7 +267,7 @@ export const renderYAxis = (
   if (unitText !== '') labelText += ' (' + unitText + ')';
 
   const tickLength = 6;
-  const labelHeight = UiUtils.getTextDimensions(labelText).height;
+  const labelHeight = UiUtils.getDimensions(labelText).height;
   const label = axis
     .append('text')
     .text(labelText)
@@ -328,7 +329,7 @@ export const renderLegend = (
   // Get names and their dimension
   const names = datasets.names; // xDataset name included
   const nameSizes = names.map((n) => {
-    return UiUtils.getTextDimensions(n, 'tracker-legend-label');
+    return UiUtils.getDimensions(n, 'tracker-legend-label');
   });
   let indMaxName = 0;
   let maxNameWidth = 0;
@@ -351,10 +352,10 @@ export const renderLegend = (
   // Get legend width and height
   let legendWidth = 0;
   let legendHeight = 0;
-  if (legendOrientation === 'vertical') {
+  if (legendOrientation === Orientation.VERTICAL) {
     legendWidth = xSpacing * 3 + markerWidth + maxNameWidth;
     legendHeight = (numNames + 1) * ySpacing;
-  } else if (legendOrientation === 'horizontal') {
+  } else if (legendOrientation === Orientation.HORIZONTAL) {
     legendWidth =
       (2 * xSpacing + markerWidth) * numNames +
       xSpacing +
@@ -365,7 +366,7 @@ export const renderLegend = (
   // Calculate legendX and legendY
   let legendX = 0; // relative to graphArea
   let legendY = 0;
-  if (legendPosition === 'top') {
+  if (legendPosition === Position.TOP) {
     // below title
     legendX = leftYAxisWidth + dataAreaSize.width / 2 - legendWidth / 2;
     legendY = titleHeight;
@@ -373,20 +374,20 @@ export const renderLegend = (
     DomUtils.expandArea(svg, 0, legendHeight + ySpacing);
     // Move dataArea down
     DomUtils.moveArea(dataArea, 0, legendHeight + ySpacing);
-  } else if (legendPosition === 'bottom') {
+  } else if (legendPosition === Position.BOTTOM) {
     // bellow x-axis label
     legendX = leftYAxisWidth + dataAreaSize.width / 2 - legendWidth / 2;
     legendY = titleHeight + dataAreaSize.height + xAxisHeight + ySpacing;
     // Expand svg
     DomUtils.expandArea(svg, 0, legendHeight + ySpacing);
-  } else if (legendPosition === 'left') {
+  } else if (legendPosition === Position.LEFT) {
     legendX = 0;
     legendY = titleHeight + dataAreaSize.height / 2 - legendHeight / 2;
     // Expand svg
     DomUtils.expandArea(svg, legendWidth + xSpacing, 0);
     // Move dataArea right
     DomUtils.moveArea(dataArea, legendWidth + xSpacing, 0);
-  } else if (legendPosition === 'right') {
+  } else if (legendPosition === Position.RIGHT) {
     legendX = dataAreaSize.width + leftYAxisWidth + rightYAxisWidth + xSpacing;
     legendY = titleHeight + dataAreaSize.height / 2 - legendHeight / 2;
     // Expand svg
@@ -413,7 +414,7 @@ export const renderLegend = (
   const firstLabelX = firstMarkerX + xSpacing + markerWidth; // xSpacing + 2 * xSpacing
   const firstLabelY = firstMarkerY;
 
-  if (legendOrientation === 'vertical') {
+  if (legendOrientation === Orientation.VERTICAL) {
     if (componentType === ComponentType.LineChart) {
       // lines
       legend
@@ -522,7 +523,7 @@ export const renderLegend = (
         return (component as BarChart).barColor[i];
       });
     }
-  } else if (legendOrientation === 'horizontal') {
+  } else if (legendOrientation === Orientation.HORIZONTAL) {
     if (componentType === ComponentType.LineChart) {
       // lines
       legend
@@ -659,42 +660,4 @@ export const renderLegend = (
       });
     }
   }
-};
-
-export interface RenderTitleOptions {
-  titleSpacing?: number;
-  titleCssClass?: string;
-}
-
-export const renderTitle = (
-  elements: ComponentElements,
-  renderInfo: RenderInfo,
-  component: CartesianChart,
-  options: RenderTitleOptions = { titleSpacing: 0 }
-): void => {
-  if (!renderInfo || !component || !component.title) return;
-
-  const { title } = component;
-  const width = renderInfo.dataAreaSize.width;
-  const spacing = options?.titleSpacing || 0; // Extra spacing between title and dataArea
-  const cssClass = options?.titleCssClass || 'tracker-title';
-  const dimensions = UiUtils.getTextDimensions(title, cssClass);
-
-  // Append title
-  elements.title = elements.graphArea
-    .append('text')
-    .text(title) // pivot at center
-    .attr('id', 'title')
-    .attr('transform', `translate(${width / 2}, ${dimensions.height / 2})`)
-    .attr('height', dimensions.height) // for later use
-    .attr('class', 'tracker-title');
-
-  // Expand parent areas
-  DomUtils.expandArea(elements.svg, 0, dimensions.height + spacing);
-  DomUtils.expandArea(elements.graphArea, 0, dimensions.height + spacing);
-
-  // Move sibling areas
-  DomUtils.moveArea(elements.dataArea, 0, dimensions.height + spacing);
-
-  return;
 };

@@ -7,10 +7,9 @@ import { RenderInfo } from '../../models/render-info';
 import { ComponentElements } from '../../models/types';
 import { UiUtils } from '../../utils';
 import { setScale } from '../../utils/ui.utils';
-import { createElements } from './cartesian-chart.helper';
+import { createElements, renderTitle } from '../shared';
 import {
   renderLegend,
-  renderTitle,
   renderXAxis,
   renderYAxis,
 } from './cartesian-chart.renderer';
@@ -145,8 +144,8 @@ export const renderPoints = (
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let yScale: any = null;
-  if (yAxisPosition === 'left') yScale = leftYScale;
-  else if (yAxisPosition === 'right') yScale = rightYScale;
+  if (yAxisPosition === Position.LEFT) yScale = leftYScale;
+  else if (yAxisPosition === Position.RIGHT) yScale = rightYScale;
 
   if (component.showPoint[dataset.id]) {
     const dots = dataArea
@@ -215,7 +214,7 @@ export function renderTooltip(
       // Date
       const labelDateText = 'date: ' + d3.select(this).attr('date');
       // labelDateText = x.toString();// debug
-      const labelDateSize = UiUtils.getTextDimensions(
+      const labelDateSize = UiUtils.getDimensions(
         labelDateText,
         'tracker-tooltip-label'
       );
@@ -240,7 +239,7 @@ export function renderTooltip(
         labelValueText += strValue;
         tooltipLabelValue.text(labelValueText);
       }
-      const labelValueSize = UiUtils.getTextDimensions(
+      const labelValueSize = UiUtils.getDimensions(
         labelValueText,
         'tracker-tooltip-label'
       );

@@ -1,7 +1,7 @@
 import { ComponentType } from '../../models/enums';
-import { BaseChart } from './base-chart.model';
+import { ChartBase } from './chart-base.model';
 
-export abstract class CartesianChart extends BaseChart {
+export abstract class CartesianChart extends ChartBase {
   xAxisLabel: string;
   xAxisColor: string;
   xAxisLabelColor: string;

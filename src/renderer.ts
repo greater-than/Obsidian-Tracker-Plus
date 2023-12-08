@@ -5,7 +5,7 @@ import { renderLineChart } from './ui-components/chart/line-chart.renderer';
 import { renderPieChart } from './ui-components/chart/pie-chart.renderer';
 import { renderBulletGraph } from './ui-components/graph/bullet-graph.renderer';
 import { renderHeatMap } from './ui-components/heat-map/heat-map.renderer';
-import { renderMonth } from './ui-components/month-view/month-view.renderer';
+import { renderMonthView } from './ui-components/month-view/month-view.renderer';
 import { renderSummary } from './ui-components/summary/summary.renderer';
 
 export const renderTracker = (
@@ -38,21 +38,21 @@ export const renderTracker = (
   pie.forEach((component) => renderPieChart(...args, component));
   summary.forEach((component) => renderSummary(...args, component));
   bullet.forEach((component) => renderBulletGraph(...args, component));
-  month.forEach((component) => renderMonth(...args, component));
+  month.forEach((component) => renderMonthView(...args, component));
   heatmap.forEach((component) => renderHeatMap(...args, component));
 };
 
 export const renderErrorMessage = (
-  canvas: HTMLElement,
+  container: HTMLElement,
   errorMessage: string
 ): void => {
   // TODO Remove graph not completed
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const graph = d3.select(canvas).select('#svg').remove();
+  const graph = d3.select(container).select('#svg').remove();
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const svg = d3
-    .select(canvas)
+    .select(container)
     .append('div')
     .text(errorMessage)
     .style('background-color', 'white')
@@ -87,10 +87,6 @@ export const renderError = (
     .style('margin-bottom', '20px')
     .style('padding', '10px')
     .style('color', 'red');
-
-  // TODO implement env vars for debug options
-  // TRACKER_LOG_ERROR=true|false
-  // TRACKER_CLEAR_CONSOLE=true|false
 
   if (options?.logError) {
     if (options?.clearLog) console.clear();

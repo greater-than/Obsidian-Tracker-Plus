@@ -41,7 +41,7 @@ import {
  */
 export const setCartesianChartInfo = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  yaml: any,
+  yaml: Record<string, any>,
   chart: CartesianChart
 ): void => {
   // single value, use default value if no value from YAML
@@ -76,15 +76,14 @@ export const setCartesianChartInfo = (
     else chart.legendPosition = BOTTOM;
 
     // legend orientation
-    if (typeof yaml.legendOrientation === STRING) {
+    if (typeof yaml.legendOrientation === STRING)
       chart.legendOrientation = yaml.legendOrientation;
-    } else {
-      if (chart.legendPosition === TOP || chart.legendPosition === BOTTOM)
-        chart.legendOrientation = HORIZONTAL;
-      else if (chart.legendPosition === LEFT || chart.legendPosition === RIGHT)
-        chart.legendOrientation = VERTICAL;
-      else chart.legendOrientation = HORIZONTAL;
-    }
+    else if (chart.legendPosition === TOP || chart.legendPosition === BOTTOM)
+      chart.legendOrientation = HORIZONTAL;
+    else if (chart.legendPosition === LEFT || chart.legendPosition === RIGHT)
+      chart.legendOrientation = VERTICAL;
+    else chart.legendOrientation = HORIZONTAL;
+
     // legendBgColor
     chart.legendBgColor = getString(yaml.legendBgColor, chart.legendBgColor);
 
@@ -251,15 +250,15 @@ export const getSearchTargets = (target: string | object): string[] => {
 /**
  * @summary Returns an array of SearchType from the searchType input property
  * @param {string} searchType
- * @param {number} numTargets
+ * @param {number} valueCount
  * @returns {SearchType[]}
  */
 export const getSearchTypes = (
   searchType: string,
-  numTargets: number
+  valueCount: number
 ): SearchType[] => {
   const types = getStrings('searchType', searchType, isSearchTypeValid, {
-    valueCount: numTargets,
+    valueCount,
     defaultValue: '',
     allowInvalidValue: false,
   });
@@ -337,15 +336,13 @@ export const getQueries = (
   searchTypes: SearchType[],
   datasets: number[],
   separators: string[]
-): Query[] => {
-  const queries: Query[] = searchTargets.map((target, index) => {
+): Query[] =>
+  searchTargets.map((target, index) => {
     const query = new Query(index, searchTypes[index], target);
     query.separator = separators[index];
     if (datasets.includes(index)) query.usedAsXDataset = true;
     return query;
   });
-  return queries;
-};
 
 /**
  * @summary Returns an array of custom dataset keys
@@ -438,7 +435,7 @@ export const getOutputKeys = (
 export const getLineCharts = (
   lineKeys: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  yaml: any,
+  yaml: Record<string, any>,
   searchTargets: string[]
 ): LineChart[] => {
   return lineKeys.map((key) => {
@@ -560,7 +557,7 @@ export const getLineCharts = (
 export const getBarCharts = (
   barKeys: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  yaml: any,
+  yaml: Record<string, any>,
   searchTargets: string[]
 ): BarChart[] => {
   return barKeys.map((key) => {
@@ -606,7 +603,7 @@ export const getBarCharts = (
 export const getPieCharts = (
   keys: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  yaml: any
+  yaml: Record<string, any>
 ): PieChart[] => {
   return keys.map((key) => {
     const pie = new PieChart();
@@ -670,15 +667,18 @@ export const getPieCharts = (
       pie.showLegend = yamlPie.showLegend;
 
     // legendPosition
-    pie.legendPosition = getString(yamlPie?.legendPosition, 'right');
+    pie.legendPosition = getString(yamlPie?.legendPosition, Position.RIGHT);
 
     // legendOrientation
     let defaultLegendOrientation = Orientation.HORIZONTAL;
-    if (pie.legendPosition === 'top' || pie.legendPosition === 'bottom') {
+    if (
+      pie.legendPosition === Position.TOP ||
+      pie.legendPosition === Position.BOTTOM
+    ) {
       defaultLegendOrientation = Orientation.HORIZONTAL;
     } else if (
-      pie.legendPosition === 'left' ||
-      pie.legendPosition === 'right'
+      pie.legendPosition === Position.LEFT ||
+      pie.legendPosition === Position.RIGHT
     ) {
       defaultLegendOrientation = Orientation.VERTICAL;
     } else {
@@ -705,7 +705,7 @@ export const getPieCharts = (
 export const getSummaries = (
   keys: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  yaml: any
+  yaml: Record<string, any>
 ): Summary[] => {
   return keys.map((key) => {
     const summary = new Summary();
@@ -724,14 +724,27 @@ export const getSummaries = (
     // style
     summary.style = getString(yamlSummary?.style, summary.style);
 
+    // // renderAs
+    // summary.style = getString(yamlSummary?.renderAs, summary.renderAs);
+
+    // // pivot
+    // summary.pivot = getString(yamlSummary?.pivot, summary.pivot);
+
     return summary;
   });
 };
 
+/**
+ *
+ * @param {string[]} keys
+ * @param {object} yaml
+ * @param queries
+ * @returns
+ */
 export const getMonthViews = (
   keys: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  yaml: any,
+  yaml: Record<string, any>,
   queries: Query[]
 ): MonthView[] => {
   return keys.map((key) => {

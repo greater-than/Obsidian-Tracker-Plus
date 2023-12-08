@@ -1,18 +1,16 @@
-import { createElements } from './cartesian-chart.helper';
-import {
-  renderLegend,
-  renderTitle,
-  renderXAxis,
-  renderYAxis,
-} from './cartesian-chart.renderer';
-
 import { Position } from '../../enums';
 import { DataPoint } from '../../models/data-point.model';
 import { Dataset } from '../../models/dataset';
 import { RenderInfo } from '../../models/render-info';
 import { ComponentElements } from '../../models/types';
 import { setScale } from '../../utils/ui.utils';
+import { createElements, renderTitle } from '../shared';
 import { BarChart } from './bar-chart.model';
+import {
+  renderLegend,
+  renderXAxis,
+  renderYAxis,
+} from './cartesian-chart.renderer';
 
 /**
  * @summary Renders a bar chart
@@ -126,9 +124,9 @@ export const renderBar = (
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let yScale: any = null;
-  if (yAxisPosition === 'left') {
+  if (yAxisPosition === Position.LEFT) {
     yScale = elements.leftYScale;
-  } else if (yAxisPosition === 'right') {
+  } else if (yAxisPosition === Position.RIGHT) {
     yScale = elements.rightYScale;
   }
 

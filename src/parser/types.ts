@@ -11,4 +11,6 @@ export interface IStringValueOptions extends IValueOptions {
   defaultValue: string;
 }
 
-export type TValueValidator = (value: object | string | number) => boolean;
+export type TValueValidator = (
+  value: object | string | number | boolean
+) => boolean;

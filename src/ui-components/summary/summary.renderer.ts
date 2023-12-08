@@ -1,46 +1,30 @@
 import * as d3 from 'd3';
-import * as expr from '../../expressions/resolver';
+import { TrackerError } from '../../errors';
+import * as Resolver from '../../expressions/resolver';
 import { RenderInfo } from '../../models/render-info';
 import { Summary } from './summary.model';
 
 // TODO ???
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const checkSummaryTemplateValid = (_summaryTemplate: string): boolean => true;
+const isTemplateValid = (_summaryTemplate: string): boolean => true;
 
 export const renderSummary = (
-  canvas: HTMLElement,
+  container: HTMLElement,
   renderInfo: RenderInfo,
-  summaryInfo: Summary
-): string => {
-  if (!renderInfo || !summaryInfo) return;
+  component: Summary
+): void => {
+  if (!renderInfo || !component) return;
+  const { template, style } = component;
+  if (!isTemplateValid(template))
+    throw new TrackerError('Invalid summary template');
 
-  let outputSummary = '';
-  if (checkSummaryTemplateValid(summaryInfo.template)) {
-    outputSummary = summaryInfo.template;
-  } else {
-    return 'Invalid summary template';
-  }
-
-  const retResolvedTemplate = expr.resolveTemplate(outputSummary, renderInfo);
-  if (retResolvedTemplate.startsWith('Error:')) {
-    return retResolvedTemplate;
-  }
-  outputSummary = retResolvedTemplate;
-
-  if (outputSummary !== '') {
-    const textBlock = d3.select(canvas).append('div');
-    if (outputSummary.includes('\n') || outputSummary.includes('\\n')) {
-      const outputLines = outputSummary.split(/(\n|\\n)/);
-      for (const outputLine of outputLines) {
-        if (outputLine !== '\n' && outputLine !== '\\n')
-          textBlock.append('div').text(outputLine);
-      }
-    } else {
-      textBlock.text(outputSummary);
-    }
-
-    if (summaryInfo.style !== '') {
-      textBlock.attr('style', summaryInfo.style);
-    }
-  }
+  const summary = Resolver.resolveTemplate(template, renderInfo);
+  if (summary === '') return;
+  const selection = d3.select(container).append('div');
+  if (summary.includes('\n') || summary.includes('\\n')) {
+    summary.split(/(\n|\\n)/).forEach((line) => {
+      if (line !== '\n' && line !== '\\n') selection.append('div').text(line);
+    });
+  } else selection.text(summary);
+  if (style !== '') selection.attr('style', style);
 };

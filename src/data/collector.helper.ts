@@ -18,7 +18,7 @@ export function extractDate(
   pattern: string,
   renderInfo: RenderInfo
 ): Moment {
-  const regex = new RegExp(pattern, 'gm');
+  const regex = new RegExp(pattern, 'gmu');
   let match;
   while ((match = regex.exec(text))) {
     if (
@@ -59,7 +59,7 @@ export const addMultipleValues = (
   valueMap: TNumberValueMap,
   renderInfo: RenderInfo
 ): boolean => {
-  const regex = new RegExp(pattern, 'gm');
+  const regex = new RegExp(pattern, 'gmu');
   let match;
   let value = 0.0;
   let extracted = false;
