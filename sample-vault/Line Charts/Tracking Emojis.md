@@ -6,21 +6,22 @@ tags:
   - emoji
   - showLegend
 ---
+
 # Tracking Emojis
 
 ```tracker
 searchType: dvField
-searchTarget: Physical
+searchTarget: mood
 folder: Ξdiary
-startDate: 2023-11-11
-endDate: 2023-12-11
+startDate: 2023-11-01
+endDate: 2023-11-30
 textValueMap:
     😀: 5
     🙂: 4
     😐: 3
     🙁: 2
     😞: 1
-datasetName: 🚹 Physical
+datasetName: 🚹 Mood
 line:
 	lineColor: orange
 	lineWidth: 3

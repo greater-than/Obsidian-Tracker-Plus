@@ -1,8 +1,8 @@
 # Examples
 
-- [Use Cases](#use-cases)
-- [Tracker Examples](#tracker-examples)
-- [Error Message Examples](#when-things-dont-go-as-planned)
+- [Use Cases](#Use%20Cases)
+- [Trackers](#Tracker%20Examples)
+- [Error Messages](#When%20Things%20Don't%20Go%20as%20Planned)
 
 ## Use Cases
 
@@ -105,5 +105,6 @@ The notes and data used for the examples listed below can be found in the `Ξdia
 ---
 
 ### When Things Don't Go as Planned
+Examples of error messages you may encounter
 
 - [Error Messages](../ErrorMessages.md)

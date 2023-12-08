@@ -1,3 +1,7 @@
+---
+tags:
+  - error-messages
+---
 # Error Messages
 ## YAML
 

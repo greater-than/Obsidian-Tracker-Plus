@@ -4,12 +4,14 @@ tags:
   - output-line
   - searchType-tag
 ---
+
 # Date Formats
+
 ## Default Date Formats
 
 Change the default dateFormat on Tracker settings panel and then check the following trackers in the preview mode. Only the one fit dateFormat settings will get rendered.
 
-### dateFormat: YYYY-MM-DD
+<!-- ### dateFormat: YYYY-MM-DD
 
 ```tracker
 searchType: tag
@@ -97,7 +99,7 @@ line:
     yAxisLabel: Weight
     yAxisUnit: kg
     lineColor: yellow
-```
+``` -->
 
 ## ISO-8601 Date Format
 
@@ -115,7 +117,7 @@ line:
     lineColor: yellow
 ```
 
-## Date Format Prefix and Suffix
+<!-- ## Date Format Prefix and Suffix
 
 The string provided in dateFormatPrefix and dateFormatSuffix will be removed before parsing dates.
 
@@ -178,7 +180,7 @@ line:
     yAxisLabel: Count
     yAxisUnit: times
     lineColor: yellow
-```
+``` -->
 
 ## Relative Date Input for startDate and endDate
 

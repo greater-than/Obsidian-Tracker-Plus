@@ -1,4 +1,4 @@
 
 ## Bullet Graphs
-- [[Bullet Graphs/Data Embedded in Code Block|Data Embedded in Code Block]]
-- [[Bullet Graphs/Data from Notes|Data from Notes]]
+- [Data Embedded in Code Block](Bullet%20Graphs/Data%20Embedded%20in%20Code%20Block.md)
+- [Data from Notes](Bullet%20Graphs/Data%20from%20Notes.md)

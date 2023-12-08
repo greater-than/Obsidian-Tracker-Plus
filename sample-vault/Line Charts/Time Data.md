@@ -6,7 +6,7 @@ tags:
   - searchType-dvField
 ---
 # Time Data
-## From frontmatter
+## From Frontmatter
 
 Clock-In & Clock-Out from front matter
 
@@ -42,7 +42,7 @@ line:
     showLegend: true
 ```
 
-## From dvField
+## From Dataview Field
 
 Clock-In & Clock-Out from dvField
 time granularity to one second

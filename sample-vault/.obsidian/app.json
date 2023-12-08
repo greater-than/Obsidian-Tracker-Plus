@@ -1,5 +1,6 @@
 {
   "spellcheck": true,
   "alwaysUpdateLinks": true,
-  "showInlineTitle": false
+  "showInlineTitle": false,
+  "useMarkdownLinks": true
 }
