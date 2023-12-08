@@ -6,6 +6,7 @@ tags:
   - searchType-text
   - output-summary
 ---
+
 # Data from Notes Using Regular Expressions
 
 **Important**!!
@@ -14,9 +15,9 @@ tags:
 2. You can make your own expression, or find a suitable one from website like [regex101](https://regex101.com).
 3. Use a named group "(?\<value\>XXXXXX)" in your expression if you need values be retrieved from text.
 
-## Count Occurences (No Value)
+## Count Occurrences (No Value)
 
-### Occurences of Email
+### Occurrences of Email
 
 [Regex for searching simple emails](https://regex101.com/library/mF3pK7)
 
